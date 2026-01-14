@@ -584,6 +584,117 @@ class InkscapeCliWrapper:
             self.logger.debug(f"File validation failed for {file_path}: {e}")
             return False
 
+    async def trace_bitmap(self, input_path: str, output_path: str,
+                          trace_type: str = "brightness", threshold: int = 128,
+                          timeout: Optional[int] = None) -> str:
+        """
+        Convert raster image to vector SVG using Inkscape's trace bitmap feature.
+
+        Args:
+            input_path: Input raster image path
+            output_path: Output SVG path
+            trace_type: Trace method (brightness, edge, color, grayscale)
+            threshold: Threshold value for brightness tracing (0-255)
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If tracing fails
+            InkscapeTimeoutError: If operation times out
+        """
+        timeout = timeout or self.config.process_timeout
+
+        # Build trace action based on type
+        if trace_type == "brightness":
+            trace_action = f"trace-brightness;trace-threshold:{threshold}"
+        elif trace_type == "edge":
+            trace_action = "trace-edge"
+        elif trace_type == "color":
+            trace_action = "trace-color"
+        elif trace_type == "grayscale":
+            trace_action = "trace-grayscale"
+        else:
+            trace_action = f"trace-brightness;trace-threshold:{threshold}"
+
+        # Use actions to perform tracing
+        actions = f"import:{input_path};{trace_action};export-filename:{output_path};export-do"
+
+        return await self._execute_actions(input_path, actions.split(";"), output_path, timeout)
+
+    async def apply_boolean(self, input_path: str, output_path: str,
+                           operation: str, object_ids: Optional[list] = None,
+                           timeout: Optional[int] = None) -> str:
+        """
+        Apply boolean operations to SVG objects.
+
+        Args:
+            input_path: Input SVG file path
+            output_path: Output SVG path
+            operation: Boolean operation (union, difference, intersection, exclusion, division)
+            object_ids: List of object IDs to operate on (None = all selected)
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If operation fails
+            InkscapeTimeoutError: If operation times out
+        """
+        timeout = timeout or self.config.process_timeout
+
+        # Map operation names to Inkscape actions
+        op_map = {
+            "union": "selection-union",
+            "difference": "selection-diff",
+            "intersection": "selection-intersect",
+            "exclusion": "selection-exclusion",
+            "division": "selection-division"
+        }
+
+        if operation not in op_map:
+            raise InkscapeExecutionError(f"Unknown boolean operation: {operation}")
+
+        # Build action chain
+        actions = []
+
+        # Select specific objects if provided
+        if object_ids:
+            for obj_id in object_ids:
+                actions.append(f"select-by-id:{obj_id}")
+        else:
+            actions.append("select-all")
+
+        # Apply the boolean operation
+        actions.append(op_map[operation])
+
+        # Export result
+        actions.append("export-do")
+
+        return await self._execute_actions(input_path, actions, output_path, timeout)
+
+    async def execute_actions(self, input_path: str, actions: list,
+                             output_path: Optional[str] = None, timeout: Optional[int] = None) -> str:
+        """
+        Execute a sequence of Inkscape actions using --batch-process.
+
+        Args:
+            input_path: Input file path
+            actions: List of action IDs to execute
+            output_path: Optional output path
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
+        """
+        return await self._execute_actions(input_path, actions, output_path, timeout)
+
 
 # Backward compatibility alias for legacy code
 GimpCliWrapper = InkscapeCliWrapper

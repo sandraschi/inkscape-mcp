@@ -5,9 +5,11 @@ Simple test script to detect Inkscape installation.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from inkscape_mcp.inkscape_detector import InkscapeDetector
+
 
 def main():
     detector = InkscapeDetector()
@@ -18,8 +20,9 @@ def main():
 
         # Test if it's actually executable
         import subprocess
+
         try:
-            result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=10)
+            result = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 print(f"✅ Inkscape version: {result.stdout.strip()}")
             else:
@@ -29,6 +32,7 @@ def main():
     else:
         print("❌ Inkscape not found")
         print("Please install Inkscape from: https://inkscape.org/")
+
 
 if __name__ == "__main__":
     main()

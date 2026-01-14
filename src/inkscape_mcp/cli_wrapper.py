@@ -6,20 +6,34 @@ This module provides core Inkscape command-line functionality for MCP operations
 
 import asyncio
 import logging
-import subprocess
-import time
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+
 class InkscapeCliError(Exception):
     """Base exception for Inkscape CLI operations."""
+
     pass
+
+
+class InkscapeTimeoutError(InkscapeCliError):
+    """Exception for Inkscape operation timeouts."""
+
+    pass
+
+
+class InkscapeExecutionError(InkscapeCliError):
+    """Exception for Inkscape execution failures."""
+
+    pass
+
 
 class InkscapeCliWrapper:
     """
-    Minimal Inkscape CLI wrapper for essential operations.
+    Minimal Inkscape CLI wrapper for essential vector graphics operations.
     """
 
     def __init__(self, config):
@@ -30,139 +44,21 @@ class InkscapeCliWrapper:
         self.logger = logging.getLogger(__name__)
 
         # Basic validation
-        if not hasattr(config, 'inkscape_executable') or not config.inkscape_executable:
+        if not hasattr(config, "inkscape_executable") or not config.inkscape_executable:
             raise InkscapeCliError("Inkscape executable not configured")
 
         if not Path(config.inkscape_executable).exists():
             raise InkscapeCliError(f"Inkscape executable not found: {config.inkscape_executable}")
 
-    async def export_file(self, input_path: str, output_path: str,
-                         export_type: str = "png", dpi: int = 300) -> str:
-        """
-        Export SVG to other formats using Inkscape.
-        """
-        cmd = [
-            self.config.inkscape_executable,
-            f"--export-type={export_type}",
-            f"--export-dpi={dpi}",
-            f"--export-filename={output_path}",
-            input_path
-        ]
-
-        return await self._execute_command(cmd)
-
-    async def execute_actions(self, input_path: str, actions: str,
-                             output_path: Optional[str] = None) -> str:
-        """
-        Execute Inkscape actions (Inkscape 1.2+ actions system).
-        """
-        cmd = [
-            self.config.inkscape_executable,
-            f"--actions={actions}"
-        ]
-
-        if output_path:
-            cmd.append(f"--export-filename={output_path}")
-
-        cmd.append(input_path)
-
-        return await self._execute_command(cmd)
-
-    async def trace_bitmap(self, input_path: str, output_path: str,
-                          trace_type: str = "brightness", threshold: int = 128) -> str:
-        """
-        Convert raster image to vector using Inkscape's trace bitmap.
-        """
-        # Actions to select all, trace bitmap, and export
-        actions = f"select-all;selection-trace;export-do"
-
-        cmd = [
-            self.config.inkscape_executable,
-            f"--actions={actions}",
-            f"--export-type=svg",
-            f"--export-filename={output_path}",
-            input_path
-        ]
-
-        return await self._execute_command(cmd)
-
-    async def apply_boolean(self, input_path: str, output_path: str,
-                           operation: str, object_ids: list) -> str:
-        """
-        Apply boolean operations to selected objects.
-        """
-        # Select objects and apply boolean operation
-        select_actions = ";".join([f"select-by-id:{obj_id}" for obj_id in object_ids])
-
-        op_map = {
-            "union": "selection-union",
-            "difference": "selection-diff",
-            "intersection": "selection-intersect",
-            "exclusion": "selection-exclusion",
-            "division": "selection-division"
-        }
-
-        if operation not in op_map:
-            raise InkscapeCliError(f"Unknown boolean operation: {operation}")
-
-        actions = f"{select_actions};{op_map[operation]};export-do"
-
-        cmd = [
-            self.config.inkscape_executable,
-            f"--actions={actions}",
-            f"--export-type=svg",
-            f"--export-filename={output_path}",
-            input_path
-        ]
-
-        return await self._execute_command(cmd)
-
-    async def get_document_info(self, input_path: str) -> str:
-        """
-        Get basic document information.
-        """
-        cmd = [
-            self.config.inkscape_executable,
-            "--query-all",
-            input_path
-        ]
-
-        return await self._execute_command(cmd)
-
-    async def _execute_command(self, cmd_args, timeout: int = 30) -> str:
-        """
-        Execute Inkscape command with timeout.
-        """
-        try:
-            self.logger.debug(f"Executing: {' '.join(cmd_args)}")
-
-            process = await asyncio.create_subprocess_exec(
-                *cmd_args,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            try:
-                stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                process.kill()
-                raise InkscapeCliError(f"Inkscape operation timed out after {timeout}s")
-
-            if process.returncode != 0:
-                error_msg = stderr.decode('utf-8', errors='ignore').strip()
-                raise InkscapeCliError(f"Inkscape failed: {error_msg}")
-
-            return stdout.decode('utf-8', errors='ignore').strip()
-
-        except Exception as e:
-            raise InkscapeCliError(f"Inkscape execution failed: {e}")
-    
-    async def export_file(self, input_path: str, output_path: str,
-                         export_type: str = "png", dpi: int = 300,
-                         export_area: str = "drawing", timeout: Optional[int] = None) -> str:
+    async def export_file(
+        self,
+        input_path: str,
+        output_path: str,
+        export_type: str = "png",
+        dpi: int = 300,
+        export_area: str = "drawing",
+        timeout: Optional[int] = None,
+    ) -> str:
         """
         Export SVG file to raster or vector format using Inkscape CLI.
 
@@ -186,8 +82,10 @@ class InkscapeCliWrapper:
         # Build command arguments
         cmd_args = [
             self.config.inkscape_executable,
-            "--export-type", export_type,
-            "--export-filename", output_path
+            "--export-type",
+            export_type,
+            "--export-filename",
+            output_path,
         ]
 
         # Add DPI for raster formats
@@ -208,9 +106,14 @@ class InkscapeCliWrapper:
         cmd_args.append(input_path)
 
         return await self._execute_command(cmd_args, timeout)
-    
-    async def query_object(self, input_path: str, object_id: str,
-                          query_type: str = "bbox", timeout: Optional[int] = None) -> str:
+
+    async def query_object(
+        self,
+        input_path: str,
+        object_id: str,
+        query_type: str = "bbox",
+        timeout: Optional[int] = None,
+    ) -> str:
         """
         Query object properties from SVG file using Inkscape CLI.
 
@@ -230,10 +133,7 @@ class InkscapeCliWrapper:
         timeout = timeout or self.config.process_timeout
 
         # Build command arguments
-        cmd_args = [
-            self.config.inkscape_executable,
-            "--query-id", object_id
-        ]
+        cmd_args = [self.config.inkscape_executable, "--query-id", object_id]
 
         # Add specific query type
         if query_type == "bbox":
@@ -255,8 +155,13 @@ class InkscapeCliWrapper:
 
         return await self._execute_command(cmd_args, timeout)
 
-    async def execute_verbs(self, input_path: str, verbs: List[str],
-                           output_path: Optional[str] = None, timeout: Optional[int] = None) -> str:
+    async def execute_verbs(
+        self,
+        input_path: str,
+        verbs: List[str],
+        output_path: Optional[str] = None,
+        timeout: Optional[int] = None,
+    ) -> str:
         """
         Execute Inkscape verbs (actions) on an SVG file.
 
@@ -275,8 +180,11 @@ class InkscapeCliWrapper:
         """
         timeout = timeout or self.config.process_timeout
 
-        # Build command arguments
-        cmd_args = [self.config.inkscape_executable]
+        # Build command arguments with HEADLESS MODE (prevents GUI flashes)
+        cmd_args = [self.config.inkscape_executable, "--batch-process"]
+
+        # Prevent hanging on missing external resources
+        cmd_args.append("--no-remote-resources")
 
         # Add verbs
         for verb in verbs:
@@ -290,6 +198,82 @@ class InkscapeCliWrapper:
         cmd_args.append(input_path)
 
         return await self._execute_command(cmd_args, timeout)
+
+    async def _execute_actions(
+        self,
+        input_path: str,
+        actions: list[str],
+        output_path: Optional[str] = None,
+        timeout: Optional[int] = None,
+    ) -> str:
+        """
+        Execute Inkscape actions using the --actions flag.
+
+        Args:
+            input_path: Input SVG file path
+            actions: List of Inkscape action IDs to execute
+            output_path: Optional output path
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
+        """
+        timeout = timeout or self.config.process_timeout
+
+        cmd_args = [self.config.inkscape_executable]
+
+        # Use --batch-process for headless operation (prevents GUI flashes)
+        cmd_args.append("--batch-process")
+
+        # Prevent hanging on missing external resources
+        cmd_args.append("--no-remote-resources")
+
+        # Construct the actions string
+        actions_str = ";".join(actions)
+
+        # Add input file
+        cmd_args.append(str(Path(input_path).resolve()))
+
+        # Add the actions flag
+        cmd_args.append(f"--actions={actions_str}")
+
+        # If an output path is specified, add an export action to the chain
+        if output_path:
+            cmd_args.append(f"--export-filename={str(Path(output_path).resolve())}")
+            # Ensure an export action is part of the chain if output_path is given
+            if "export-do" not in actions_str:
+                cmd_args[-1] += ";export-do"  # Append export-do if not already present
+
+        return await self._execute_command(cmd_args, timeout)
+
+    async def execute_actions(
+        self,
+        input_path: str,
+        actions: list[str],
+        output_path: Optional[str] = None,
+        timeout: Optional[int] = None,
+    ) -> str:
+        """
+        Execute a sequence of Inkscape actions using --batch-process.
+
+        Args:
+            input_path: Input file path
+            actions: List of action IDs to execute
+            output_path: Optional output path
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
+        """
+        return await self._execute_actions(input_path, actions, output_path, timeout)
 
     async def get_document_info(self, input_path: str, timeout: Optional[int] = None) -> str:
         """
@@ -312,388 +296,61 @@ class InkscapeCliWrapper:
         cmd_args = [
             self.config.inkscape_executable,
             "--query-all",  # Get all object information
-            input_path
+            input_path,
         ]
 
         return await self._execute_command(cmd_args, timeout)
 
-    
-    async def load_image_info(self, file_path: str) -> Dict:
-        """
-        Load basic image information using GIMP.
-        
-        Args:
-            file_path: Path to image file
-            
-        Returns:
-            Dict: Image metadata
-        """
-        # Convert to absolute path for cross-platform compatibility
-        abs_path = str(Path(file_path).resolve())
-        
-        script = f"""
-(let* ((image (car (gimp-file-load RUN-NONINTERACTIVE "{abs_path}" "{abs_path}")))
-       (width (car (gimp-image-width image)))
-       (height (car (gimp-image-height image)))
-       (base-type (car (gimp-image-base-type image)))
-       (precision (car (gimp-image-precision image))))
-  (gimp-message (string-append "WIDTH:" (number->string width)
-                              "|HEIGHT:" (number->string height)
-                              "|TYPE:" (number->string base-type)
-                              "|PRECISION:" (number->string precision)))
-  (gimp-image-delete image))
-"""
-        
-        try:
-            output = await self.execute_script_fu(script)
-            return self._parse_image_info(output)
-        except Exception as e:
-            raise GimpExecutionError(f"Failed to load image info for {file_path}: {e}")
-    
-    async def convert_image(self, 
-                           input_path: str, 
-                           output_path: str,
-                           output_format: Optional[str] = None,
-                           quality: Optional[int] = None) -> bool:
-        """
-        Convert image format using GIMP.
-        
-        Args:
-            input_path: Source image path
-            output_path: Destination image path
-            output_format: Target format (auto-detected from extension if None)
-            quality: JPEG quality (1-100)
-            
-        Returns:
-            bool: True if conversion succeeded
-        """
-        input_abs = str(Path(input_path).resolve())
-        output_abs = str(Path(output_path).resolve())
-        
-        # Ensure output directory exists
-        Path(output_abs).parent.mkdir(parents=True, exist_ok=True)
-        
-        # Determine quality setting
-        qual = quality or self.config.default_quality
-        
-        script = f"""
-(let* ((image (car (gimp-file-load RUN-NONINTERACTIVE "{input_abs}" "{input_abs}")))
-       (drawable (car (gimp-image-get-active-layer image))))
-  (gimp-file-save RUN-NONINTERACTIVE image drawable "{output_abs}" "{output_abs}")
-  (gimp-image-delete image)
-  (gimp-message "CONVERSION:SUCCESS"))
-"""
-        
-        try:
-            output = await self.execute_script_fu(script)
-            return "CONVERSION:SUCCESS" in output
-        except Exception as e:
-            self.logger.error(f"Image conversion failed: {e}")
-            return False
-    
-    async def resize_image(self,
-                          input_path: str,
-                          output_path: str,
-                          width: int,
-                          height: int,
-                          maintain_aspect: bool = True) -> bool:
-        """
-        Resize image using GIMP.
-        
-        Args:
-            input_path: Source image path
-            output_path: Destination image path
-            width: Target width in pixels
-            height: Target height in pixels
-            maintain_aspect: Whether to maintain aspect ratio
-            
-        Returns:
-            bool: True if resize succeeded
-        """
-        input_abs = str(Path(input_path).resolve())
-        output_abs = str(Path(output_path).resolve())
-        
-        # Ensure output directory exists
-        Path(output_abs).parent.mkdir(parents=True, exist_ok=True)
-        
-        # Build resize script
-        if maintain_aspect:
-            resize_func = "gimp-image-scale"
-        else:
-            resize_func = "gimp-image-scale"
-        
-        script = f"""
-(let* ((image (car (gimp-file-load RUN-NONINTERACTIVE "{input_abs}" "{input_abs}")))
-       (drawable (car (gimp-image-get-active-layer image))))
-  ({resize_func} image {width} {height})
-  (gimp-file-save RUN-NONINTERACTIVE image drawable "{output_abs}" "{output_abs}")
-  (gimp-image-delete image)
-  (gimp-message "RESIZE:SUCCESS"))
-"""
-        
-        try:
-            output = await self.execute_script_fu(script)
-            return "RESIZE:SUCCESS" in output
-        except Exception as e:
-            self.logger.error(f"Image resize failed: {e}")
-            return False
-    
     async def _execute_command(self, cmd_args: List[str], timeout: int) -> str:
         """
-        Execute GIMP command with proper error handling.
-        
-        Args:
-            cmd_args: Command arguments list
-            timeout: Timeout in seconds
-            
-        Returns:
-            str: Command output
-            
-        Raises:
-            GimpExecutionError: If execution fails
-            GimpTimeoutError: If operation times out
+        Execute command with proper error handling and logging.
         """
         try:
-            self.logger.debug(f"Executing GIMP command: {' '.join(cmd_args[:3])}...")
-            
-            # Create subprocess with proper error capture
+            # Use asyncio.create_subprocess_exec for better async handling
             process = await asyncio.create_subprocess_exec(
                 *cmd_args,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=self.config.temp_directory,
-                env=self._get_environment()
+                env=self._get_environment(),
             )
-            
-            # Wait for completion with timeout
+
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    process.communicate(), timeout=timeout
-                )
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+
+                # Combine stdout and stderr for Inkscape
+                output = (stdout + stderr).decode("utf-8", errors="replace")
+
+                if process.returncode != 0:
+                    error_msg = (
+                        f"Inkscape command failed with return code {process.returncode}: {output}"
+                    )
+                    raise InkscapeExecutionError(error_msg)
+
+                return output
+
             except asyncio.TimeoutError:
-                # Kill the process and raise timeout error
-                try:
-                    process.kill()
-                    await process.wait()
-                except Exception:
-                    pass
-                raise GimpTimeoutError(f"GIMP operation timed out after {timeout} seconds")
-            
-            # Check return code
-            if process.returncode != 0:
-                error_msg = stderr.decode('utf-8', errors='replace') if stderr else "Unknown error"
-                raise GimpExecutionError(f"GIMP execution failed (code {process.returncode}): {error_msg}")
-            
-            # Return stdout
-            output = stdout.decode('utf-8', errors='replace') if stdout else ""
-            self.logger.debug(f"GIMP command completed successfully")
-            return output
-            
-        except (GimpTimeoutError, GimpExecutionError):
-            raise
+                process.kill()
+                await process.wait()
+                raise InkscapeTimeoutError(f"Command timed out after {timeout} seconds")
+
+        except FileNotFoundError:
+            raise InkscapeExecutionError(
+                f"Inkscape executable not found: {self.config.inkscape_executable}"
+            )
         except Exception as e:
-            raise GimpExecutionError(f"Failed to execute GIMP command: {e}")
-    
+            raise InkscapeExecutionError(f"Command execution failed: {e}")
+
     def _get_environment(self) -> Dict[str, str]:
         """
-        Get environment variables for GIMP execution.
-        
-        Returns:
-            Dict[str, str]: Environment variables
+        Get environment variables for subprocess execution.
         """
         env = os.environ.copy()
-        
-        # Set GIMP-specific environment variables
-        env['GIMP_CONSOLE_MODE'] = '1'
-        
-        # Disable GIMP splash screen and user interface
-        if 'DISPLAY' in env and self.system == "linux":
-            # For headless Linux operation
-            env['DISPLAY'] = ''
-        
+
+        # Ensure UTF-8 encoding
+        env["LANG"] = "C.UTF-8"
+        env["LC_ALL"] = "C.UTF-8"
+
         return env
-    
-    def _parse_image_info(self, gimp_output: str) -> Dict:
-        """
-        Parse image information from GIMP output.
-        
-        Args:
-            gimp_output: Raw GIMP output
-            
-        Returns:
-            Dict: Parsed image information
-        """
-        try:
-            # Look for our custom message format
-            lines = gimp_output.split('\n')
-            for line in lines:
-                if 'WIDTH:' in line and 'HEIGHT:' in line:
-                    # Parse format: WIDTH:1920|HEIGHT:1080|TYPE:0|PRECISION:100
-                    parts = line.split('|')
-                    info = {}
-                    
-                    for part in parts:
-                        if ':' in part:
-                            key, value = part.split(':', 1)
-                            if key in ['WIDTH', 'HEIGHT', 'TYPE', 'PRECISION']:
-                                info[key.lower()] = int(value)
-                    
-                    # Convert GIMP type codes to readable names
-                    type_map = {0: 'RGB', 1: 'GRAYSCALE', 2: 'INDEXED'}
-                    if 'type' in info:
-                        info['color_mode'] = type_map.get(info['type'], 'UNKNOWN')
-                    
-                    return info
-            
-            # Fallback: return empty info if parsing fails
-            return {}
-            
-        except Exception as e:
-            self.logger.warning(f"Failed to parse GIMP output: {e}")
-            return {}
-    
-    def validate_image_file(self, file_path: str) -> bool:
-        """
-        Validate if file is a supported image format.
-        
-        Args:
-            file_path: Path to image file
-            
-        Returns:
-            bool: True if file is valid
-        """
-        try:
-            path = Path(file_path)
-            
-            # Check if file exists
-            if not path.exists():
-                return False
-            
-            # Check file size
-            if not self.config.validate_file_size(path):
-                return False
-            
-            # Check file extension
-            extension = path.suffix.lower().lstrip('.')
-            if not self.config.is_format_supported(extension):
-                return False
-            
-            return True
-            
-        except Exception as e:
-            self.logger.debug(f"File validation failed for {file_path}: {e}")
-            return False
-
-    async def trace_bitmap(self, input_path: str, output_path: str,
-                          trace_type: str = "brightness", threshold: int = 128,
-                          timeout: Optional[int] = None) -> str:
-        """
-        Convert raster image to vector SVG using Inkscape's trace bitmap feature.
-
-        Args:
-            input_path: Input raster image path
-            output_path: Output SVG path
-            trace_type: Trace method (brightness, edge, color, grayscale)
-            threshold: Threshold value for brightness tracing (0-255)
-            timeout: Operation timeout in seconds
-
-        Returns:
-            str: Inkscape output
-
-        Raises:
-            InkscapeExecutionError: If tracing fails
-            InkscapeTimeoutError: If operation times out
-        """
-        timeout = timeout or self.config.process_timeout
-
-        # Build trace action based on type
-        if trace_type == "brightness":
-            trace_action = f"trace-brightness;trace-threshold:{threshold}"
-        elif trace_type == "edge":
-            trace_action = "trace-edge"
-        elif trace_type == "color":
-            trace_action = "trace-color"
-        elif trace_type == "grayscale":
-            trace_action = "trace-grayscale"
-        else:
-            trace_action = f"trace-brightness;trace-threshold:{threshold}"
-
-        # Use actions to perform tracing
-        actions = f"import:{input_path};{trace_action};export-filename:{output_path};export-do"
-
-        return await self._execute_actions(input_path, actions.split(";"), output_path, timeout)
-
-    async def apply_boolean(self, input_path: str, output_path: str,
-                           operation: str, object_ids: Optional[list] = None,
-                           timeout: Optional[int] = None) -> str:
-        """
-        Apply boolean operations to SVG objects.
-
-        Args:
-            input_path: Input SVG file path
-            output_path: Output SVG path
-            operation: Boolean operation (union, difference, intersection, exclusion, division)
-            object_ids: List of object IDs to operate on (None = all selected)
-            timeout: Operation timeout in seconds
-
-        Returns:
-            str: Inkscape output
-
-        Raises:
-            InkscapeExecutionError: If operation fails
-            InkscapeTimeoutError: If operation times out
-        """
-        timeout = timeout or self.config.process_timeout
-
-        # Map operation names to Inkscape actions
-        op_map = {
-            "union": "selection-union",
-            "difference": "selection-diff",
-            "intersection": "selection-intersect",
-            "exclusion": "selection-exclusion",
-            "division": "selection-division"
-        }
-
-        if operation not in op_map:
-            raise InkscapeExecutionError(f"Unknown boolean operation: {operation}")
-
-        # Build action chain
-        actions = []
-
-        # Select specific objects if provided
-        if object_ids:
-            for obj_id in object_ids:
-                actions.append(f"select-by-id:{obj_id}")
-        else:
-            actions.append("select-all")
-
-        # Apply the boolean operation
-        actions.append(op_map[operation])
-
-        # Export result
-        actions.append("export-do")
-
-        return await self._execute_actions(input_path, actions, output_path, timeout)
-
-    async def execute_actions(self, input_path: str, actions: list,
-                             output_path: Optional[str] = None, timeout: Optional[int] = None) -> str:
-        """
-        Execute a sequence of Inkscape actions using --batch-process.
-
-        Args:
-            input_path: Input file path
-            actions: List of action IDs to execute
-            output_path: Optional output path
-            timeout: Operation timeout in seconds
-
-        Returns:
-            str: Inkscape output
-
-        Raises:
-            InkscapeExecutionError: If execution fails
-            InkscapeTimeoutError: If operation times out
-        """
-        return await self._execute_actions(input_path, actions, output_path, timeout)
 
 
 # Backward compatibility alias for legacy code

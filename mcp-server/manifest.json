@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.2",
+  "name": "inkscape-mcp",
+  "version": "1.1.0",
+  "description": "Professional vector graphics and SVG editing through Inkscape CLI with AI-powered automation",
+  "author": {
+    "name": "Sandra Schipal"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "src/inkscape_mcp/main.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "inkscape_mcp.main"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "inkscape_path": {
+      "type": "string",
+      "title": "Inkscape Executable Path",
+      "required": false,
+      "default": "inkscape"
+    },
+    "process_timeout": {
+      "type": "string",
+      "title": "Operation Timeout (seconds)",
+      "default": "60"
+    },
+    "max_concurrent_processes": {
+      "type": "string",
+      "title": "Max Concurrent Operations",
+      "default": "4"
+    },
+    "allowed_directories": {
+      "type": "string",
+      "title": "Allowed Working Directories (comma-separated)",
+      "required": false,
+      "default": ""
+    }
+  },
+  "tools": [
+    {
+      "name": "inkscape_file",
+      "description": "File operations for SVG and vector graphics (load, save, convert, info, validate)"
+    },
+    {
+      "name": "inkscape_vector",
+      "description": "Advanced vector operations (trace, boolean, optimize, render, construct SVG)"
+    },
+    {
+      "name": "inkscape_analysis",
+      "description": "Document analysis and quality assessment (statistics, validate, dimensions)"
+    },
+    {
+      "name": "inkscape_system",
+      "description": "System management and diagnostics (status, config, version)"
+    }
+  ]
+}

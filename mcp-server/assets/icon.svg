@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="256" height="256" rx="32" fill="#2D3748"/>
+
+  <!-- Inkscape-inspired logo -->
+  <g transform="translate(128,128)">
+    <!-- Main shape - simplified vector path -->
+    <path d="M-60,-40 L-20,-40 L-20,-20 L40,-20 L40,20 L-20,20 L-20,40 L-60,40 Z"
+          fill="#FF6B35" stroke="#E53E3E" stroke-width="4"/>
+
+    <!-- Node points -->
+    <circle cx="-60" cy="-40" r="6" fill="#38B2AC"/>
+    <circle cx="-20" cy="-40" r="6" fill="#38B2AC"/>
+    <circle cx="-20" cy="-20" r="6" fill="#38B2AC"/>
+    <circle cx="40" cy="-20" r="6" fill="#38B2AC"/>
+    <circle cx="40" cy="20" r="6" fill="#38B2AC"/>
+    <circle cx="-20" cy="20" r="6" fill="#38B2AC"/>
+    <circle cx="-20" cy="40" r="6" fill="#38B2AC"/>
+    <circle cx="-60" cy="40" r="6" fill="#38B2AC"/>
+
+    <!-- Control handles -->
+    <line x1="-40" y1="-40" x2="-30" y2="-50" stroke="#3182CE" stroke-width="3"/>
+    <line x1="-40" y1="-40" x2="-30" y2="-30" stroke="#3182CE" stroke-width="3"/>
+    <line x1="10" y1="-20" x2="20" y2="-30" stroke="#3182CE" stroke-width="3"/>
+    <line x1="10" y1="-20" x2="20" y2="-10" stroke="#3182CE" stroke-width="3"/>
+  </g>
+
+  <!-- Text label -->
+  <text x="128" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">Inkscape MCP</text>
+  <text x="128" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#A0AEC0">Vector Graphics Automation</text>
+</svg>

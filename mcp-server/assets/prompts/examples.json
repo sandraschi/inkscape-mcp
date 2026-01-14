@@ -1,0 +1,525 @@
+{
+  "examples": [
+    {
+      "title": "Load and Validate SVG File",
+      "description": "Load an SVG file and perform basic validation checks",
+      "user_input": "Load this SVG file and check if it's valid",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design.svg"
+      },
+      "expected_output": "SVG file loaded successfully with validation results and basic information"
+    },
+    {
+      "title": "Convert SVG to PDF",
+      "description": "Convert an SVG file to high-quality PDF format",
+      "user_input": "Convert this SVG to PDF format for printing",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo.svg",
+        "output_path": "logo.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "SVG successfully converted to PDF with proper vector scaling"
+    },
+    {
+      "title": "Get SVG File Information",
+      "description": "Retrieve detailed metadata and statistics about an SVG file",
+      "user_input": "Tell me about this SVG file - size, dimensions, complexity",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "illustration.svg"
+      },
+      "expected_output": "Comprehensive file information including dimensions, file size, and basic statistics"
+    },
+    {
+      "title": "Validate SVG Structure",
+      "description": "Perform comprehensive validation of SVG file structure",
+      "user_input": "Check if this SVG file is properly formatted",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "drawing.svg"
+      },
+      "expected_output": "Validation results with any structural issues identified"
+    },
+    {
+      "title": "List Supported Formats",
+      "description": "Get list of all supported export formats",
+      "user_input": "What formats can I export to?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Complete list of supported vector and raster export formats"
+    },
+    {
+      "title": "Trace Bitmap to Vector",
+      "description": "Convert a scanned sketch to clean vector paths",
+      "user_input": "Convert this scanned drawing to vector format",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "sketch.jpg",
+        "output_path": "vector_sketch.svg"
+      },
+      "expected_output": "Bitmap successfully traced to vector paths with optimization suggestions"
+    },
+    {
+      "title": "Generate QR Code",
+      "description": "Create a QR code for a URL",
+      "user_input": "Generate a QR code for my website",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "generate_barcode_qr",
+        "barcode_data": "https://example.com",
+        "output_path": "qrcode.svg"
+      },
+      "expected_output": "QR code generated and saved as SVG with scannability confirmation"
+    },
+    {
+      "title": "Create Mesh Gradient",
+      "description": "Generate a complex mesh gradient for realistic shading",
+      "user_input": "Create a beautiful mesh gradient for this design",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "create_mesh_gradient",
+        "output_path": "mesh_gradient.svg"
+      },
+      "expected_output": "Complex mesh gradient created with multiple color stops"
+    },
+    {
+      "title": "Convert Text to Paths",
+      "description": "Transform text objects into editable vector paths",
+      "user_input": "Convert all the text in this design to paths",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "text_to_path",
+        "input_path": "design_with_text.svg",
+        "output_path": "design_paths.svg"
+      },
+      "expected_output": "Text successfully converted to editable vector paths"
+    },
+    {
+      "title": "AI-Powered SVG Construction",
+      "description": "Generate SVG from natural language description",
+      "user_input": "Create an SVG of a professional company logo",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "construct_svg",
+        "description": "Modern geometric logo with clean lines and professional appearance",
+        "output_path": "company_logo.svg"
+      },
+      "expected_output": "AI-generated SVG logo based on description with refinement suggestions"
+    },
+    {
+      "title": "Boolean Union Operation",
+      "description": "Combine multiple shapes using boolean union",
+      "user_input": "Merge these two overlapping shapes",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "apply_boolean",
+        "input_path": "shapes.svg",
+        "output_path": "union_result.svg",
+        "operation_type": "union",
+        "object_ids": ["shape1", "shape2"]
+      },
+      "expected_output": "Shapes successfully combined with clean union result"
+    },
+    {
+      "title": "Boolean Difference Operation",
+      "description": "Subtract one shape from another",
+      "user_input": "Cut a hole in this shape",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "apply_boolean",
+        "input_path": "shapes.svg",
+        "output_path": "difference_result.svg",
+        "operation_type": "difference",
+        "object_ids": ["base_shape", "cutout_shape"]
+      },
+      "expected_output": "Shape subtraction completed with precise cutout"
+    },
+    {
+      "title": "Path Simplification",
+      "description": "Reduce path complexity while preserving shape",
+      "user_input": "Simplify these complex paths for web performance",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "complex_drawing.svg",
+        "output_path": "simplified_drawing.svg",
+        "threshold": 0.1
+      },
+      "expected_output": "Paths simplified with node count reduction and performance metrics"
+    },
+    {
+      "title": "Path Cleaning",
+      "description": "Remove unnecessary elements and artifacts",
+      "user_input": "Clean up this imported SVG file",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_clean",
+        "input_path": "imported_artwork.svg",
+        "output_path": "clean_artwork.svg"
+      },
+      "expected_output": "SVG cleaned with artifacts removed and structure optimized"
+    },
+    {
+      "title": "Path Combination",
+      "description": "Merge compatible paths into compound paths",
+      "user_input": "Combine these separate path segments",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_combine",
+        "input_path": "path_segments.svg",
+        "output_path": "combined_paths.svg"
+      },
+      "expected_output": "Paths successfully combined into unified compound paths"
+    },
+    {
+      "title": "Path Separation",
+      "description": "Break compound paths into individual elements",
+      "user_input": "Separate these combined paths",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_break_apart",
+        "input_path": "compound_paths.svg",
+        "output_path": "separated_paths.svg"
+      },
+      "expected_output": "Compound paths broken into individual editable elements"
+    },
+    {
+      "title": "Convert Objects to Paths",
+      "description": "Transform primitive shapes to editable paths",
+      "user_input": "Convert all shapes to editable paths",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "object_to_path",
+        "input_path": "shapes.svg",
+        "output_path": "paths.svg"
+      },
+      "expected_output": "All objects converted to fully editable Bézier paths"
+    },
+    {
+      "title": "SVG Optimization",
+      "description": "Clean and optimize SVG structure",
+      "user_input": "Optimize this SVG for web deployment",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "optimize_svg",
+        "input_path": "design.svg",
+        "output_path": "optimized_design.svg"
+      },
+      "expected_output": "SVG optimized with file size reduction and performance improvements"
+    },
+    {
+      "title": "Scour SVG Cleanup",
+      "description": "Remove metadata and optimize XML structure",
+      "user_input": "Remove all metadata from this SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "scour_svg",
+        "input_path": "metadata_rich.svg",
+        "output_path": "clean_svg.svg"
+      },
+      "expected_output": "Metadata removed and SVG structure optimized for production"
+    },
+    {
+      "title": "Measure Object Dimensions",
+      "description": "Get precise measurements of SVG objects",
+      "user_input": "Measure the dimensions of this logo element",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "measure_object",
+        "input_path": "logo.svg",
+        "object_id": "logo_element"
+      },
+      "expected_output": "Precise measurements including position, size, and bounding box"
+    },
+    {
+      "title": "Query Document Statistics",
+      "description": "Get comprehensive document information",
+      "user_input": "Tell me about this SVG document",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "document.svg"
+      },
+      "expected_output": "Complete document statistics including dimensions, object counts, and structure"
+    },
+    {
+      "title": "Count Path Nodes",
+      "description": "Analyze path complexity by counting nodes",
+      "user_input": "How complex are the paths in this drawing?",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "drawing.svg",
+        "object_id": "main_path"
+      },
+      "expected_output": "Node count and complexity analysis for path optimization"
+    },
+    {
+      "title": "Export to DXF Format",
+      "description": "Convert SVG to CAD-compatible DXF format",
+      "user_input": "Export this design for CAD software",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "export_dxf",
+        "input_path": "technical_drawing.svg",
+        "output_path": "drawing.dxf"
+      },
+      "expected_output": "SVG successfully exported to DXF format for CAD applications"
+    },
+    {
+      "title": "Export Layers to Files",
+      "description": "Save each layer as a separate SVG file",
+      "user_input": "Split this layered design into separate files",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "layers_to_files",
+        "input_path": "layered_design.svg",
+        "output_path": "layer_output.svg"
+      },
+      "expected_output": "Layers exported as individual SVG files with proper naming"
+    },
+    {
+      "title": "Fit Canvas to Drawing",
+      "description": "Resize canvas to match content bounds",
+      "user_input": "Resize the canvas to fit the drawing perfectly",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "fit_canvas_to_drawing",
+        "input_path": "oversized_canvas.svg",
+        "output_path": "fitted_canvas.svg"
+      },
+      "expected_output": "Canvas resized to perfectly fit the drawing content"
+    },
+    {
+      "title": "Generate PNG Preview",
+      "description": "Create raster preview of vector design",
+      "user_input": "Create a high-quality PNG preview of this design",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "design.svg",
+        "output_path": "preview.png",
+        "dpi": 300
+      },
+      "expected_output": "High-resolution PNG preview generated with specified DPI"
+    },
+    {
+      "title": "Create Laser Pointer Dot",
+      "description": "Generate animated laser pointer effect",
+      "user_input": "Create a cool animated laser dot",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "generate_laser_dot",
+        "output_path": "laser_dot.svg",
+        "x": 300,
+        "y": 200
+      },
+      "expected_output": "Animated green laser pointer dot created with pulsing effect"
+    },
+    {
+      "title": "Document Quality Analysis",
+      "description": "Comprehensive quality assessment of SVG document",
+      "user_input": "Analyze the quality of this SVG file",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "quality",
+        "input_path": "design.svg"
+      },
+      "expected_output": "Detailed quality metrics including complexity, optimization potential, and performance scores"
+    },
+    {
+      "title": "Generate Document Statistics",
+      "description": "Create comprehensive document statistics",
+      "user_input": "Get detailed statistics about this SVG",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "complex_design.svg"
+      },
+      "expected_output": "Complete statistical analysis including object counts, path metrics, and structural information"
+    },
+    {
+      "title": "Validate SVG Compliance",
+      "description": "Check SVG against specification requirements",
+      "user_input": "Validate this SVG for specification compliance",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "design.svg"
+      },
+      "expected_output": "Validation results with compliance status and any issues found"
+    },
+    {
+      "title": "List Document Objects",
+      "description": "Enumerate all objects in the SVG document",
+      "user_input": "What objects are in this SVG file?",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "objects",
+        "input_path": "design.svg"
+      },
+      "expected_output": "Complete object inventory with IDs, types, and properties"
+    },
+    {
+      "title": "Get Document Dimensions",
+      "description": "Retrieve precise document size information",
+      "user_input": "What are the dimensions of this SVG?",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "design.svg"
+      },
+      "expected_output": "Precise dimensions including canvas size, viewport, and coordinate system"
+    },
+    {
+      "title": "Analyze Document Structure",
+      "description": "Examine the hierarchical structure of the SVG",
+      "user_input": "Analyze the structure of this SVG document",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "structure",
+        "input_path": "design.svg"
+      },
+      "expected_output": "Detailed structural analysis including hierarchy, relationships, and organization"
+    },
+    {
+      "title": "Check Server Status",
+      "description": "Get current server health and capabilities",
+      "user_input": "Is the Inkscape server working properly?",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "status"
+      },
+      "expected_output": "Server status including Inkscape availability, version, and capability information"
+    },
+    {
+      "title": "Get Version Information",
+      "description": "Retrieve server and component version details",
+      "user_input": "What version is the Inkscape server?",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "version"
+      },
+      "expected_output": "Complete version information for server and all components"
+    },
+    {
+      "title": "Run System Diagnostics",
+      "description": "Perform comprehensive system health checks",
+      "user_input": "Run diagnostics on the system",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "diagnostics"
+      },
+      "expected_output": "Diagnostic results with health status and any issues identified"
+    },
+    {
+      "title": "Get System Help",
+      "description": "Access comprehensive help and documentation",
+      "user_input": "Help me understand what the Inkscape server can do",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "help"
+      },
+      "expected_output": "Comprehensive help information including capabilities, usage, and examples"
+    },
+    {
+      "title": "View System Configuration",
+      "description": "Display current server configuration settings",
+      "user_input": "Show me the current configuration",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "config"
+      },
+      "expected_output": "Current configuration settings and available options"
+    }
+  ],
+  "configuration_examples": [
+    {
+      "title": "Configure Inkscape Path",
+      "description": "Set custom path to Inkscape executable",
+      "user_input": "Configure the server to use Inkscape at C:\\Program Files\\Inkscape\\bin\\inkscape.exe",
+      "config_key": "inkscape_path",
+      "config_value": "C:\\Program Files\\Inkscape\\bin\\inkscape.exe"
+    },
+    {
+      "title": "Set Operation Timeout",
+      "description": "Configure timeout for long-running operations",
+      "user_input": "Set timeout to 120 seconds for complex operations",
+      "config_key": "process_timeout",
+      "config_value": "120"
+    },
+    {
+      "title": "Limit Concurrent Operations",
+      "description": "Control maximum parallel processing",
+      "user_input": "Limit to 2 concurrent operations",
+      "config_key": "max_concurrent_processes",
+      "config_value": "2"
+    },
+    {
+      "title": "Set Allowed Directories",
+      "description": "Restrict file access to specific directories",
+      "user_input": "Only allow operations in my projects folder",
+      "config_key": "allowed_directories",
+      "config_value": "/home/user/projects,/home/user/designs"
+    }
+  ],
+  "error_handling_examples": [
+    {
+      "title": "Handle File Not Found",
+      "error": "FileNotFoundError: Input file does not exist",
+      "recovery": "Verify file path and permissions, check if file was moved or deleted",
+      "user_action": "Provide correct file path or check file location"
+    },
+    {
+      "title": "Resolve Inkscape Not Found",
+      "error": "InkscapeExecutionError: Inkscape executable not found",
+      "recovery": "Install Inkscape or provide explicit path in configuration",
+      "user_action": "Install Inkscape or configure custom executable path"
+    },
+    {
+      "title": "Fix Operation Timeout",
+      "error": "TimeoutError: Operation exceeded time limit",
+      "recovery": "Increase timeout setting or simplify the operation",
+      "user_action": "Use simpler operation or increase timeout configuration"
+    },
+    {
+      "title": "Handle Invalid SVG",
+      "error": "ValueError: Invalid SVG structure",
+      "recovery": "Validate and repair SVG file structure",
+      "user_action": "Use validation tools or repair corrupted SVG"
+    },
+    {
+      "title": "Resolve Path Complexity",
+      "error": "PerformanceError: Path too complex for operation",
+      "recovery": "Simplify paths before applying complex operations",
+      "user_action": "Use path simplification before attempting operation"
+    },
+    {
+      "title": "Fix Object ID Issues",
+      "error": "ValueError: Object ID not found in document",
+      "recovery": "Verify object exists and ID is correct",
+      "user_action": "Check object IDs in SVG or use object listing tools"
+    },
+    {
+      "title": "Resolve Permission Issues",
+      "error": "PermissionError: Cannot write to output location",
+      "recovery": "Check write permissions and available disk space",
+      "user_action": "Change output location or fix permission issues"
+    },
+    {
+      "title": "Handle Memory Constraints",
+      "error": "MemoryError: Insufficient memory for operation",
+      "recovery": "Process files individually or increase system memory",
+      "user_action": "Break operation into smaller steps or upgrade system"
+    }
+  ]
+}

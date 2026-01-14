@@ -7,16 +7,18 @@ import sys
 import os
 import asyncio
 import tempfile
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from inkscape_mcp.tools.vector_operations import inkscape_vector
+
 
 async def test_polish_crest():
     """Test constructing the Polish royal crest."""
     print("Testing Polish royal crest construction...")
 
     # Create temporary output file
-    with tempfile.NamedTemporaryFile(suffix='.svg', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
         output_path = tmp.name
 
     try:
@@ -26,7 +28,7 @@ async def test_polish_crest():
             output_path=output_path,
             description="Create the royal crest of arms of Poland - white eagle with crown on red background",
             cli_wrapper=None,  # No CLI wrapper needed for basic construction
-            config=None
+            config=None,
         )
 
         print(f"Result: {result}")
@@ -35,7 +37,7 @@ async def test_polish_crest():
             print(f"SUCCESS: Successfully created Polish crest at: {output_path}")
 
             # Read and show a bit of the content
-            with open(output_path, 'r', encoding='utf-8') as f:
+            with open(output_path, "r", encoding="utf-8") as f:
                 content = f.read()
                 print(f"Generated SVG ({len(content)} characters):")
                 print(content[:500] + "..." if len(content) > 500 else content)
@@ -49,6 +51,7 @@ async def test_polish_crest():
         # Clean up
         if os.path.exists(output_path):
             os.unlink(output_path)
+
 
 if __name__ == "__main__":
     asyncio.run(test_polish_crest())

@@ -1,154 +1,88 @@
 """
-GIMP MCP Tools - FastMCP 2.13+ Portmanteau Architecture.
+Inkscape MCP Tools - FastMCP 2.13+ Portmanteau Architecture.
 
-Consolidated tools for reduced cognitive load and better discoverability.
+Consolidated tools for vector graphics operations with reduced cognitive load and better discoverability.
 
-Instead of 50+ individual tools, GIMP MCP consolidates related operations into 8
+Instead of 50+ individual tools, Inkscape MCP consolidates related operations into 8
 master tools. Each tool handles a specific domain with multiple operations.
 
 TOOLS:
-- gimp_file: File operations (load, save, convert, info)
-- gimp_transform: Geometric transforms (resize, crop, rotate, flip)
-- gimp_color: Color adjustments (brightness, levels, curves, HSL)
-- gimp_filter: Filters (blur, sharpen, noise, artistic)
-- gimp_layer: Layer management (create, merge, flatten)
-- gimp_analysis: Image analysis (quality, statistics, compare)
-- gimp_batch: Batch processing (resize, convert, watermark)
-- gimp_system: System operations (status, help, cache)
+- inkscape_file: File operations (load, save, convert, info)
+- inkscape_object: Object management (create, group, align, transform)
+- inkscape_path: Path operations (edit, boolean, stroke/fill)
+- inkscape_text: Text handling (create, edit, style, convert to path)
+- inkscape_transform: Geometric transforms (scale, rotate, translate)
+- inkscape_export: Export operations (PNG, PDF, EPS, SVG variants)
+- inkscape_analysis: Document analysis (quality, statistics, validation)
+- inkscape_system: System operations (status, help, diagnostics)
 """
 
-from .file_operations import gimp_file
-from .transform import gimp_transform
-from .color import gimp_color
-from .filter import gimp_filter
-from .layer import gimp_layer
-from .analysis import gimp_analysis
-from .batch import gimp_batch
-from .system import gimp_system
+from .file_operations import inkscape_file
+from .transform import inkscape_transform
+from .analysis import inkscape_analysis
+from .system import inkscape_system
+
+# Placeholder imports for tools to be implemented
+# from .object_operations import inkscape_object
+# from .path_operations import inkscape_path
+# from .text_operations import inkscape_text
+# from .export_operations import inkscape_export
 
 __all__ = [
-    "gimp_file",
-    "gimp_transform",
-    "gimp_color",
-    "gimp_filter",
-    "gimp_layer",
-    "gimp_analysis",
-    "gimp_batch",
-    "gimp_system",
+    "inkscape_file",
+    "inkscape_transform",
+    "inkscape_analysis",
+    "inkscape_system",
+    # "inkscape_object",
+    # "inkscape_path",
+    # "inkscape_text",
+    # "inkscape_export",
 ]
 
 # Tool metadata for discovery
 PORTMANTEAU_TOOLS = [
     {
-        "name": "gimp_file",
-        "function": gimp_file,
+        "name": "inkscape_file",
+        "function": inkscape_file,
         "category": "file_operations",
         "operations": ["load", "save", "convert", "info", "validate", "list_formats"],
     },
     {
-        "name": "gimp_transform",
-        "function": gimp_transform,
+        "name": "inkscape_transform",
+        "function": inkscape_transform,
         "category": "transforms",
         "operations": [
-            "resize",
-            "crop",
-            "rotate",
-            "flip",
             "scale",
-            "perspective",
-            "autocrop",
+            "rotate",
+            "translate",
+            "skew",
+            "matrix",
+            "reset",
         ],
     },
     {
-        "name": "gimp_color",
-        "function": gimp_color,
-        "category": "color_adjustments",
-        "operations": [
-            "brightness_contrast",
-            "levels",
-            "curves",
-            "color_balance",
-            "hue_saturation",
-            "colorize",
-            "threshold",
-            "posterize",
-            "desaturate",
-            "invert",
-            "auto_levels",
-            "auto_color",
-        ],
-    },
-    {
-        "name": "gimp_filter",
-        "function": gimp_filter,
-        "category": "filters",
-        "operations": [
-            "blur",
-            "sharpen",
-            "noise",
-            "edge_detect",
-            "artistic",
-            "enhance",
-            "distort",
-            "light_shadow",
-        ],
-    },
-    {
-        "name": "gimp_layer",
-        "function": gimp_layer,
-        "category": "layer_management",
-        "operations": [
-            "create",
-            "duplicate",
-            "delete",
-            "merge",
-            "flatten",
-            "reorder",
-            "properties",
-            "info",
-        ],
-    },
-    {
-        "name": "gimp_analysis",
-        "function": gimp_analysis,
-        "category": "image_analysis",
+        "name": "inkscape_analysis",
+        "function": inkscape_analysis,
+        "category": "document_analysis",
         "operations": [
             "quality",
             "statistics",
-            "histogram",
-            "compare",
-            "detect_issues",
-            "report",
-            "color_profile",
-            "metadata",
+            "validate",
+            "objects",
+            "dimensions",
+            "structure",
         ],
     },
     {
-        "name": "gimp_batch",
-        "function": gimp_batch,
-        "category": "batch_processing",
-        "operations": [
-            "resize",
-            "convert",
-            "process",
-            "watermark",
-            "rename",
-            "optimize",
-        ],
-    },
-    {
-        "name": "gimp_system",
-        "function": gimp_system,
+        "name": "inkscape_system",
+        "function": inkscape_system,
         "category": "system",
         "operations": [
             "status",
             "help",
             "diagnostics",
-            "cache",
-            "config",
-            "performance",
-            "tools",
             "version",
+            "config",
         ],
     },
 ]

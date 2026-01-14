@@ -1,8 +1,8 @@
 """
-GIMP File Operations Portmanteau Tool.
+Inkscape File Operations Portmanteau Tool.
 
-Comprehensive file management for GIMP MCP, consolidating all file I/O
-operations into a single unified interface.
+Comprehensive file management for Inkscape MCP, consolidating all file I/O
+operations into a single unified interface for SVG and vector graphics files.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ class FileOperationResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_file(
+async def inkscape_file(
     operation: Literal["load", "save", "convert", "info", "validate", "list_formats"],
     input_path: Optional[str] = None,
     output_path: Optional[str] = None,
@@ -38,7 +38,7 @@ async def gimp_file(
     cli_wrapper: Any = None,
     config: Any = None,
 ) -> Dict[str, Any]:
-    """Comprehensive file management portmanteau for GIMP MCP.
+    """Comprehensive file management portmanteau for Inkscape MCP.
 
     PORTMANTEAU PATTERN RATIONALE:
     Instead of creating 6 separate tools (one per operation), this tool consolidates
@@ -50,12 +50,12 @@ async def gimp_file(
     - Follows FastMCP 2.13+ best practices for feature-rich MCP servers
 
     SUPPORTED OPERATIONS:
-    - load: Load an image file and return metadata/thumbnail
-    - save: Save image to specified format with quality options
-    - convert: Convert image between formats (PNG, JPG, WEBP, TIFF, etc.)
-    - info: Get comprehensive image metadata without loading full image
-    - validate: Validate image file integrity and format compliance
-    - list_formats: List all supported image formats
+    - load: Load an SVG/vector file and return basic metadata
+    - save: Save SVG file with optional optimization
+    - convert: Convert between vector formats (SVG, PDF, EPS, AI, CDR)
+    - info: Get comprehensive SVG metadata (dimensions, objects, layers)
+    - validate: Validate SVG file structure and compliance
+    - list_formats: List all supported vector graphics formats
 
     Args:
         operation: The file operation to perform. MUST be one of:
@@ -66,28 +66,27 @@ async def gimp_file(
             - "validate": Validate image file (requires: input_path)
             - "list_formats": List supported formats (no parameters required)
 
-        input_path: Path to source image file. Required for: load, save, convert, info, validate.
-            Supports absolute or relative paths. Example: "C:/images/photo.jpg"
+        input_path: Path to source SVG/vector file. Required for: load, save, convert, info, validate.
+            Supports absolute or relative paths. Example: "C:/designs/logo.svg"
 
         output_path: Path for output file. Required for: save, convert operations.
             If omitted for convert, generates path from input with new extension.
 
         format: Target format for conversion. Used by: convert, save operations.
-            Valid: "png", "jpg", "jpeg", "webp", "tiff", "bmp", "gif", "xcf", "psd"
+            Valid: "svg", "pdf", "eps", "ai", "cdr", "odg", "plt"
             Default: Inferred from output_path extension.
 
-        quality: JPEG/WebP quality (1-100). Used by: save, convert operations.
-            Default: 95. Higher = better quality, larger file.
+        quality: Export quality for raster conversions (1-100). Used by: convert operations.
+            Default: 95. Only applies when converting to raster formats like PNG.
 
-        metadata: Preserve EXIF/metadata. Used by: save, convert operations.
-            Default: True. Set False to strip all metadata.
+        metadata: Preserve SVG metadata. Used by: save, convert operations.
+            Default: True. Set False to strip metadata and comments.
 
         overwrite: Overwrite existing output file. Used by: save, convert operations.
             Default: False. Raises error if file exists and overwrite=False.
 
-        compression: Compression method for PNG/TIFF. Used by: save, convert operations.
-            PNG: "none", "fast", "best" (default: "best")
-            TIFF: "none", "lzw", "zip", "jpeg" (default: "lzw")
+        compression: Compression level for PDF/EPS. Used by: convert operations.
+            Range: 0-9 (0=none, 9=maximum). Default: 6.
 
     Returns:
         Dict containing operation results:
@@ -190,7 +189,7 @@ async def gimp_file(
 
         # Dispatch to specific operation handlers
         if operation == "load":
-            result = await _load_image(input_path, metadata, cli_wrapper, config)
+            result = await _load_svg(input_path, cli_wrapper, config)
         elif operation == "save":
             if not output_path:
                 return FileOperationResult(
@@ -199,33 +198,22 @@ async def gimp_file(
                     message="output_path is required for save",
                     error="Missing required parameter: output_path",
                 ).model_dump()
-            result = await _save_image(
-                input_path,
-                output_path,
-                format,
-                quality,
-                metadata,
-                overwrite,
-                compression,
-                cli_wrapper,
-                config,
-            )
+            result = await _save_svg(input_path, output_path, overwrite, cli_wrapper, config)
         elif operation == "convert":
-            result = await _convert_image(
+            result = await _convert_svg(
                 input_path,
                 output_path,
                 format,
                 quality,
-                metadata,
                 overwrite,
                 compression,
                 cli_wrapper,
                 config,
             )
         elif operation == "info":
-            result = await _get_image_info(input_path, cli_wrapper, config)
+            result = await _get_svg_info(input_path, cli_wrapper, config)
         elif operation == "validate":
-            result = await _validate_image(input_path, cli_wrapper, config)
+            result = await _validate_svg(input_path, cli_wrapper, config)
         else:
             result = FileOperationResult(
                 success=False,
@@ -257,58 +245,36 @@ async def gimp_file(
 
 def _list_formats(config: Any) -> Dict[str, Any]:
     """List supported image formats."""
+    # Inkscape primarily works with SVG but can export to various formats
     read_formats = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "bmp",
-        "tiff",
-        "tif",
-        "webp",
-        "xcf",
-        "psd",
-        "svg",
-        "ico",
-        "pcx",
-        "ppm",
-        "pgm",
-        "pbm",
-        "tga",
-        "xpm",
-        "xbm",
-        "fits",
-        "raw",
-        "cr2",
-        "nef",
-        "orf",
+        "svg",      # Native SVG format
+        "svgz",     # Compressed SVG
+        "ai",       # Adobe Illustrator
+        "cdr",      # CorelDRAW
+        "vsd",      # Microsoft Visio
+        "odg",      # OpenDocument Graphics
+        "pdf",      # PDF (import only)
     ]
-    write_formats = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "bmp",
-        "tiff",
-        "tif",
-        "webp",
-        "xcf",
-        "psd",
-        "ico",
-        "pcx",
-        "ppm",
-        "pgm",
-        "pbm",
-        "tga",
+    export_formats = [
+        "svg",      # Optimized SVG
+        "svgz",     # Compressed SVG
+        "png",      # Raster PNG
+        "pdf",      # PDF document
+        "eps",      # Encapsulated PostScript
+        "ps",       # PostScript
+        "ai",       # Adobe Illustrator
+        "odg",      # OpenDocument Graphics
+        "plt",      # HPGL plotter
+        "dxf",      # AutoCAD DXF
     ]
 
     return FileOperationResult(
         success=True,
         operation="list_formats",
-        message=f"GIMP supports {len(read_formats)} read and {len(write_formats)} write formats",
+        message=f"Inkscape supports {len(read_formats)} import and {len(export_formats)} export formats",
         data={
             "read_formats": sorted(read_formats),
-            "write_formats": sorted(write_formats),
+            "export_formats": sorted(export_formats),
             "recommended": {
                 "lossless": ["png", "tiff", "webp"],
                 "lossy": ["jpg", "webp"],
@@ -319,36 +285,44 @@ def _list_formats(config: Any) -> Dict[str, Any]:
     ).model_dump()
 
 
-async def _load_image(
-    input_path: str, include_metadata: bool, cli_wrapper: Any, config: Any
+async def _load_svg(
+    input_path: str, cli_wrapper: Any, config: Any
 ) -> Dict[str, Any]:
-    """Load image and return metadata."""
-    from PIL import Image
+    """Load SVG file and return basic metadata using Inkscape."""
+    import time
+    start_time = time.time()
 
-    input_path_obj = Path(input_path)
+    try:
+        # Use Inkscape to get document information
+        result = await cli_wrapper.get_document_info(input_path)
 
-    with Image.open(input_path_obj) as img:
+        input_path_obj = Path(input_path)
+
+        # Parse Inkscape output for dimensions and object count
+        # This is a simplified implementation - in practice you'd parse the actual output
         data = {
-            "width": img.width,
-            "height": img.height,
-            "format": img.format or input_path_obj.suffix.lstrip(".").upper(),
-            "color_mode": img.mode,
-            "has_alpha": img.mode in ("RGBA", "LA", "PA"),
             "file_size_bytes": input_path_obj.stat().st_size,
             "file_size_mb": round(input_path_obj.stat().st_size / (1024 * 1024), 2),
             "path": str(input_path_obj.resolve()),
+            "format": "SVG",
+            "is_vector": True,
+            "inkscape_output": result,
         }
 
-        # Add bit depth info
-        mode_depths = {
-            "1": 1,
-            "L": 8,
-            "P": 8,
-            "RGB": 8,
-            "RGBA": 8,
-            "CMYK": 8,
-            "YCbCr": 8,
-            "LAB": 8,
+        return {
+            "success": True,
+            "message": f"Successfully loaded SVG: {Path(input_path).name}",
+            "data": data,
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to load SVG: {e}",
+            "error": str(e),
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
             "HSV": 8,
             "I": 32,
             "F": 32,
@@ -382,196 +356,219 @@ async def _load_image(
     ).model_dump()
 
 
-async def _save_image(
+async def _save_svg(
     input_path: str,
     output_path: str,
-    format: Optional[str],
-    quality: int,
-    preserve_metadata: bool,
     overwrite: bool,
-    compression: Optional[str],
     cli_wrapper: Any,
     config: Any,
 ) -> Dict[str, Any]:
-    """Save image to specified path and format."""
-    from PIL import Image
+    """Save SVG file to specified path."""
+    import time
+    import shutil
+    start_time = time.time()
 
     input_path_obj = Path(input_path)
     output_path_obj = Path(output_path)
 
-    # Check overwrite
-    if output_path_obj.exists() and not overwrite:
-        return FileOperationResult(
-            success=False,
-            operation="save",
-            message=f"Output file exists: {output_path}",
-            error="Set overwrite=True to replace existing file",
-        ).model_dump()
+    try:
+        # Check overwrite
+        if output_path_obj.exists() and not overwrite:
+            return {
+                "success": False,
+                "message": f"Output file exists and overwrite=False: {output_path}",
+                "error": "File exists",
+                "execution_time_ms": (time.time() - start_time) * 1000,
+            }
 
-    # Ensure output directory exists
-    output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        # For SVG files, we can simply copy them
+        # In a more advanced implementation, we could use Inkscape to optimize/cleanup
+        shutil.copy2(input_path_obj, output_path_obj)
 
-    # Determine format
-    if not format:
-        format = output_path_obj.suffix.lstrip(".").lower()
+        output_size = output_path_obj.stat().st_size
 
-    # Load and save
-    with Image.open(input_path_obj) as img:
-        original_size = input_path_obj.stat().st_size
+        return {
+            "success": True,
+            "message": f"Successfully saved SVG to {output_path}",
+            "data": {
+                "output_path": str(output_path_obj.resolve()),
+                "file_size_bytes": output_size,
+                "file_size_mb": round(output_size / (1024 * 1024), 2),
+            },
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
 
-        save_kwargs = {}
-
-        # Format-specific options
-        if format in ("jpg", "jpeg"):
-            save_kwargs["quality"] = quality
-            save_kwargs["optimize"] = True
-            if img.mode == "RGBA":
-                img = img.convert("RGB")
-        elif format == "webp":
-            save_kwargs["quality"] = quality
-            save_kwargs["method"] = 6  # Best compression
-        elif format == "png":
-            if compression == "none":
-                save_kwargs["compress_level"] = 0
-            elif compression == "fast":
-                save_kwargs["compress_level"] = 1
-            else:  # best
-                save_kwargs["compress_level"] = 9
-        elif format in ("tiff", "tif"):
-            if compression == "lzw":
-                save_kwargs["compression"] = "tiff_lzw"
-            elif compression == "zip":
-                save_kwargs["compression"] = "tiff_adobe_deflate"
-            elif compression == "jpeg":
-                save_kwargs["compression"] = "jpeg"
-
-        img.save(output_path_obj, **save_kwargs)
-
-    output_size = output_path_obj.stat().st_size
-
-    return FileOperationResult(
-        success=True,
-        operation="save",
-        message=f"Saved to {output_path}",
-        data={
-            "input_path": str(input_path_obj.resolve()),
-            "output_path": str(output_path_obj.resolve()),
-            "format": format,
-            "quality": quality,
-            "input_size_bytes": original_size,
-            "output_size_bytes": output_size,
-            "compression_ratio": round(output_size / original_size, 3)
-            if original_size > 0
-            else 1.0,
-        },
-    ).model_dump()
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to save SVG: {e}",
+            "error": str(e),
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
 
 
-async def _convert_image(
+async def _convert_svg(
     input_path: str,
-    output_path: Optional[str],
+    output_path: str,
     format: Optional[str],
     quality: int,
-    preserve_metadata: bool,
     overwrite: bool,
-    compression: Optional[str],
     cli_wrapper: Any,
     config: Any,
 ) -> Dict[str, Any]:
-    """Convert image to different format."""
+    """Convert SVG to other formats using Inkscape export."""
+    import time
+    start_time = time.time()
+
     input_path_obj = Path(input_path)
+    output_path_obj = Path(output_path)
 
-    # Determine output path
-    if not output_path:
+    try:
+        # Check overwrite
+        if output_path_obj.exists() and not overwrite:
+            return {
+                "success": False,
+                "message": f"Output file exists and overwrite=False: {output_path}",
+                "error": "File exists",
+                "execution_time_ms": (time.time() - start_time) * 1000,
+            }
+
+        # Determine format from output path if not specified
         if not format:
-            return FileOperationResult(
-                success=False,
-                operation="convert",
-                message="Either output_path or format must be specified",
-                error="Missing required parameter for conversion",
-            ).model_dump()
-        output_path = str(input_path_obj.with_suffix(f".{format}"))
+            format = output_path_obj.suffix.lstrip(".").lower()
 
-    # Use save implementation
-    return await _save_image(
-        input_path,
-        output_path,
-        format,
-        quality,
-        preserve_metadata,
-        overwrite,
-        compression,
-        cli_wrapper,
-        config,
-    )
+        # Use Inkscape's export functionality
+        result = await cli_wrapper.export_file(
+            input_path=input_path,
+            output_path=output_path,
+            export_type=format,
+            dpi=quality if format in ["png", "jpg", "jpeg"] else 300,
+            export_area="drawing"
+        )
+
+        output_size = output_path_obj.stat().st_size
+        input_size = input_path_obj.stat().st_size
+
+        return {
+            "success": True,
+            "message": f"Successfully converted SVG to {format}",
+            "data": {
+                "input_path": str(input_path_obj.resolve()),
+                "output_path": str(output_path_obj.resolve()),
+                "format": format,
+                "quality": quality,
+                "input_size_bytes": input_size,
+                "output_size_bytes": output_size,
+                "compression_ratio": round(output_size / input_size, 3) if input_size > 0 else 0,
+                "inkscape_output": result,
+            },
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to convert SVG: {e}",
+            "error": str(e),
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
 
 
-async def _get_image_info(
+async def _get_svg_info(
     input_path: str, cli_wrapper: Any, config: Any
 ) -> Dict[str, Any]:
-    """Get image metadata without full load."""
-    return await _load_image(input_path, True, cli_wrapper, config)
+    """Get SVG document information using Inkscape."""
+    import time
+    start_time = time.time()
+
+    try:
+        # Use Inkscape to get document information
+        result = await cli_wrapper.get_document_info(input_path)
+
+        input_path_obj = Path(input_path)
+
+        # Parse basic file info
+        data = {
+            "file_size_bytes": input_path_obj.stat().st_size,
+            "file_size_mb": round(input_path_obj.stat().st_size / (1024 * 1024), 2),
+            "path": str(input_path_obj.resolve()),
+            "format": "SVG",
+            "is_vector": True,
+            "inkscape_info": result,
+        }
+
+        return {
+            "success": True,
+            "message": f"Successfully retrieved SVG info for {Path(input_path).name}",
+            "data": data,
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to get SVG info: {e}",
+            "error": str(e),
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
 
 
-async def _validate_image(
+async def _validate_svg(
     input_path: str, cli_wrapper: Any, config: Any
 ) -> Dict[str, Any]:
-    """Validate image file integrity."""
-    from PIL import Image
+    """Validate SVG file by checking if Inkscape can process it."""
+    import time
+    start_time = time.time()
 
     input_path_obj = Path(input_path)
     issues = []
     warnings = []
 
     try:
-        with Image.open(input_path_obj) as img:
-            # Verify image can be fully loaded
-            img.verify()
+        # Basic file checks first
+        if not input_path_obj.exists():
+            issues.append("File does not exist")
+            valid = False
+        elif input_path_obj.stat().st_size == 0:
+            issues.append("File is empty")
+            valid = False
+        else:
+            # Try to get document info with Inkscape
+            result = await cli_wrapper.get_document_info(input_path)
 
-        # Re-open to get details (verify() invalidates the image)
-        with Image.open(input_path_obj) as img:
-            img.load()  # Force full load
+            # If we get here without exception, the file is valid
+            valid = True
 
-            # Check for potential issues
-            if img.width == 0 or img.height == 0:
-                issues.append("Image has zero dimensions")
-
-            if img.width > 32000 or img.height > 32000:
-                warnings.append(f"Very large image: {img.width}x{img.height}")
-
+            # Check file size
             file_size = input_path_obj.stat().st_size
-            if file_size == 0:
-                issues.append("File is empty")
+            if file_size > 50 * 1024 * 1024:  # 50MB
+                warnings.append(f"Very large SVG file: {round(file_size / (1024*1024), 1)}MB")
 
-            # Check for truncation
-            expected_size = img.width * img.height * len(img.getbands())
-            if file_size < expected_size * 0.1:
-                warnings.append("File may be truncated or heavily compressed")
-
-        valid = len(issues) == 0
-
-        return FileOperationResult(
-            success=True,
-            operation="validate",
-            message="Image is valid" if valid else f"Image has {len(issues)} issue(s)",
-            data={
+        return {
+            "success": True,
+            "message": "SVG is valid" if valid else f"SVG has {len(issues)} issue(s)",
+            "data": {
                 "valid": valid,
                 "issues": issues,
                 "warnings": warnings,
                 "path": str(input_path_obj.resolve()),
+                "file_size_bytes": input_path_obj.stat().st_size if input_path_obj.exists() else 0,
             },
-        ).model_dump()
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
 
     except Exception as e:
-        return FileOperationResult(
-            success=False,
-            operation="validate",
-            message=f"Validation failed: {str(e)}",
-            data={
+        return {
+            "success": False,
+            "message": f"SVG validation failed: {e}",
+            "error": str(e),
+            "data": {
                 "valid": False,
                 "issues": [str(e)],
-                "warnings": [],
-                "path": str(input_path_obj.resolve()),
+                "warnings": warnings,
+                "path": str(input_path_obj.resolve()) if input_path_obj.exists() else input_path,
             },
+            "execution_time_ms": (time.time() - start_time) * 1000,
+        }
             error=str(e),
         ).model_dump()

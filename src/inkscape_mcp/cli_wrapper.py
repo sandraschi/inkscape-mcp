@@ -1,8 +1,14 @@
 """
 Inkscape CLI Wrapper for executing Inkscape operations via command line.
 
-This module provides a robust interface for executing Inkscape batch operations
+This module provides a robust interface for executing Inkscape vector graphics operations
 through command line interface with proper error handling and cross-platform support.
+
+Inkscape CLI Reference:
+- Export: inkscape --export-type=png --export-dpi=300 input.svg -o output.png
+- Query: inkscape --query-id=id --query-x input.svg
+- Actions: inkscape --verb=EditSelectAll input.svg
+- Batch: inkscape --batch-process input.svg
 """
 
 import asyncio
@@ -34,10 +40,13 @@ class InkscapeExecutionError(InkscapeCliError):
 
 class InkscapeCliWrapper:
     """
-    Cross-platform Inkscape command-line interface wrapper.
+    Cross-platform Inkscape command-line interface wrapper for vector graphics operations.
 
-    Provides a high-level interface for executing Inkscape batch operations
-    with proper error handling, timeout management, and result parsing.
+    Provides a high-level interface for executing Inkscape operations including:
+    - File export (PNG, PDF, EPS, SVG variants)
+    - Object manipulation and querying
+    - Document processing and analysis
+    - Batch operations on multiple files
     """
 
     def __init__(self, config: InkscapeConfig):
@@ -49,87 +58,173 @@ class InkscapeCliWrapper:
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
         self.system = platform.system().lower()
-        
-        # Validate GIMP executable
-        if not self.config.gimp_executable:
-            raise GimpCliError("GIMP executable not configured")
-        
-        if not Path(self.config.gimp_executable).exists():
-            raise GimpCliError(f"GIMP executable not found: {self.config.gimp_executable}")
+
+        # Validate Inkscape executable
+        if not self.config.inkscape_executable:
+            raise InkscapeCliError("Inkscape executable not configured")
+
+        if not Path(self.config.inkscape_executable).exists():
+            raise InkscapeCliError(f"Inkscape executable not found: {self.config.inkscape_executable}")
     
-    async def execute_script_fu(self, script_content: str, timeout: Optional[int] = None) -> str:
+    async def export_file(self, input_path: str, output_path: str,
+                         export_type: str = "png", dpi: int = 300,
+                         export_area: str = "drawing", timeout: Optional[int] = None) -> str:
         """
-        Execute a Script-Fu script in GIMP batch mode.
-        
+        Export SVG file to raster or vector format using Inkscape CLI.
+
         Args:
-            script_content: Script-Fu code to execute
+            input_path: Input SVG file path
+            output_path: Output file path
+            export_type: Export format (png, pdf, eps, svg)
+            dpi: Resolution for raster exports (ignored for vector formats)
+            export_area: Export area (drawing, page, or custom coordinates)
             timeout: Operation timeout in seconds
-            
+
         Returns:
-            str: GIMP output
-            
+            str: Inkscape output
+
         Raises:
-            GimpExecutionError: If execution fails
-            GimpTimeoutError: If operation times out
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
         """
         timeout = timeout or self.config.process_timeout
-        
+
         # Build command arguments
         cmd_args = [
-            self.config.gimp_executable,
-            "-i",  # No interface
-            "-d",  # No data (faster startup)
-            "-f",  # No fonts (faster startup)
-            "-b", script_content,
-            "-b", "(gimp-quit 0)"
+            self.config.inkscape_executable,
+            "--export-type", export_type,
+            "--export-filename", output_path
         ]
-        
+
+        # Add DPI for raster formats
+        if export_type.lower() in ["png", "jpg", "jpeg", "tiff", "bmp"]:
+            cmd_args.extend(["--export-dpi", str(dpi)])
+
+        # Add export area
+        if export_area == "drawing":
+            cmd_args.append("--export-area-drawing")
+        elif export_area == "page":
+            cmd_args.append("--export-area-page")
+        elif export_area.startswith("custom:"):
+            # Custom coordinates: "custom:x0:y0:x1:y1"
+            coords = export_area.split(":", 1)[1]
+            cmd_args.extend(["--export-area", coords])
+
+        # Add input file
+        cmd_args.append(input_path)
+
         return await self._execute_command(cmd_args, timeout)
     
-    async def execute_python_fu(self, python_content: str, timeout: Optional[int] = None) -> str:
+    async def query_object(self, input_path: str, object_id: str,
+                          query_type: str = "bbox", timeout: Optional[int] = None) -> str:
         """
-        Execute Python-Fu code in GIMP (GIMP 3.0+).
-        
+        Query object properties from SVG file using Inkscape CLI.
+
         Args:
-            python_content: Python code to execute
+            input_path: Input SVG file path
+            object_id: ID of object to query
+            query_type: Type of query (bbox, x, y, width, height, all)
             timeout: Operation timeout in seconds
-            
+
         Returns:
-            str: GIMP output
-            
+            str: Query result output
+
         Raises:
-            GimpExecutionError: If execution fails
-            GimpTimeoutError: If operation times out
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
         """
         timeout = timeout or self.config.process_timeout
-        
-        # Create temporary Python script file
-        temp_script = self.config.get_temp_file_path(".py")
-        
-        try:
-            with open(temp_script, 'w', encoding='utf-8') as f:
-                f.write(python_content)
-            
-            # Build command arguments for Python-Fu
-            cmd_args = [
-                self.config.gimp_executable,
-                "-i",  # No interface
-                "-d",  # No data
-                "-f",  # No fonts
-                "--batch-interpreter", "python-fu-eval",
-                "-b", f"exec(open('{temp_script}').read())",
-                "-b", "pdb.gimp_quit(1)"
-            ]
-            
-            return await self._execute_command(cmd_args, timeout)
-            
-        finally:
-            # Clean up temporary script file
-            try:
-                temp_script.unlink(missing_ok=True)
-            except Exception as e:
-                self.logger.warning(f"Failed to clean up temp script {temp_script}: {e}")
+
+        # Build command arguments
+        cmd_args = [
+            self.config.inkscape_executable,
+            "--query-id", object_id
+        ]
+
+        # Add specific query type
+        if query_type == "bbox":
+            cmd_args.append("--query-bbox")
+        elif query_type == "x":
+            cmd_args.append("--query-x")
+        elif query_type == "y":
+            cmd_args.append("--query-y")
+        elif query_type == "width":
+            cmd_args.append("--query-width")
+        elif query_type == "height":
+            cmd_args.append("--query-height")
+        elif query_type == "all":
+            # Query all properties
+            pass
+
+        # Add input file
+        cmd_args.append(input_path)
+
+        return await self._execute_command(cmd_args, timeout)
+
+    async def execute_verbs(self, input_path: str, verbs: List[str],
+                           output_path: Optional[str] = None, timeout: Optional[int] = None) -> str:
+        """
+        Execute Inkscape verbs (actions) on an SVG file.
+
+        Args:
+            input_path: Input SVG file path
+            verbs: List of Inkscape verb IDs to execute
+            output_path: Optional output path (will overwrite input if None)
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Inkscape output
+
+        Raises:
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
+        """
+        timeout = timeout or self.config.process_timeout
+
+        # Build command arguments
+        cmd_args = [self.config.inkscape_executable]
+
+        # Add verbs
+        for verb in verbs:
+            cmd_args.extend(["--verb", verb])
+
+        # Add output if specified
+        if output_path:
+            cmd_args.extend(["--export-filename", output_path])
+
+        # Add input file
+        cmd_args.append(input_path)
+
+        return await self._execute_command(cmd_args, timeout)
+
+    async def get_document_info(self, input_path: str, timeout: Optional[int] = None) -> str:
+        """
+        Get document information and metadata from SVG file.
+
+        Args:
+            input_path: Input SVG file path
+            timeout: Operation timeout in seconds
+
+        Returns:
+            str: Document information output
+
+        Raises:
+            InkscapeExecutionError: If execution fails
+            InkscapeTimeoutError: If operation times out
+        """
+        timeout = timeout or self.config.process_timeout
+
+        # Build command arguments for document info
+        cmd_args = [
+            self.config.inkscape_executable,
+            "--query-all",  # Get all object information
+            input_path
+        ]
+
+        return await self._execute_command(cmd_args, timeout)
+
     
     async def load_image_info(self, file_path: str) -> Dict:
         """

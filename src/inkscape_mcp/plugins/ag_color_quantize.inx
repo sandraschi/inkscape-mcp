@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>AG: Color Quantize</name>
+    <id>org.project_ag.color_quantize</id>
+    <param name="max_colors" type="int" min="2" max="256" gui-text="Max Colors">8</param>
+    <param name="palette" type="string" gui-text="Custom Palette (hex colors, comma-separated)">#FF0000,#00FF00,#0000FF,#FFFF00,#FF00FF,#00FFFF,#000000,#FFFFFF</param>
+    <param name="dither" type="bool" gui-text="Apply Dithering">false</param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu>
+            <submenu>Project AG</submenu>
+        </effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">ag_color_quantize.py</command>
+    </script>
+</inkscape-extension>

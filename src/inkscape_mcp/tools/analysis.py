@@ -1,26 +1,55 @@
-"""Inkscape document analysis - FastMCP 2.14.1+ Portmanteau Tool.
+"""Comprehensive document analysis for Inkscape SVG files.
 
-Portmanteau Pattern Rationale:
-Consolidates document analysis operations into a single tool to prevent tool explosion
+PORTMANTEAU PATTERN RATIONALE:
+Consolidates 6 document analysis operations into a single tool to prevent tool explosion
 while maintaining clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
 
-Supported Operations:
-- "quality": Analyze SVG quality metrics
-- "statistics": Get document statistics
-- "validate": Validate SVG structure
-- "objects": List document objects
-- "dimensions": Get document dimensions
-- "structure": Analyze document structure
+SUPPORTED OPERATIONS:
+
+**Document Statistics**:
+- statistics: Get comprehensive document statistics (dimensions, file size, object count, layers)
+
+**Validation**:
+- validate: Validate SVG structure and syntax, report errors and warnings
+
+**Dimension Analysis**:
+- dimensions: Get document dimensions with aspect ratio and unit information
+
+**Quality Assessment** (Planned):
+- quality: Analyze SVG quality metrics (complexity, optimization potential, standards compliance)
+
+**Object Discovery** (Planned):
+- objects: List all objects in document with IDs, types, and properties
+
+**Structure Analysis** (Planned):
+- structure: Analyze document structure (layers, groups, hierarchy)
+
+PREREQUISITES:
+- Requires Inkscape CLI installation (1.0+ recommended)
+- Input file must be a valid SVG document
+- File must be readable and accessible
 
 Args:
-    operation (Literal, required): The analysis operation to perform.
-    input_path (str, required): Path to input SVG file.
-    cli_wrapper (Any): Injected CLI wrapper dependency.
-    config (Any): Injected configuration dependency.
+    operation (Literal, required): The analysis operation to perform. Must be one of:
+        "statistics", "validate", "dimensions", "quality", "objects", "structure".
+        - "statistics": Get comprehensive document statistics (requires: input_path)
+        - "validate": Validate SVG structure and syntax (requires: input_path)
+        - "dimensions": Get document dimensions and aspect ratio (requires: input_path)
+        - "quality": Analyze SVG quality metrics (requires: input_path) - Planned
+        - "objects": List document objects with IDs and types (requires: input_path) - Planned
+        - "structure": Analyze document structure hierarchy (requires: input_path) - Planned
+
+    input_path (str, required): Path to input SVG file. Required for all operations.
+        Must be a valid file path accessible by the system. File must be readable.
+
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    **FastMCP 2.14.1+ Conversational Response Structure:**
+    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
 
+    Success Response:
     {
       "success": true,
       "operation": "operation_name",
@@ -28,32 +57,107 @@ Returns:
       "result": {
         "data": {
           "input_path": "path/to/input.svg",
-          "analysis_results": {...}
+          "analysis_results": {
+            "width": 800.0,
+            "height": 600.0,
+            "file_size": 15360,
+            "format": "svg",
+            "num_objects": 15,
+            "num_layers": 3,
+            "aspect_ratio": 1.333,
+            "valid": true,
+            "errors": [],
+            "warnings": []
+          }
         },
         "execution_time_ms": 123.45
       },
-      "next_steps": ["Suggested next operations"],
+      "next_steps": ["Use inkscape_vector for path operations", "Optimize SVG if needed"],
       "context": {
-        "operation_details": "Technical details about analysis"
+        "operation_details": "Technical details about analysis results"
       },
-      "suggestions": ["Related analysis operations"],
-      "follow_up_questions": ["Questions about document issues"]
+      "suggestions": ["Related analysis operations", "Optimization recommendations"],
+      "follow_up_questions": ["Would you like to optimize this SVG?", "Need to validate specific elements?"]
+    }
+
+    Error Response (Error Recovery Pattern):
+    {
+      "success": false,
+      "operation": "operation_name",
+      "error": "Error type (e.g., FileNotFoundError)",
+      "message": "Human-readable error description",
+      "recovery_options": ["Check file path and permissions", "Verify SVG file is valid", "Ensure Inkscape is installed"],
+      "diagnostic_info": {
+        "file_exists": false,
+        "inkscape_available": true,
+        "file_readable": false
+      },
+      "alternative_solutions": ["Use inkscape_file validate operation", "Check file format"]
     }
 
 Examples:
-    # Get document statistics
-    result = await inkscape_analysis("statistics", input_path="drawing.svg")
+    # Get comprehensive document statistics
+    result = await inkscape_analysis(
+        operation="statistics",
+        input_path="drawing.svg"
+    )
 
-    # Validate SVG structure
-    result = await inkscape_analysis("validate", input_path="drawing.svg")
+    # Validate SVG structure and syntax
+    result = await inkscape_analysis(
+        operation="validate",
+        input_path="drawing.svg"
+    )
 
-    # Analyze quality
-    result = await inkscape_analysis("quality", input_path="drawing.svg")
+    # Get document dimensions with aspect ratio
+    result = await inkscape_analysis(
+        operation="dimensions",
+        input_path="drawing.svg"
+    )
+
+    # Analyze SVG quality metrics (when implemented)
+    result = await inkscape_analysis(
+        operation="quality",
+        input_path="drawing.svg"
+    )
+
+    # List all objects in document (when implemented)
+    result = await inkscape_analysis(
+        operation="objects",
+        input_path="drawing.svg"
+    )
+
+    # Analyze document structure (when implemented)
+    result = await inkscape_analysis(
+        operation="structure",
+        input_path="drawing.svg"
+    )
 
 Errors:
-    - FileNotFoundError: Input SVG file does not exist
-    - ValueError: Invalid SVG format
+    - FileNotFoundError: Input SVG file does not exist or is not readable
+        Recovery options:
+        → Verify file path is correct and accessible
+        → Check file permissions (read access required)
+        → Ensure file is a valid SVG document
+        → Use absolute paths if relative paths fail
+
+    - ValueError: Invalid SVG format or operation parameter
+        Recovery options:
+        → Verify operation is one of: statistics, validate, dimensions, quality, objects, structure
+        → Check SVG file format (must be valid XML/SVG)
+        → Ensure file extension matches content
+
     - InkscapeExecutionError: Inkscape CLI command failed
+        Recovery options:
+        → Verify Inkscape installation (run inkscape --version)
+        → Check CLI arguments are valid for Inkscape version
+        → Check process timeout settings in config
+        → Verify SVG file is not corrupted
+
+    - NotImplementedError: Operation not yet implemented
+        Recovery options:
+        → Check supported operations list (currently: statistics, validate, dimensions)
+        → Use alternative operations that provide similar functionality
+        → Check if operation is available in newer versions
 """
 
 import time

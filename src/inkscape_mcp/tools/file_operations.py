@@ -1,64 +1,179 @@
-"""Inkscape file operations - FastMCP 2.14.1+ Portmanteau Tool.
+"""Comprehensive file operations for Inkscape SVG documents.
 
-Portmanteau Pattern Rationale:
-Consolidates basic file operations into a single tool to prevent tool explosion
-while maintaining clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
+PORTMANTEAU PATTERN RATIONALE:
+Consolidates 6 file operations (load, save, convert, info, validate, list_formats) into a single
+interface. Prevents tool explosion while maintaining full functionality and improving discoverability.
+Follows FastMCP 2.14.1+ SOTA standards.
 
-Supported Operations:
-- "load": Load SVG file and validate
-- "save": Save SVG with options
-- "convert": Convert between vector formats (SVG, PDF, EPS, AI, CDR)
-- "info": Get file metadata and statistics
-- "validate": Validate SVG structure
-- "list_formats": List supported formats
+SUPPORTED OPERATIONS:
+- load: Load and validate SVG files
+- save: Save SVG files with formatting options
+- convert: Convert between vector formats (SVG, PDF, EPS, AI, CDR, PNG, PS, WMF, EMF, XAML)
+- info: Get comprehensive file metadata and statistics
+- validate: Validate SVG structure and syntax
+- list_formats: Enumerate all supported export formats
+
+OPERATIONS DETAIL:
+
+**File Management (CRUD)**:
+  - load: Validates SVG syntax and basic structure, returns dimensions and file metadata
+  - save: Writes SVG with optional formatting and structure validation
+  - convert: Transforms between vector formats using Inkscape export functionality
+
+**Analysis & Discovery**:
+  - info: Extracts dimensions, file size, format, and comprehensive metadata
+  - validate: Checks SVG validity using Inkscape query commands, reports issues
+  - list_formats: Shows all available export formats supported by Inkscape
+
+PREREQUISITES:
+- Requires Inkscape CLI installation (1.0+ recommended, 1.2+ for Actions API)
+- Supports all Inkscape-compatible SVG features
+- Cross-platform file path handling via pathlib
 
 Args:
-    operation (Literal, required): The file operation to perform.
-    input_path (str, required): Path to input SVG file.
-    output_path (str, optional): Path for output file (required for save/convert).
-    format (str, optional): Output format for convert operations.
-    validate_structure (bool): Whether to validate SVG structure.
-    cli_wrapper (Any): Injected CLI wrapper dependency.
-    config (Any): Injected configuration dependency.
+    operation (Literal, required): The file operation to perform. Must be one of:
+        "load", "save", "convert", "info", "validate", "list_formats".
+        - "load": Load SVG file and validate structure (requires: input_path)
+        - "save": Save SVG with options (requires: input_path, output_path)
+        - "convert": Convert between formats (requires: input_path, output_path, format)
+        - "info": Get file metadata (requires: input_path)
+        - "validate": Validate SVG structure (requires: input_path)
+        - "list_formats": List supported formats (no additional parameters required)
+
+    input_path (str | None): Path to input SVG file. Required for: load, save, convert, info, validate.
+        Must be a valid file path accessible by the system.
+
+    output_path (str | None): Path for output file. Required for: save, convert operations.
+        Directory must exist and be writable. File extension should match format parameter.
+
+    format (str | None): Output format for convert operations. Must be one of:
+        "pdf", "eps", "ai", "cdr", "svg", "png", "ps", "wmf", "emf", "xaml".
+        Required for: convert operation. Case-insensitive.
+
+    validate_structure (bool): Whether to validate SVG structure during load operations.
+        Default: True. When True, uses Inkscape query commands to verify file validity.
+
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    **FastMCP 2.14.1+ Conversational Response Structure:**
+    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
 
+    Success Response:
     {
       "success": true,
       "operation": "operation_name",
-      "summary": "Human-readable conversational summary",
+      "summary": "Human-readable conversational summary (e.g., 'Successfully loaded drawing.svg')",
       "result": {
         "data": {
           "input_path": "path/to/input.svg",
           "output_path": "path/to/output.svg",
-          "file_info": {...},
-          "validation_results": {...}
+          "file_info": {
+            "width": 100.0,
+            "height": 200.0,
+            "file_size": 1536,
+            "format": "svg"
+          },
+          "validation_results": {
+            "valid": true,
+            "errors": []
+          },
+          "formats": ["svg", "pdf", "eps", "png", ...]
         },
         "execution_time_ms": 123.45
       },
-      "next_steps": ["Suggested next operations"],
+      "next_steps": ["Use inkscape_vector tool for path operations", "Convert to PDF format"],
       "context": {
         "operation_details": "Technical details about file operation"
       },
-      "suggestions": ["Related file operations"],
-      "follow_up_questions": ["Questions about file handling"]
+      "suggestions": ["Try inkscape_vector tool for advanced operations", "Use convert operation for format changes"],
+      "follow_up_questions": ["Would you like to convert this file to another format?", "Need to optimize the SVG?"]
+    }
+
+    Error Response (Error Recovery Pattern):
+    {
+      "success": false,
+      "operation": "operation_name",
+      "error": "Error type (e.g., FileNotFoundError)",
+      "message": "Human-readable error description",
+      "recovery_options": ["Check file path and permissions", "Verify Inkscape installation", "Ensure output directory exists"],
+      "diagnostic_info": {
+        "file_exists": false,
+        "inkscape_available": true,
+        "permissions": "read-only"
+      },
+      "alternative_solutions": ["Use list_formats to verify supported formats", "Check file extension matches format"]
     }
 
 Examples:
-    # Load and validate SVG
-    result = await inkscape_file("load", input_path="drawing.svg")
+    # Load and validate an SVG file
+    result = await inkscape_file(
+        operation="load",
+        input_path="logo.svg",
+        validate_structure=True
+    )
 
-    # Convert to PDF
-    result = await inkscape_file("convert", input_path="drawing.svg", output_path="drawing.pdf", format="pdf")
+    # Convert SVG to PDF
+    result = await inkscape_file(
+        operation="convert",
+        input_path="drawing.svg",
+        output_path="drawing.pdf",
+        format="pdf"
+    )
 
-    # Get file info
-    result = await inkscape_file("info", input_path="drawing.svg")
+    # Get comprehensive file information
+    result = await inkscape_file(
+        operation="info",
+        input_path="design.svg"
+    )
+
+    # Validate SVG structure
+    result = await inkscape_file(
+        operation="validate",
+        input_path="document.svg"
+    )
+
+    # List all supported export formats
+    result = await inkscape_file(
+        operation="list_formats"
+    )
+
+    # Save SVG with formatting
+    result = await inkscape_file(
+        operation="save",
+        input_path="source.svg",
+        output_path="formatted.svg"
+    )
 
 Errors:
-    - FileNotFoundError: Input file does not exist
-    - ValueError: Invalid format or parameters
+    - FileNotFoundError: Input file does not exist or is not readable
+        Recovery options:
+        → Verify file path is correct and accessible
+        → Check file permissions (read access required)
+        → Ensure file is a valid SVG document
+        → Use absolute paths if relative paths fail
+
     - InkscapeExecutionError: Inkscape CLI command failed
+        Recovery options:
+        → Verify Inkscape installation (run inkscape --version)
+        → Check CLI arguments are valid for Inkscape version
+        → Ensure output directory exists and is writable
+        → Check process timeout settings in config
+
+    - ValueError: Invalid format or parameters
+        Recovery options:
+        → Verify format is supported (use list_formats operation)
+        → Check output_path is provided for write operations (save, convert)
+        → Ensure format parameter matches file extension
+        → Validate all required parameters are provided
+
+    - PermissionError: Cannot write to output location
+        Recovery options:
+        → Check write permissions on output directory
+        → Ensure output path is not read-only
+        → Verify sufficient disk space available
+        → Check if file is locked by another process
 """
 
 import time

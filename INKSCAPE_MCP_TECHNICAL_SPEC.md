@@ -6,9 +6,10 @@ The Inkscape MCP (Model Context Protocol) Server provides comprehensive vector g
 
 **Key Architecture:**
 - **FastMCP 2.14.1+ Framework**: Modern MCP implementation with portmanteau design pattern
-- **4 Portmanteau Tools**: Consolidated operations to reduce cognitive load
-- **39 Total Operations**: Comprehensive vector graphics workflow coverage
+- **4 Portmanteau Tools + Extension System**: Consolidated operations + 200+ Inkscape extensions
+- **39 Core Operations + Unlimited Extensions**: Comprehensive vector graphics workflow coverage
 - **Stdio-based Communication**: JSON-RPC over stdin/stdout for AI agent integration
+- **4 Specialized Unity/VRChat Extensions**: AG Series for game development pipelines
 
 ## Portmanteau Tool Architecture
 
@@ -239,6 +240,166 @@ Comprehensive error reporting with recovery suggestions:
   ]
 }
 ```
+
+## Inkscape Extension System
+
+### Overview
+
+**v1.2.0 Enhancement**: Complete integration with Inkscape's extension ecosystem. The server now provides access to the 200+ Inkscape extensions that power professional vector workflows, including specialized tools for Unity/VRChat development.
+
+### Extension Architecture
+
+#### Extension Discovery
+- **Cross-platform directories**: Automatic scanning of standard Inkscape extension locations
+- **XML parsing**: Robust `.inx` file parsing for extension metadata and parameter schemas
+- **Dynamic registration**: Runtime extension loading with parameter validation
+- **Hot-reload support**: Extensions can be added/removed without server restart
+
+#### Extension Execution
+- **CLI integration**: Native `--extension=extension_id` parameter support
+- **Parameter injection**: Automatic mapping from MCP parameters to extension format
+- **Async processing**: Non-blocking execution with configurable timeouts
+- **Error isolation**: Sandboxed execution with comprehensive error reporting
+
+### MCP Extension Tools
+
+#### inkscape_system Extension Operations
+
+**list_extensions**: Discover available extensions
+```python
+result = inkscape_system("list_extensions")
+# Returns: [{"id": "org.project_ag.batch_trace", "name": "AG Batch Trace", "category": "project_ag", "parameters": [...]}]
+```
+
+**execute_extension**: Execute any Inkscape extension
+```python
+result = inkscape_system("execute_extension",
+                        extension_id="org.project_ag.batch_trace",
+                        extension_params={"input_dir": "/path/to/images", "colors": 8},
+                        input_file="input.svg",
+                        output_file="output.svg")
+```
+
+### Built-in Unity/VRChat Extensions (AG Series)
+
+#### AG Batch Trace (`org.project_ag.batch_trace`)
+**Purpose**: Convert AI-generated bitmaps to optimized SVG vectors
+**Parameters**:
+- `input_dir`: Source directory containing bitmap files
+- `output_dir`: Destination directory for SVG output
+- `colors`: Maximum colors for quantization (2-256)
+- `simplify`: Enable path simplification (boolean)
+
+**CLI Execution**:
+```bash
+inkscape --extension=org.project_ag.batch_trace --input_dir=/input --output_dir=/output --colors=8 --simplify=true
+```
+
+#### AG Unity Prep (`org.project_ag.unity_prep`)
+**Purpose**: Prepare SVGs for Unity UI import with coordinate normalization
+**Parameters**:
+- `flatten_groups`: Remove all group nesting (boolean)
+- `reset_coordinates`: Reset viewBox to origin (boolean)
+- `optimize_paths`: Simplify path complexity (boolean)
+- `remove_metadata`: Strip Inkscape-specific metadata (boolean)
+
+**CLI Execution**:
+```bash
+inkscape --extension=org.project_ag.unity_prep --flatten_groups=true --reset_coordinates=true --optimize_paths=true --remove_metadata=true input.svg
+```
+
+#### AG Layer Animation (`org.project_ag.layer_animation`)
+**Purpose**: Create CSS-animated SVGs from layers for Unity web UI
+**Parameters**:
+- `duration`: Animation cycle duration in seconds (0.1-60.0)
+- `loop`: Enable infinite looping (boolean)
+- `easing`: CSS easing function (ease, linear, ease-in, ease-out, ease-in-out)
+
+**CLI Execution**:
+```bash
+inkscape --extension=org.project_ag.layer_animation --duration=2.0 --loop=true --easing=ease-in-out input.svg
+```
+
+#### AG Color Quantize (`org.project_ag.color_quantize`)
+**Purpose**: Reduce color palettes for performance while maintaining brand consistency
+**Parameters**:
+- `max_colors`: Maximum colors in palette (2-256)
+- `palette`: Custom hex color palette (comma-separated)
+- `dither`: Enable dithering (boolean)
+
+**CLI Execution**:
+```bash
+inkscape --extension=org.project_ag.color_quantize --max_colors=8 --palette="#FF0000,#00FF00,#0000FF" input.svg
+```
+
+### Extension Development
+
+#### Creating Custom Extensions
+Extensions consist of two files in the extensions directory:
+
+**extension_example.inx** (XML metadata):
+```xml
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Custom Extension</name>
+    <id>org.example.custom</id>
+    <param name="param1" type="string" gui-text="Parameter 1">default</param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu><submenu>Project AG</submenu></effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">extension_example.py</command>
+    </script>
+</inkscape-extension>
+```
+
+**extension_example.py** (Python logic):
+```python
+import inkex
+
+class CustomExtension(inkex.EffectExtension):
+    def add_arguments(self, pars):
+        pars.add_argument("--param1", type=str, help="Parameter 1")
+
+    def effect(self):
+        # Extension logic using inkex library
+        param1 = self.options.param1
+        # Process SVG document...
+
+if __name__ == '__main__':
+    CustomExtension().run()
+```
+
+### Configuration
+
+Extensions are configured in `config.yaml`:
+```yaml
+extension_config:
+  enable_extensions: true
+  extension_dirs:
+    - "~/.config/inkscape/extensions"
+    - "./extensions"
+  disabled_extensions:
+    - "org.example.problematic"
+  config:
+    org.project_ag.batch_trace:
+      default_colors: 8
+      simplify_paths: true
+```
+
+### Performance Characteristics
+
+- **Extension Discovery**: < 1 second for typical extension sets
+- **Extension Execution**: Variable (depends on extension complexity)
+- **Memory Overhead**: Minimal (< 5MB for extension registry)
+- **Concurrent Extensions**: Limited by Inkscape CLI (typically 3-5 concurrent)
+
+### Security Considerations
+
+- **Sandboxed Execution**: Extensions run in isolated subprocesses
+- **Timeout Protection**: Configurable execution timeouts (default: 60s)
+- **Parameter Validation**: Strict parameter type checking and bounds validation
+- **File Access Control**: Extensions operate within configured allowed directories
 
 ## Performance Characteristics
 

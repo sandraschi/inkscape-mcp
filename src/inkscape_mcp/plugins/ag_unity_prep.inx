@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>AG: Prepare for Unity</name>
+    <id>org.project_ag.unity_prep</id>
+    <param name="flatten_groups" type="bool" gui-text="Flatten Groups">true</param>
+    <param name="reset_coordinates" type="bool" gui-text="Reset Coordinates">true</param>
+    <param name="optimize_paths" type="bool" gui-text="Optimize Paths">true</param>
+    <param name="remove_metadata" type="bool" gui-text="Remove Metadata">true</param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu>
+            <submenu>Project AG</submenu>
+        </effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">ag_unity_prep.py</command>
+    </script>
+</inkscape-extension>

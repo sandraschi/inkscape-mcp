@@ -5,6 +5,178 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-15 - Complete Inkscape Extension System & Unity/VRChat Workflows
+
+### 🚀 **Major Feature: Complete Inkscape Extension System**
+
+This release transforms Inkscape-MCP into a **full-featured extension platform**, implementing comprehensive support for Inkscape's rich ecosystem of Python extensions. Based on Gemini's extension analysis, we've added native support for the 200+ Inkscape extensions that power professional vector workflows.
+
+### 🎯 **Core Extension Infrastructure**
+
+#### ✅ **Extension Discovery & Loading**
+- **Cross-platform discovery**: Automatic detection of extensions in standard Inkscape directories
+- **XML parsing**: Robust `.inx` file parsing for extension metadata and parameters
+- **Dynamic loading**: Runtime extension registration with parameter validation
+- **Hot-reload capable**: Extensions can be added/removed without server restart
+
+#### ✅ **Extension Execution Engine**
+- **CLI integration**: Native `--extension=extension_id` support with parameter injection
+- **Async execution**: Non-blocking extension execution with configurable timeouts
+- **Error handling**: Comprehensive error reporting and recovery
+- **Parameter mapping**: Automatic conversion between MCP and extension parameter formats
+
+#### ✅ **MCP Integration**
+- **Extension registry**: `list_extensions` operation for discovering available extensions
+- **Extension execution**: `execute_extension` operation with full parameter support
+- **Status monitoring**: Extension health and availability in server status
+- **Configuration support**: Per-extension configuration in `config.yaml`
+
+### 🎨 **Custom Unity/VRChat Extensions (AG Series)**
+
+Based on Gemini's workflow analysis, we've implemented **4 specialized extensions** for Unity and VRChat development:
+
+#### **AG Batch Trace** (`org.project_ag.batch_trace`)
+- **Purpose**: Convert AI-generated bitmaps to optimized SVG vectors
+- **Features**: Color quantization, path simplification, batch folder processing
+- **Unity Workflow**: Prepare AI concept art for vector import
+- **Parameters**: `input_dir`, `output_dir`, `colors`, `simplify`
+
+#### **AG Unity Prep** (`org.project_ag.unity_prep`)
+- **Purpose**: Prepare SVGs for Unity UI import with coordinate normalization
+- **Features**: Group flattening, coordinate reset, path optimization, metadata removal
+- **Unity Workflow**: Clean complex SVGs for game engine import
+- **Parameters**: `flatten_groups`, `reset_coordinates`, `optimize_paths`, `remove_metadata`
+
+#### **AG Layer Animation** (`org.project_ag.layer_animation`)
+- **Purpose**: Create CSS-animated SVGs from layers for Unity web UI
+- **Features**: Keyframe generation, easing curves, loop control, duration settings
+- **Unity Workflow**: Animated UI elements without heavy video files
+- **Parameters**: `duration`, `loop`, `easing`
+
+#### **AG Color Quantize** (`org.project_ag.color_quantize`)
+- **Purpose**: Reduce color palettes for performance while maintaining brand consistency
+- **Features**: Custom palette support, automatic quantization, dithering options
+- **Unity Workflow**: Optimize textures and maintain color accuracy
+- **Parameters**: `max_colors`, `palette`, `dither`
+
+### 🔧 **Enhanced System Architecture**
+
+#### **Extension Manager**
+- **Discovery**: Scans `~/.config/inkscape/extensions/` and custom directories
+- **Validation**: Ensures extension files exist and are properly formatted
+- **Caching**: Efficient extension metadata caching for performance
+- **Security**: Sandboxed execution with timeout and resource limits
+
+#### **Configuration System**
+- **Extension settings**: Enable/disable individual extensions
+- **Directory scanning**: Custom extension directory support
+- **Parameter defaults**: Per-extension configuration overrides
+- **Performance tuning**: Concurrent execution limits
+
+#### **MCP Protocol Extensions**
+- **Tool discovery**: Extensions appear as standard MCP tools
+- **Parameter schemas**: Automatic OpenAPI schema generation from `.inx` files
+- **Result formatting**: Structured responses with extension metadata
+- **Error reporting**: Detailed extension execution error information
+
+### 📚 **Documentation & Examples**
+
+#### **Extension Development Guide**
+- Complete tutorial for creating custom Inkscape extensions
+- MCP integration patterns and best practices
+- Parameter definition and validation guidelines
+- Testing and deployment procedures
+
+#### **Unity/VRChat Workflow Guide**
+- Complete pipeline from AI concept to Unity import
+- Batch processing workflows for large asset libraries
+- Performance optimization techniques
+- Troubleshooting common issues
+
+### 🧪 **Testing & Quality Assurance**
+
+#### **Extension Testing Suite**
+- Unit tests for extension discovery and loading
+- Integration tests for extension execution
+- Parameter validation and error handling tests
+- Cross-platform compatibility verification
+
+#### **Workflow Validation**
+- Unity import compatibility testing
+- VRChat asset pipeline verification
+- Performance benchmarking for batch operations
+- Memory usage and resource consumption monitoring
+
+### 🎯 **Unity/VRChat Compatibility**
+
+#### **Unity-Specific Optimizations**
+- Coordinate system normalization for proper UI placement
+- Path simplification to reduce vertex counts
+- Metadata removal for clean imports
+- Color palette optimization for texture compression
+
+#### **VRChat Pipeline Support**
+- Batch processing for large avatar/ prop libraries
+- Animation preparation for interactive elements
+- Performance optimization for real-time rendering
+- Format compatibility with VRChat's SVG import
+
+### ✨ **Added**
+
+#### **New Operations (2 Total)**
+- `list_extensions`: Discover and catalog all available Inkscape extensions
+- `execute_extension`: Execute any Inkscape extension with parameters
+
+#### **New Extensions (4 Total)**
+- `org.project_ag.batch_trace`: Bitmap to SVG batch conversion
+- `org.project_ag.unity_prep`: Unity import preparation
+- `org.project_ag.layer_animation`: CSS animation creation
+- `org.project_ag.color_quantize`: Color palette optimization
+
+### 🔧 **Enhanced**
+
+#### **System Tool Expansion**
+- Extended `inkscape_system` portmanteau with extension operations
+- Enhanced status reporting with extension information
+- Improved error handling for extension execution
+
+#### **Configuration System**
+- Added extension configuration section to `config.yaml`
+- Support for custom extension directories
+- Per-extension parameter customization
+
+#### **Server Architecture**
+- Extension manager integration with server lifecycle
+- Asynchronous extension execution support
+- Resource management for extension processes
+
+### 📚 **Documentation**
+
+#### **Extension System Documentation**
+- Complete extension development guide
+- MCP integration patterns and examples
+- Unity/VRChat workflow documentation
+- Troubleshooting and best practices
+
+#### **Technical Specification Updates**
+- Extension system architecture documentation
+- Parameter mapping and validation details
+- Performance considerations and optimization
+
+### 🐛 **Fixed**
+- Extension system initialization issues
+- Parameter validation edge cases
+- Cross-platform extension directory detection
+- Memory management in extension execution
+
+### 🧪 **Testing**
+- Extension discovery and loading tests
+- Parameter validation and schema generation
+- Cross-platform compatibility testing
+- Unity/VRChat workflow validation
+
+---
+
 ## [1.1.1] - 2025-01-15 - Production-Ready Robustness & Critical Fixes
 
 ### 🔒 **Critical Robustness Fixes (Gemini Analysis Integration)**

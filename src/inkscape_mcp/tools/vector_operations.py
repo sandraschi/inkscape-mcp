@@ -1,45 +1,110 @@
-"""Inkscape vector operations - FastMCP 2.14.1+ Portmanteau Tool.
+"""Advanced vector operations for Inkscape SVG documents.
 
-Portmanteau Pattern Rationale:
-Consolidates 23 advanced vector operations into a single tool to prevent tool explosion
+PORTMANTEAU PATTERN RATIONALE:
+Consolidates 23+ advanced vector operations into a single tool to prevent tool explosion
 while maintaining full functionality. Follows FastMCP 2.14.1+ SOTA standards.
 
-Supported Operations:
-- trace_image: Convert raster to vector using potrace
-- generate_barcode_qr: Generate QR codes and barcodes
-- create_mesh_gradient: Create SVG mesh gradients
-- text_to_path: Convert text to editable paths
-- construct_svg: Generate SVG from text description
-- apply_boolean: Boolean operations (union, difference, intersection)
-- path_inset_outset: Dynamic path offset
-- path_simplify: Reduce path complexity
-- path_clean: Remove unnecessary elements
-- path_combine: Merge multiple paths
-- path_break_apart: Separate compound paths
-- object_to_path: Convert shapes to paths
-- optimize_svg: Clean and optimize SVG
-- scour_svg: Remove metadata and cruft
-- measure_object: Query object dimensions
-- query_document: Get document statistics
-- count_nodes: Count path nodes
-- export_dxf: Export to CAD format
+SUPPORTED OPERATIONS:
+
+**Raster-to-Vector Conversion**:
+- trace_image: Convert raster images to vector paths using potrace algorithm
+
+**Code Generation**:
+- generate_barcode_qr: Generate QR codes and barcodes as SVG elements
+- generate_laser_dot: Create animated laser pointer dot for presentations
+
+**Path Manipulation**:
+- path_simplify: Reduce path complexity by removing unnecessary nodes
+- path_clean: Remove unnecessary elements and optimize paths
+- path_combine: Merge multiple paths into single path
+- path_break_apart: Separate compound paths into individual paths
+- path_inset_outset: Dynamic path offset (expand or contract)
+
+**Object Operations**:
+- apply_boolean: Boolean operations (union, difference, intersection, exclusion)
+- object_to_path: Convert shapes (rectangles, circles, etc.) to editable paths
+- object_raise: Raise object in Z-order (move up in layer stack)
+- object_lower: Lower object in Z-order (move down in layer stack)
+
+**Text Operations**:
+- text_to_path: Convert text elements to editable vector paths
+
+**Document Operations**:
+- query_document: Get document statistics (dimensions, object count)
+- measure_object: Query object dimensions and bounding box
+- count_nodes: Count path nodes for complexity analysis
+- fit_canvas_to_drawing: Resize canvas to match drawing bounds
+- set_document_units: Normalize document coordinate systems (px, mm, in)
+
+**Export & Rendering**:
+- render_preview: Generate PNG preview at specified DPI
+- export_dxf: Export to CAD format (DXF)
 - layers_to_files: Export layers as separate files
-- fit_canvas_to_drawing: Resize canvas to content
-- render_preview: Generate PNG preview
-- generate_laser_dot: Create animated laser pointer
+
+**Optimization**:
+- optimize_svg: Clean and optimize SVG structure
+- scour_svg: Remove metadata and unnecessary elements
+
+**Advanced Features** (Planned):
+- create_mesh_gradient: Create SVG mesh gradients
+- construct_svg: Generate SVG from text description
+
+PREREQUISITES:
+- Requires Inkscape CLI installation (1.0+ recommended, 1.2+ for Actions API)
+- For boolean operations: Requires object IDs or select_all parameter
+- For path operations: Requires valid SVG path elements
 
 Args:
-    operation (Literal, required): The vector operation to perform.
-    input_path (str, optional): Path to input SVG file.
-    output_path (str, optional): Path for output file.
-    object_id (str, optional): Target object ID.
-    cli_wrapper (Any): Injected CLI wrapper dependency.
-    config (Any): Injected configuration dependency.
-    [operation-specific parameters]
+    operation (Literal, required): The vector operation to perform. Must be one of:
+        "trace_image", "generate_barcode_qr", "generate_laser_dot", "apply_boolean",
+        "path_simplify", "path_clean", "path_combine", "path_break_apart",
+        "object_to_path", "object_raise", "object_lower", "measure_object",
+        "query_document", "count_nodes", "render_preview", "set_document_units".
+
+    input_path (str | None): Path to input SVG file. Required for most operations.
+        Must be a valid SVG file accessible by the system.
+
+    output_path (str | None): Path for output file. Required for operations that modify files.
+        Directory must exist and be writable. Required for: trace_image, apply_boolean,
+        path_simplify, path_clean, object_raise, object_lower, render_preview, set_document_units.
+
+    object_id (str | None): Target object ID within SVG document. Required for:
+        measure_object, count_nodes, path_simplify, object_raise, object_lower.
+        Object ID must exist in the SVG document.
+
+    object_ids (list[str] | None): List of object IDs for multi-object operations.
+        Required for: apply_boolean (when select_all=False). Must contain at least 2 IDs.
+
+    select_all (bool): Select all objects for operation. Required for: apply_boolean
+        (when object_ids not provided). Default: False.
+
+    operation_type (str | None): Type of boolean operation. Required for: apply_boolean.
+        Must be one of: "union", "difference", "intersection", "exclusion".
+
+    barcode_data (str | None): Data to encode in QR code or barcode. Required for:
+        generate_barcode_qr.
+
+    threshold (float): Simplification threshold for path_simplify. Default: 1.0.
+        Higher values result in more aggressive simplification.
+
+    dpi (int): DPI for render_preview operation. Default: 96. Higher values produce
+        higher resolution previews but take longer to render.
+
+    units (str | None): Document units for set_document_units. Must be one of:
+        "px", "mm", "in", "pt", "cm". Default: "px".
+
+    x (float): X coordinate for generate_laser_dot. Default: 300.
+
+    y (float): Y coordinate for generate_laser_dot. Default: 200.
+
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    **FastMCP 2.14.1+ Conversational Response Structure:**
+    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
 
+    Success Response:
     {
       "success": true,
       "operation": "operation_name",
@@ -48,7 +113,13 @@ Returns:
         "data": {
           "input_path": "path/to/input.svg",
           "output_path": "path/to/output.svg",
-          "operation_result": {...}
+          "operation_result": {
+            "object_id": "circle1",
+            "width": 100.0,
+            "height": 100.0,
+            "x": 50.0,
+            "y": 50.0
+          }
         },
         "execution_time_ms": 123.45
       },
@@ -60,26 +131,119 @@ Returns:
       "follow_up_questions": ["Questions about operation parameters"]
     }
 
+    Error Response (Error Recovery Pattern):
+    {
+      "success": false,
+      "operation": "operation_name",
+      "error": "Error type (e.g., ValueError)",
+      "message": "Human-readable error description",
+      "recovery_options": ["Provide object_ids or set select_all=true", "Verify object IDs exist in document"],
+      "diagnostic_info": {
+        "object_ids_provided": false,
+        "select_all": false,
+        "valid_operation_types": ["union", "difference", "intersection", "exclusion"]
+      },
+      "alternative_solutions": ["Use query_document to list available object IDs", "Use select_all=true for all objects"]
+    }
+
 Examples:
-    # Trace bitmap to vector
-    result = await inkscape_vector("trace_image", input_path="sketch.png", output_path="vector.svg")
+    # Trace bitmap image to vector paths
+    result = await inkscape_vector(
+        operation="trace_image",
+        input_path="sketch.png",
+        output_path="vector.svg"
+    )
 
     # Generate QR code
-    result = await inkscape_vector("generate_barcode_qr", barcode_data="hello", output_path="qr.svg")
+    result = await inkscape_vector(
+        operation="generate_barcode_qr",
+        barcode_data="https://example.com",
+        output_path="qr.svg"
+    )
 
-    # Apply boolean union (REQUIRES object_ids OR select_all=true)
-    result = await inkscape_vector("apply_boolean", input_path="shapes.svg", output_path="union.svg", operation_type="union", object_ids=["shape1", "shape2"])
+    # Apply boolean union to specific objects
+    result = await inkscape_vector(
+        operation="apply_boolean",
+        input_path="shapes.svg",
+        output_path="union.svg",
+        operation_type="union",
+        object_ids=["shape1", "shape2"]
+    )
 
-    # Alternative: Apply to all objects
-    result = await inkscape_vector("apply_boolean", input_path="shapes.svg", output_path="union.svg", operation_type="union", select_all=True)
+    # Apply boolean union to all objects
+    result = await inkscape_vector(
+        operation="apply_boolean",
+        input_path="shapes.svg",
+        output_path="union.svg",
+        operation_type="union",
+        select_all=True
+    )
 
-    # Measure object
-    result = await inkscape_vector("measure_object", input_path="drawing.svg", object_id="circle1")
+    # Measure object dimensions
+    result = await inkscape_vector(
+        operation="measure_object",
+        input_path="drawing.svg",
+        object_id="circle1"
+    )
+
+    # Simplify path with threshold
+    result = await inkscape_vector(
+        operation="path_simplify",
+        input_path="complex.svg",
+        output_path="simplified.svg",
+        object_id="path1",
+        threshold=2.0
+    )
+
+    # Render PNG preview at high DPI
+    result = await inkscape_vector(
+        operation="render_preview",
+        input_path="design.svg",
+        output_path="preview.png",
+        dpi=300
+    )
+
+    # Generate animated laser dot
+    result = await inkscape_vector(
+        operation="generate_laser_dot",
+        output_path="laser.svg",
+        x=400,
+        y=300
+    )
+
+    # Query document statistics
+    result = await inkscape_vector(
+        operation="query_document",
+        input_path="document.svg"
+    )
 
 Errors:
-    - FileNotFoundError: Input file does not exist
+    - FileNotFoundError: Input file does not exist or is not readable
+        Recovery options:
+        → Verify file path is correct and accessible
+        → Check file permissions (read access required)
+        → Ensure file is a valid SVG document
+
     - ValueError: Invalid parameters or object IDs
+        Recovery options:
+        → For apply_boolean: Provide object_ids (list with 2+ items) OR set select_all=True
+        → Verify operation_type is one of: union, difference, intersection, exclusion
+        → Ensure object_id exists in document (use query_document to list IDs)
+        → Check all required parameters are provided for the operation
+
     - InkscapeExecutionError: Inkscape CLI command failed
+        Recovery options:
+        → Verify Inkscape installation (run inkscape --version)
+        → Check CLI arguments are valid for Inkscape version
+        → Ensure output directory exists and is writable
+        → Check process timeout settings in config
+        → Verify object IDs exist in the SVG document
+
+    - NotImplementedError: Operation not yet implemented
+        Recovery options:
+        → Check supported operations list in documentation
+        → Use alternative operations that provide similar functionality
+        → Check if operation is available in newer Inkscape versions
 """
 
 import time

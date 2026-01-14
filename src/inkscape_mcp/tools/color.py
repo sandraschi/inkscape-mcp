@@ -28,7 +28,7 @@ class ColorResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_color(
+async def inkscape_color(
     operation: Literal[
         "brightness_contrast",
         "levels",

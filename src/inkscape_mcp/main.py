@@ -11,7 +11,7 @@ master portmanteau tools. Each tool handles a specific domain with multiple oper
 Tools:
 - inkscape_file: File operations (load, save, convert, info)
 - inkscape_transform: Geometric transforms (resize, rotate, scale)
-- inkscape_object: Object management (create, group, align)
+- : Object management (create, group, align)
 - inkscape_path: Path operations (edit, boolean, stroke/fill)
 - inkscape_text: Text handling (create, edit, style)
 - inkscape_export: Export operations (PNG, PDF, EPS, SVG variants)
@@ -44,7 +44,7 @@ from .logging_config import (
 from .tools import (
     inkscape_file,
     inkscape_transform,
-    inkscape_object,
+    ,
     inkscape_path,
     inkscape_text,
     gimp_analysis,

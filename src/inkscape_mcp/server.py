@@ -18,29 +18,29 @@ from .config import InkscapeConfig
 from .plugins import PluginManager, InkscapePlugin
 
 # Import all tool categories from legacy tools
-from .tools_legacy.file_operations_tools import FileOperationTools
-from .tools_legacy.transforms import TransformTools
-from .tools_legacy.color_adjustments import ColorAdjustmentTools
-from .tools_legacy.filters import FilterTools
-from .tools_legacy.batch_processing import BatchProcessingTools
-from .tools_legacy.help_tools import HelpTools
-from .tools_legacy.layer_management import LayerManagementTools
-from .tools_legacy.image_analysis import ImageAnalysisTools
-from .tools_legacy.performance_tools import PerformanceTools
+# from .tools_legacy.file_operations_tools import FileOperationTools
+# from .tools_legacy.transforms import TransformTools
+# from .tools_legacy.color_adjustments import ColorAdjustmentTools
+# from .tools_legacy.filters import FilterTools
+# from .tools_legacy.batch_processing import BatchProcessingTools
+# from .tools_legacy.help_tools import HelpTools
+# from .tools_legacy.layer_management import LayerManagementTools
+# from .tools_legacy.image_analysis import ImageAnalysisTools
+# from .tools_legacy.performance_tools import # PerformanceTools
 
 logger = logging.getLogger(__name__)
 
 # Core plugin classes that should always be loaded
 CORE_PLUGINS = [
-    FileOperationTools,
-    TransformTools, 
-    ColorAdjustmentTools,
-    FilterTools,
-    BatchProcessingTools,
-    HelpTools,
-    LayerManagementTools,      # New: Layer management tools
-    ImageAnalysisTools,        # New: Image analysis tools
-    PerformanceTools           # New: Performance optimization tools
+    #    # ,
+    # ,
+    # ,
+    # ,
+    # ,
+    # ,
+    # ,
+    # ,
+    # PerformanceTools           # New: Performance optimization tools
 ]
 
 class InkscapeMcpServer:

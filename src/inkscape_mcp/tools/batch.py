@@ -24,7 +24,7 @@ class BatchResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_batch(
+async def inkscape_batch(
     operation: Literal[
         "resize", "convert", "process", "watermark", "rename", "optimize"
     ],

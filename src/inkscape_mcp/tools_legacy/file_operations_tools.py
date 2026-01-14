@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from fastmcp import FastMCP
-from ..cli_wrapper import GimpCliWrapper
+from ..cli_wrapper import InkscapeCliWrapper
 from ..config import InkscapeConfig
 from ..tool_utils import tool
 from .file_operations_base import FileOperationBase, FileOperationResult, FileOperationStatus
@@ -24,7 +24,7 @@ T = TypeVar('T', bound=Callable[..., Any])
 class FileOperationTools(FileOperationBase):
     """Tools for file operations in GIMP MCP Server."""
     
-    def __init__(self, cli_wrapper: InkscapeCliWrapper, config: InkscapeConfig):
+    def __init__(self, cli_wrapper: "InkscapeCliWrapper", config: "InkscapeConfig"):
         """Initialize file operation tools.
         
         Args:

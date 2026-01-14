@@ -1,28 +1,15 @@
 """
-Inkscape CLI Wrapper for executing Inkscape operations via command line.
+Minimal Inkscape CLI Wrapper for essential vector graphics operations.
 
-This module provides a robust interface for executing Inkscape vector graphics operations
-through command line interface with proper error handling and cross-platform support.
-
-Inkscape CLI Reference:
-- Export: inkscape --export-type=png --export-dpi=300 input.svg -o output.png
-- Query: inkscape --query-id=id --query-x input.svg
-- Actions: inkscape --verb=EditSelectAll input.svg
-- Batch: inkscape --batch-process input.svg
+This module provides core Inkscape command-line functionality for MCP operations.
 """
 
 import asyncio
 import logging
-import os
-import platform
-import shlex
 import subprocess
-import tempfile
-import yaml
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
-
-from .config import InkscapeConfig
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,43 +17,148 @@ class InkscapeCliError(Exception):
     """Base exception for Inkscape CLI operations."""
     pass
 
-class InkscapeTimeoutError(InkscapeCliError):
-    """Inkscape operation timed out."""
-    pass
-
-class InkscapeExecutionError(InkscapeCliError):
-    """Inkscape execution failed."""
-    pass
-
 class InkscapeCliWrapper:
     """
-    Cross-platform Inkscape command-line interface wrapper for vector graphics operations.
-
-    Provides a high-level interface for executing Inkscape operations including:
-    - File export (PNG, PDF, EPS, SVG variants)
-    - Object manipulation and querying
-    - Document processing and analysis
-    - Batch operations on multiple files
+    Minimal Inkscape CLI wrapper for essential operations.
     """
 
-    def __init__(self, config: InkscapeConfig):
+    def __init__(self, config):
         """
-        Initialize Inkscape CLI wrapper.
-
-        Args:
-            config: Inkscape configuration object
+        Initialize wrapper with config.
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.logger = logging.getLogger(__name__)
-        self.system = platform.system().lower()
 
-        # Validate Inkscape executable
-        if not self.config.inkscape_executable:
+        # Basic validation
+        if not hasattr(config, 'inkscape_executable') or not config.inkscape_executable:
             raise InkscapeCliError("Inkscape executable not configured")
 
-        if not Path(self.config.inkscape_executable).exists():
-            raise InkscapeCliError(f"Inkscape executable not found: {self.config.inkscape_executable}")
+        if not Path(config.inkscape_executable).exists():
+            raise InkscapeCliError(f"Inkscape executable not found: {config.inkscape_executable}")
+
+    async def export_file(self, input_path: str, output_path: str,
+                         export_type: str = "png", dpi: int = 300) -> str:
+        """
+        Export SVG to other formats using Inkscape.
+        """
+        cmd = [
+            self.config.inkscape_executable,
+            f"--export-type={export_type}",
+            f"--export-dpi={dpi}",
+            f"--export-filename={output_path}",
+            input_path
+        ]
+
+        return await self._execute_command(cmd)
+
+    async def execute_actions(self, input_path: str, actions: str,
+                             output_path: Optional[str] = None) -> str:
+        """
+        Execute Inkscape actions (Inkscape 1.2+ actions system).
+        """
+        cmd = [
+            self.config.inkscape_executable,
+            f"--actions={actions}"
+        ]
+
+        if output_path:
+            cmd.append(f"--export-filename={output_path}")
+
+        cmd.append(input_path)
+
+        return await self._execute_command(cmd)
+
+    async def trace_bitmap(self, input_path: str, output_path: str,
+                          trace_type: str = "brightness", threshold: int = 128) -> str:
+        """
+        Convert raster image to vector using Inkscape's trace bitmap.
+        """
+        # Actions to select all, trace bitmap, and export
+        actions = f"select-all;selection-trace;export-do"
+
+        cmd = [
+            self.config.inkscape_executable,
+            f"--actions={actions}",
+            f"--export-type=svg",
+            f"--export-filename={output_path}",
+            input_path
+        ]
+
+        return await self._execute_command(cmd)
+
+    async def apply_boolean(self, input_path: str, output_path: str,
+                           operation: str, object_ids: list) -> str:
+        """
+        Apply boolean operations to selected objects.
+        """
+        # Select objects and apply boolean operation
+        select_actions = ";".join([f"select-by-id:{obj_id}" for obj_id in object_ids])
+
+        op_map = {
+            "union": "selection-union",
+            "difference": "selection-diff",
+            "intersection": "selection-intersect",
+            "exclusion": "selection-exclusion",
+            "division": "selection-division"
+        }
+
+        if operation not in op_map:
+            raise InkscapeCliError(f"Unknown boolean operation: {operation}")
+
+        actions = f"{select_actions};{op_map[operation]};export-do"
+
+        cmd = [
+            self.config.inkscape_executable,
+            f"--actions={actions}",
+            f"--export-type=svg",
+            f"--export-filename={output_path}",
+            input_path
+        ]
+
+        return await self._execute_command(cmd)
+
+    async def get_document_info(self, input_path: str) -> str:
+        """
+        Get basic document information.
+        """
+        cmd = [
+            self.config.inkscape_executable,
+            "--query-all",
+            input_path
+        ]
+
+        return await self._execute_command(cmd)
+
+    async def _execute_command(self, cmd_args, timeout: int = 30) -> str:
+        """
+        Execute Inkscape command with timeout.
+        """
+        try:
+            self.logger.debug(f"Executing: {' '.join(cmd_args)}")
+
+            process = await asyncio.create_subprocess_exec(
+                *cmd_args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                raise InkscapeCliError(f"Inkscape operation timed out after {timeout}s")
+
+            if process.returncode != 0:
+                error_msg = stderr.decode('utf-8', errors='ignore').strip()
+                raise InkscapeCliError(f"Inkscape failed: {error_msg}")
+
+            return stdout.decode('utf-8', errors='ignore').strip()
+
+        except Exception as e:
+            raise InkscapeCliError(f"Inkscape execution failed: {e}")
     
     async def export_file(self, input_path: str, output_path: str,
                          export_type: str = "png", dpi: int = 300,
@@ -491,3 +583,7 @@ class InkscapeCliWrapper:
         except Exception as e:
             self.logger.debug(f"File validation failed for {file_path}: {e}")
             return False
+
+
+# Backward compatibility alias for legacy code
+GimpCliWrapper = InkscapeCliWrapper

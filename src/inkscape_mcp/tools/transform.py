@@ -24,7 +24,7 @@ class TransformResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_transform(
+async def inkscape_transform(
     operation: Literal[
         "resize",
         "crop",

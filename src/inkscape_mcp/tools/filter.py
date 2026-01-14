@@ -24,7 +24,7 @@ class FilterResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_filter(
+async def inkscape_filter(
     operation: Literal[
         "blur",
         "sharpen",

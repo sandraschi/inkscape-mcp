@@ -24,7 +24,7 @@ class LayerResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_layer(
+async def inkscape_layer(
     operation: Literal[
         "create",
         "duplicate",

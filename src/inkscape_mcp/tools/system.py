@@ -27,7 +27,7 @@ class SystemResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_system(
+async def inkscape_system(
     operation: Literal[
         "status",
         "help",

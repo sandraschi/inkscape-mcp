@@ -12,10 +12,7 @@ master portmanteau tools for reduced cognitive load and better discoverability.
 Portmanteau Tools:
 - inkscape_file: File operations (load, save, convert, info)
 - inkscape_transform: Geometric transforms (resize, rotate, scale)
-- inkscape_object: Object management (create, group, align)
-- inkscape_path: Path operations (edit, boolean, stroke/fill)
-- inkscape_text: Text handling (create, edit, style)
-- inkscape_export: Export operations (PNG, PDF, EPS, SVG variants)
+- : Object management (create, group, align)
 - inkscape_analysis: Document analysis (quality, statistics, validation)
 - inkscape_system: System operations (status, help, diagnostics)
 
@@ -33,10 +30,6 @@ from .server import InkscapeMcpServer
 from .tools import (
     inkscape_file,
     inkscape_transform,
-    inkscape_object,
-    inkscape_path,
-    inkscape_text,
-    inkscape_export,
     inkscape_analysis,
     inkscape_system,
     PORTMANTEAU_TOOLS,
@@ -47,10 +40,7 @@ __all__ = [
     # Portmanteau tools
     "inkscape_file",
     "inkscape_transform",
-    "inkscape_object",
-    "inkscape_path",
-    "inkscape_text",
-    "inkscape_export",
+    "",
     "inkscape_analysis",
     "inkscape_system",
     "PORTMANTEAU_TOOLS",

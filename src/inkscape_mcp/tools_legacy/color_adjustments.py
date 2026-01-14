@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 """
 Color Adjustment Tools for GIMP MCP Server.

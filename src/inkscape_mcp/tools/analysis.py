@@ -24,7 +24,7 @@ class AnalysisResult(BaseModel):
     error: Optional[str] = None
 
 
-async def gimp_analysis(
+async def inkscape_analysis(
     operation: Literal[
         "quality",
         "statistics",

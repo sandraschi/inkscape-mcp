@@ -1,0 +1,2 @@
+[console_scripts]
+gimp-mcp = gimp_mcp.main:main

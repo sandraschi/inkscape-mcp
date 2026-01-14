@@ -1,0 +1,229 @@
+Metadata-Version: 2.4
+Name: gimp-mcp
+Version: 2.0.0
+Summary: FastMCP 2.x server for professional image editing using GIMP
+Author-email: Sandra Schipal <sandra@sandraschi.dev>, FastMCP Community <fastmcp@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/sandraschi/gimp-mcp
+Project-URL: Documentation, https://github.com/sandraschi/gimp-mcp#readme
+Project-URL: Issues, https://github.com/sandraschi/gimp-mcp/issues
+Project-URL: Source, https://github.com/sandraschi/gimp-mcp
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Content Creators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Microsoft :: Windows :: Windows 10
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Typing :: Typed
+Classifier: Topic :: Multimedia :: Graphics
+Classifier: Topic :: Multimedia :: Graphics :: Graphics Conversion
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: <3.14,>=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fastmcp<3.0.0,>=2.11.3
+Requires-Dist: pydantic<3.0.0,>=2.0.0
+Requires-Dist: typing-extensions<5.0.0,>=4.5.0
+Requires-Dist: pillow<11.0.0,>=10.0.0
+Requires-Dist: numpy<2.0.0,>=1.24.0
+Requires-Dist: psutil<6.0.0,>=5.9.0
+Requires-Dist: python-dotenv<2.0.0,>=1.0.0
+Requires-Dist: python-magic<1.0.0,>=0.4.27; platform_system != "Windows"
+Requires-Dist: python-magic-bin<1.0.0,>=0.4.14; platform_system == "Windows"
+Requires-Dist: filetype<2.0.0,>=1.2.0
+Requires-Dist: pyyaml<7.0.0,>=6.0.0
+Requires-Dist: python-dateutil<3.0.0,>=2.8.2
+Requires-Dist: click<9.0.0,>=8.1.3
+Requires-Dist: anyio<5.0.0,>=4.5.0
+Requires-Dist: asyncer<0.0.9,>=0.0.8
+Provides-Extra: http
+Requires-Dist: fastapi<1.0.0,>=0.95.0; extra == "http"
+Requires-Dist: uvicorn[standard]<1.0.0,>=0.22.0; extra == "http"
+Requires-Dist: httpx<1.0.0,>=0.24.0; extra == "http"
+Provides-Extra: dev
+Requires-Dist: pytest<8.0.0,>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov<5.0.0,>=4.1.0; extra == "dev"
+Requires-Dist: pytest-asyncio<1.0.0,>=0.21.0; extra == "dev"
+Requires-Dist: pytest-mock<4.0.0,>=3.11.0; extra == "dev"
+Requires-Dist: pytest-xdist<4.0.0,>=3.3.1; extra == "dev"
+Requires-Dist: pytest-html<5.0.0,>=4.0.0; extra == "dev"
+Requires-Dist: pytest-timeout<3.0.0,>=2.1.0; extra == "dev"
+Requires-Dist: black<24.0.0,>=23.7.0; extra == "dev"
+Requires-Dist: isort<6.0.0,>=5.12.0; extra == "dev"
+Requires-Dist: mypy<2.0.0,>=1.4.0; extra == "dev"
+Requires-Dist: ruff<1.0.0,>=0.0.280; extra == "dev"
+Requires-Dist: pre-commit<4.0.0,>=3.3.0; extra == "dev"
+Requires-Dist: mkdocs<2.0.0,>=1.4.3; extra == "dev"
+Requires-Dist: mkdocs-material<10.0.0,>=9.1.15; extra == "dev"
+Requires-Dist: mkdocstrings[python]<1.0.0,>=0.22.0; extra == "dev"
+Requires-Dist: mkdocs-autorefs<1.0.0,>=0.4.1; extra == "dev"
+Requires-Dist: mkdocs-jupyter<1.0.0,>=0.24.1; extra == "dev"
+Requires-Dist: mkdocs-minify-plugin<1.0.0,>=0.6.4; extra == "dev"
+Requires-Dist: mkdocs-redirects<2.0.0,>=1.1.2; extra == "dev"
+Requires-Dist: types-python-dotenv<2.0.0,>=1.0.0; extra == "dev"
+Requires-Dist: types-psutil<6.0.0,>=5.9.0; extra == "dev"
+Requires-Dist: types-python-dateutil<3.0.0,>=2.8.0; extra == "dev"
+Requires-Dist: types-requests<3.0.0,>=2.28.0; extra == "dev"
+Requires-Dist: types-pyyaml<7.0.0,>=6.0.0; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: mkdocs<2.0.0,>=1.4.3; extra == "docs"
+Requires-Dist: mkdocs-material<10.0.0,>=9.1.15; extra == "docs"
+Requires-Dist: mkdocstrings[python]<1.0.0,>=0.22.0; extra == "docs"
+Requires-Dist: mkdocs-autorefs<1.0.0,>=0.4.1; extra == "docs"
+Requires-Dist: mkdocs-jupyter<1.0.0,>=0.24.1; extra == "docs"
+
+# GIMP MCP Server
+
+Professional image editing through Model Context Protocol (MCP) using GIMP.
+
+## Overview
+
+GIMP-MCP provides Claude and other AI agents with professional image editing capabilities through GIMP (GNU Image Manipulation Program). This MCP server enables powerful image processing operations via a clean, standardized interface.
+
+## Features
+
+### Core Image Operations
+- **File Management**: Load, save, and convert between formats (JPEG, PNG, WebP, TIFF, etc.)
+- **Transformations**: Resize, crop, rotate, and flip images with quality preservation
+- **Color Adjustments**: Brightness, contrast, hue, saturation, and color balance
+- **Filters & Effects**: Blur, sharpen, noise reduction, and artistic filters
+- **Batch Processing**: Process multiple images efficiently
+
+### Technical Highlights
+- **Cross-platform**: Windows, macOS, and Linux support
+- **Performance optimized**: Async operations with process management
+- **Robust error handling**: Comprehensive validation and recovery
+- **Flexible configuration**: YAML-based settings with sensible defaults
+- **Security focused**: File validation and access controls
+
+## Installation
+
+### Prerequisites
+- Python 3.10 or higher
+- GIMP 2.10+ (GIMP 3.0+ recommended)
+
+### Quick Install
+```bash
+# Clone the repository
+git clone https://github.com/sandraschi/gimp-mcp.git
+cd gimp-mcp
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install the package
+pip install -e .
+```
+
+### Verify Installation
+```bash
+# Check GIMP detection
+gimp-mcp --validate-only
+```
+
+## Configuration
+
+GIMP-MCP works out of the box with automatic GIMP detection and sensible defaults.
+
+### Custom Configuration
+Create `config.yaml` in your working directory:
+
+```yaml
+# GIMP Configuration
+gimp_executable: "/custom/path/to/gimp"  # Optional: auto-detected
+
+# Performance Settings
+max_concurrent_processes: 3
+process_timeout: 30
+
+# File Handling
+temp_directory: "/tmp/gimp-mcp"
+max_file_size_mb: 100
+preserve_metadata: true
+```
+
+## Usage
+
+### Start the Server
+```bash
+gimp-mcp --host localhost --port 8000
+```
+
+### Claude Desktop Integration
+Add to your Claude Desktop MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "gimp-mcp": {
+      "command": "gimp-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+## Available Tools
+
+### File Operations
+- `load_image` - Load and analyze image files
+- `get_image_info` - Extract comprehensive metadata
+- `save_image` - Save with format conversion
+- `convert_format` - Format conversion with quality options
+
+### Transformations
+- `resize_image` - Smart resizing with aspect ratio preservation
+- `crop_image` - Precise rectangular cropping
+- `rotate_image` - Rotation with background fill options
+- `flip_image` - Horizontal and vertical flipping
+
+### Color Adjustments
+- `adjust_brightness_contrast` - Basic tonal adjustments
+- `adjust_hue_saturation` - HSL color manipulation
+- `color_balance` - Professional color grading
+
+### Filters & Effects
+- `apply_blur` - Gaussian, motion, and radial blur
+- `apply_sharpen` - Unsharp mask sharpening
+- `noise_reduction` - Intelligent noise filtering
+
+### Batch Processing
+- `batch_resize` - Bulk image resizing
+- `batch_convert` - Mass format conversion
+- `batch_apply_filter` - Apply filters to multiple images
+
+## Development Status
+
+**Current Phase**: Foundation Complete ✅
+- Repository scaffolding
+- GIMP detection system
+- Configuration management
+- CLI wrapper framework
+- Core tool structure
+
+**Next Phase**: Tool Implementation
+- File operations (in progress)
+- Transform operations (basic complete)
+- Color adjustments (planned)
+- Filters and effects (planned)
+
+## Architecture
+
+The server uses a modular architecture with:
+- **FastMCP Integration**: Standard MCP protocol implementation
+- **CLI Wrapper**: Robust GIMP command-line interface
+- **Tool Categories**: Organized by functionality for maintainability
+- **Error Handling**: Comprehensive validation and recovery
+- **Cross-platform**: Windows, macOS, and Linux support
+
+## Contributing
+
+See the detailed implementation plan in `docs/IMPLEMENTATION_ROADMAP.md` for development guidelines and current status.
+
+## License
+
+MIT License - see LICENSE file for details.

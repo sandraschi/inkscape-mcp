@@ -283,7 +283,7 @@ async def inkscape_system(
                 operation="version",
                 message="Retrieved version information",
                 data={
-                    "server": "Inkscape MCP Server v1.2.0-alpha",
+                    "server": "Inkscape MCP Server v1.2.0-beta",
                     "protocol": "FastMCP 2.14.1+",
                     "architecture": "Portmanteau Tools",
                     "inkscape_required": "1.0+ (1.2+ recommended for Actions API)",

@@ -1,0 +1,364 @@
+name: Code Quality
+
+on:
+  schedule:
+    # Weekly on Tuesdays at 4 AM UTC
+    - cron: '0 4 * * 2'
+  workflow_dispatch:
+    inputs:
+      autofix:
+        description: 'Automatically fix issues'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: code-quality-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Automated code quality checks and fixes
+  quality-check:
+    name: Quality Check & Auto-fix
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.CODE_QUALITY_TOKEN || secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run pre-commit hooks
+      run: |
+        pip install pre-commit
+        pre-commit install
+        pre-commit run --all-files
+
+    - name: Auto-fix with ruff
+      if: github.event.inputs.autofix == 'true' || github.event_name == 'schedule'
+      run: |
+        ruff check --fix .
+        ruff format .
+
+    - name: Check for changes after auto-fix
+      id: changes
+      run: |
+        if [[ -n $(git status --porcelain) ]]; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create auto-fix PR
+      if: steps.changes.outputs.changes == 'true' && (github.event.inputs.autofix == 'true' || github.event_name == 'schedule')
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.CODE_QUALITY_TOKEN || secrets.GITHUB_TOKEN }}
+        title: "🔧 Auto-fix code quality issues"
+        body: |
+          ## Code Quality Auto-fix
+
+          This PR contains automated fixes for code quality issues detected by our linting tools.
+
+          ### Changes Made
+          - Applied ruff formatting fixes
+          - Fixed linting issues automatically
+          - Updated code style consistency
+
+          ### Verification
+          - ✅ All linting checks pass
+          - ✅ Code formatting is consistent
+          - ✅ No functionality changes (style only)
+
+          *This PR was automatically created by the code quality workflow.*
+        branch: code-quality-autofix-${{ github.run_id }}
+        delete-branch: true
+        labels: |
+          code-quality
+          automated
+          style
+
+  # Documentation quality check
+  docs-quality:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install docs dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[docs]"
+
+    - name: Check documentation build
+      run: |
+        mkdocs build --strict
+
+    - name: Check for broken links
+      run: |
+        pip install linkchecker
+        # Check internal links only (avoid external rate limits)
+        linkchecker site/index.html --check-extern=false --timeout=10 || true
+
+    - name: Validate docstrings
+      run: |
+        pip install interrogate
+        interrogate -c pyproject.toml src/
+
+  # Performance benchmarking
+  performance:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-benchmark
+
+    - name: Run performance benchmarks
+      run: |
+        pytest tests/ \
+          -k "benchmark or perf" \
+          --benchmark-only \
+          --benchmark-json=benchmark-results.json \
+          --benchmark-save=benchmark-data \
+          --benchmark-compare-fail=min:5% \
+          || true
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-benchmarks
+        path: |
+          benchmark-results.json
+          benchmark-data
+
+    - name: Check for performance regressions
+      run: |
+        python -c "
+        import json
+        import os
+
+        if os.path.exists('benchmark-results.json'):
+            with open('benchmark-results.json', 'r') as f:
+                results = json.load(f)
+
+            # Check for significant regressions
+            regressions = []
+            for benchmark in results.get('benchmarks', []):
+                stats = benchmark.get('stats', {})
+                if stats.get('ops') and stats['ops'] < 100:  # Arbitrary threshold
+                    regressions.append(benchmark['name'])
+
+            if regressions:
+                print(f'⚠️  Performance regressions detected in: {regressions}')
+                # Could create an issue here
+            else:
+                print('✅ No significant performance regressions detected')
+        else:
+            print('ℹ️  No benchmark results to analyze')
+        "
+
+  # Code complexity analysis
+  complexity:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install complexity tools
+      run: |
+        pip install radon mccabe
+
+    - name: Analyze code complexity
+      run: |
+        # Cyclomatic complexity
+        radon cc src/ --min C --show-complexity --total-average > complexity_report.txt
+
+        # Maintainability index
+        radon mi src/ --show > maintainability_report.txt
+
+        # Raw metrics
+        radon raw src/ > raw_metrics.txt
+
+    - name: Check complexity thresholds
+      run: |
+        python -c "
+        import re
+
+        # Check for highly complex functions
+        with open('complexity_report.txt', 'r') as f:
+            content = f.read()
+
+        # Look for functions with complexity > 10
+        complex_functions = []
+        for line in content.split('\n'):
+            if ' - ' in line:
+                parts = line.split(' - ')
+                if len(parts) >= 2:
+                    func_part = parts[0].strip()
+                    complexity_part = parts[1].strip()
+                    if 'C' in complexity_part:
+                        complexity = int(complexity_part.split('C')[0])
+                        if complexity > 10:
+                            complex_functions.append(f'{func_part}: {complexity}C')
+
+        if complex_functions:
+            print('⚠️  Functions with high complexity (>10):')
+            for func in complex_functions[:10]:  # Show top 10
+                print(f'  - {func}')
+            if len(complex_functions) > 10:
+                print(f'  ... and {len(complex_functions) - 10} more')
+        else:
+            print('✅ No functions with high complexity found')
+        "
+
+    - name: Upload complexity reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: complexity-analysis
+        path: |
+          complexity_report.txt
+          maintainability_report.txt
+          raw_metrics.txt
+
+  # Import organization check
+  imports:
+    name: Import Organization
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Check import organization
+      run: |
+        pip install isort
+
+        # Check if imports are properly organized
+        isort --check-only --diff src/ > import_issues.txt || true
+
+        if [[ -s import_issues.txt ]]; then
+            echo "⚠️  Import organization issues found:"
+            head -20 import_issues.txt
+        else
+            echo "✅ Imports are properly organized"
+        fi
+
+    - name: Upload import report
+      uses: actions/upload-artifact@v4
+      with:
+        name: import-organization
+        path: import_issues.txt
+
+  # Type annotation coverage
+  typing:
+    name: Type Annotation Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Check type annotation coverage
+      run: |
+        pip install mypy coverage[toml]
+
+        # Run mypy with coverage reporting
+        mypy src/ --html-report mypy-report
+
+        # Calculate type annotation coverage
+        python -c "
+        import os
+        import re
+        from pathlib import Path
+
+        def count_annotations(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Count function definitions
+            func_defs = len(re.findall(r'def\s+\w+', content))
+
+            # Count annotated function definitions
+            annotated_defs = len(re.findall(r'def\s+\w+.*->', content))
+
+            # Count variable annotations
+            var_annotations = len(re.findall(r'\w+\s*:\s*[A-Z]\w+', content))
+
+            return func_defs, annotated_defs, var_annotations
+
+        total_funcs = 0
+        total_annotated = 0
+        total_vars = 0
+
+        for py_file in Path('src').rglob('*.py'):
+            funcs, annotated, vars = count_annotations(py_file)
+            total_funcs += funcs
+            total_annotated += annotated
+            total_vars += vars
+
+        if total_funcs > 0:
+            coverage = (total_annotated / total_funcs) * 100
+            print(f'📊 Type annotation coverage: {coverage:.1f}%')
+            print(f'  - Functions: {total_annotated}/{total_funcs}')
+            print(f'  - Variables: {total_vars}')
+        else:
+            print('📊 No functions found to analyze')
+        "
+
+    - name: Upload typing reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: typing-coverage
+        path: mypy-report/

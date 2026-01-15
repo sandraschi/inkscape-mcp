@@ -6,7 +6,7 @@ Perfect for Unity web UI elements and lightweight animations.
 """
 
 import inkex
-from inkex import Style, StyleElement
+from inkex import StyleElement
 
 
 class AGLayerAnimation(inkex.EffectExtension):

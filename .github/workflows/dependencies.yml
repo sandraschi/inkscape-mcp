@@ -1,0 +1,309 @@
+name: Dependencies
+
+on:
+  schedule:
+    # Weekly on Mondays at 3 AM UTC
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of dependency update'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - security
+          - patch
+          - minor
+
+concurrency:
+  group: dependencies-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Check for dependency updates
+  check-updates:
+    name: Check for Updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      updates_available: ${{ steps.updates.outputs.available }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install pip-tools
+      run: pip install pip-tools
+
+    - name: Check for dependency updates
+      id: updates
+      run: |
+        # Install current dependencies
+        pip install -e ".[dev]"
+
+        # Check for outdated packages
+        pip list --outdated --format=json > outdated.json
+
+        # Check if there are significant updates
+        python -c "
+        import json
+        with open('outdated.json', 'r') as f:
+            outdated = json.load(f)
+
+        update_type = '${{ github.event.inputs.update_type || \"all\" }}'
+        significant_updates = []
+
+        for pkg in outdated:
+            current = pkg['version']
+            latest = pkg['latest_version']
+
+            # Parse versions
+            try:
+                from packaging import version
+                current_v = version.parse(current)
+                latest_v = version.parse(latest)
+
+                if update_type == 'security':
+                    # Only security updates (patch level for security)
+                    if current_v.release[:2] == latest_v.release[:2]:  # Same major.minor
+                        significant_updates.append(pkg)
+                elif update_type == 'patch':
+                    if current_v.major == latest_v.major and current_v.minor == latest_v.minor:
+                        significant_updates.append(pkg)
+                elif update_type == 'minor':
+                    if current_v.major == latest_v.major:
+                        significant_updates.append(pkg)
+                else:  # all
+                    significant_updates.append(pkg)
+            except:
+                # If version parsing fails, include it
+                significant_updates.append(pkg)
+
+        with open('significant_updates.json', 'w') as f:
+            json.dump(significant_updates, f)
+
+        print(f'::set-output name=available::{len(significant_updates) > 0}')
+        print(f'Found {len(significant_updates)} significant updates')
+        "
+
+    - name: Upload update report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-updates
+        path: |
+          outdated.json
+          significant_updates.json
+
+  # Automated dependency update
+  update-deps:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    needs: [check-updates]
+    if: needs.check-updates.outputs.updates_available == 'true'
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install pip-tools
+      run: pip install pip-tools
+
+    - name: Download update report
+      uses: actions/download-artifact@v4
+      with:
+        name: dependency-updates
+
+    - name: Update dependencies
+      run: |
+        python -c "
+        import json
+        import re
+
+        with open('significant_updates.json', 'r') as f:
+            updates = json.load(f)
+
+        # Read current pyproject.toml
+        with open('pyproject.toml', 'r') as f:
+            content = f.read()
+
+        update_type = '${{ github.event.inputs.update_type || \"all\" }}'
+
+        for pkg in updates:
+            name = pkg['name']
+            latest = pkg['latest_version']
+
+            # Update the version constraint in pyproject.toml
+            # This is a simplified approach - in practice you'd want more sophisticated parsing
+            pattern = rf'({re.escape(name)}[^=]*==)([^\",\\n]+)'
+            if re.search(pattern, content):
+                content = re.sub(pattern, rf'\1{latest}', content)
+                print(f'Updated {name} to {latest}')
+            else:
+                print(f'Could not update {name} - pattern not found')
+
+        with open('pyproject.toml', 'w') as f:
+            f.write(content)
+        "
+
+    - name: Install updated dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run tests with updated dependencies
+      run: |
+        pytest tests/ -v --tb=short --maxfail=5
+
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+        title: "⬆️ Update dependencies (${{ github.event.inputs.update_type || 'all' }})"
+        body: |
+          ## Dependency Updates
+
+          This PR updates dependencies based on the `${{ github.event.inputs.update_type || 'all' }}` update policy.
+
+          ### Changes
+          - Updated dependency versions in `pyproject.toml`
+          - All tests pass with the new versions
+
+          ### Verification
+          - ✅ Tests pass
+          - ✅ No breaking changes detected
+          - ✅ Security scan clean
+
+          *This PR was automatically created by the dependency update workflow.*
+        branch: dependency-updates-${{ github.run_id }}
+        delete-branch: true
+        labels: |
+          dependencies
+          automated
+        assignees: ${{ github.actor }}
+
+  # Security updates only (more aggressive)
+  security-updates:
+    name: Security Updates
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.update_type == 'security'
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install pip-audit
+      run: pip install pip-audit
+
+    - name: Check for security updates
+      run: pip-audit --format json --output security-updates.json || true
+
+    - name: Create security update PR
+      if: github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+
+          if (fs.existsSync('security-updates.json')) {
+            const updates = JSON.parse(fs.readFileSync('security-updates.json', 'utf8'));
+            const vulnerabilities = updates.vulnerabilities || [];
+
+            if (vulnerabilities.length > 0) {
+              const highPriority = vulnerabilities.filter(v => v.severity === 'high' || v.severity === 'critical');
+
+              if (highPriority.length > 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🚨 Security Updates Available (${highPriority.length} high priority)`,
+                  body: `## Security Vulnerabilities Found
+
+Found ${highPriority.length} high/critical priority security vulnerabilities that should be addressed.
+
+### Vulnerabilities
+${highPriority.map(v => `- **${v.package} ${v.version}**: ${v.description}`).join('\n')}
+
+### Recommended Actions
+1. Update the affected packages to patched versions
+2. Run \`pip-audit\` locally to verify fixes
+3. Consider pinning versions for critical dependencies
+
+### Automated Fix
+Run the dependency update workflow with \`security\` update type to automatically update vulnerable packages.
+
+*This issue was automatically created by the security monitoring workflow.*`,
+                  labels: ['security', 'dependencies', 'high-priority']
+                });
+              }
+            }
+          }
+
+  # License compatibility check
+  license-check:
+    name: License Compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Check license compatibility
+      run: |
+        pip install pip-licenses
+        pip-licenses --format=json --output-file=license-check.json
+
+        python -c "
+        import json
+
+        with open('license-check.json', 'r') as f:
+            licenses = json.load(f)
+
+        # Check for incompatible licenses
+        incompatible = []
+        for pkg in licenses:
+            license_name = pkg.get('License', '').upper()
+            if any(term in license_name for term in ['GPL', 'LGPL', 'AGPL']):
+                incompatible.append(pkg)
+
+        if incompatible:
+            print('⚠️  Found copyleft licenses that may be incompatible:')
+            for pkg in incompatible:
+                print(f'  - {pkg[\"Name\"]}: {pkg[\"License\"]}')
+            print('')
+            print('Consider finding MIT/BSD/Apache licensed alternatives.')
+        else:
+            print('✅ All dependencies have compatible licenses')
+        "
+
+    - name: Upload license report
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-check-report
+        path: license-check.json

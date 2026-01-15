@@ -1,0 +1,64 @@
+[extend]
+# Use default gitleaks rules
+
+[extend]
+# Use community rules for additional coverage
+useDefault = true
+
+# Custom rules for this project
+[[rules]]
+id = "inkscape-api-key"
+description = "Inkscape API key"
+regex = '''(?i)inkscape[_-]?api[_-]?key[\\s]*[=:][\\s]*["']([a-zA-Z0-9_-]{20,})["']'''
+tags = ["key", "api", "inkscape"]
+
+[[rules]]
+id = "mcp-token"
+description = "MCP authentication token"
+regex = '''(?i)mcp[_-]?token[\\s]*[=:][\\s]*["']([a-zA-Z0-9_-]{30,})["']'''
+tags = ["key", "token", "mcp"]
+
+[[rules]]
+id = "fastmcp-secret"
+description = "FastMCP secret key"
+regex = '''(?i)fastmcp[_-]?secret[\\s]*[=:][\\s]*["']([a-zA-Z0-9_-]{40,})["']'''
+tags = ["key", "secret", "fastmcp"]
+
+# Allow patterns (false positives to ignore)
+[allowlist]
+description = "Allowlisted files and paths"
+files = [
+    '''\.gitleaks\.toml$''',
+    '''test.*\.py$''',
+    '''.*\.test\.py$''',
+    '''.*_test\.py$''',
+    '''conftest\.py$''',
+    '''\.md$''',
+    '''LICENSE$''',
+    '''\.txt$''',
+]
+
+# Paths to ignore
+paths = [
+    '''test.*''',
+    '''\.git/.*''',
+    '''__pycache__/.*''',
+    '''\.pytest_cache/.*''',
+    '''htmlcov/.*''',
+    '''\.coverage.*''',
+    '''dist/.*''',
+    '''build/.*''',
+    '''\.venv/.*''',
+    '''venv/.*''',
+    '''env/.*''',
+    '''node_modules/.*''',
+]
+
+# Regexes to ignore (example API keys in documentation)
+regexes = [
+    '''EXAMPLE.*KEY''',
+    '''FAKE.*TOKEN''',
+    '''TEST.*SECRET''',
+    '''DUMMY.*API''',
+    '''MOCK.*AUTH''',
+]

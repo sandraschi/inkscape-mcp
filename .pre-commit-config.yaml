@@ -1,0 +1,169 @@
+repos:
+  # Code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.12
+        args: [--line-length=100]
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=100]
+
+  # Linting
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.1.14
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+        args: [--ignore-missing-imports]
+
+  # Security scanning
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types: [yaml]
+        exclude: ^.*\.github/workflows/.*$
+
+  # Markdown linting
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.13.0
+    hooks:
+      - id: markdownlint
+        args: [--config, .markdownlint.json]
+
+  # Check for merge conflicts
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-vcs-perfiles
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: ^.*\.md$
+
+  # Check Python requirements
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.4
+    hooks:
+      - id: forbid-cvs-files
+      - id: remove-crlf-line-endings
+      - id: remove-tabs
+      - id: forbid-new-submodules
+
+  # Check for secrets in code
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        args: [--config=.gitleaks.toml]
+
+  # License header check
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.4
+    hooks:
+      - id: insert-license
+        files: \.py$
+        args:
+          - --license-filepath
+          - LICENSE
+          - --comment-style
+          - "#"
+
+# Custom local hooks
+  - repo: local
+    hooks:
+      # Validate pyproject.toml
+      - id: validate-pyproject
+        name: Validate pyproject.toml
+        entry: python -c "import tomllib; tomllib.load(open('pyproject.toml', 'rb'))"
+        language: system
+        files: pyproject.toml
+        pass_filenames: false
+
+      # Check for print statements in production code
+      - id: check-print-statements
+        name: Check for print statements
+        entry: python -c "
+import ast
+import sys
+
+def check_file(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            tree = ast.parse(f.read(), filepath)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, 'id', None) == 'print':
+                print(f'Found print statement in {filepath}')
+                return False
+        return True
+    except:
+        return True
+
+success = True
+for file in sys.argv[1:]:
+    if not check_file(file):
+        success = False
+
+sys.exit(0 if success else 1)
+        "
+        language: system
+        files: ^src/.*\.py$
+        exclude: ^src/.*test.*\.py$
+
+      # Validate Docker files
+      - id: validate-docker
+        name: Validate Dockerfile
+        entry: docker build --dry-run .
+        language: system
+        files: Dockerfile|docker-compose.*\.yml$
+        pass_filenames: false
+
+      # Check for TODO comments
+      - id: check-todos
+        name: Check for TODO comments
+        entry: python -c "
+import re
+import sys
+
+todo_pattern = re.compile(r'#\s*TODO|#\s*FIXME|#\s*XXX', re.IGNORECASE)
+
+for file in sys.argv[1:]:
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f, 1):
+                if todo_pattern.search(line):
+                    print(f'{file}:{i}: Found TODO comment')
+    except:
+        pass
+        "
+        language: system
+        files: \.py$
+        pass_filenames: true

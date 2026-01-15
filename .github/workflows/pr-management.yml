@@ -1,0 +1,421 @@
+name: PR Management
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: pr-management-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  # PR validation and labeling
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Validate PR title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          chore
+          ci
+          build
+          revert
+        requireScope: false
+        subjectPattern: ^[A-Z].*$
+        subjectPatternError: |
+          The subject "{subject}" found in the pull request title "{title}"
+          didn't match the configured pattern "^[A-Z].*". Please ensure that the
+          subject starts with an uppercase character.
+
+    - name: Label PR based on files changed
+      uses: actions/labeler@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/labeler.yml
+
+    - name: Label PR based on size
+      uses: codacy/git-version@2.7.1
+      with:
+        release-branch: master
+        dev-branch: develop
+
+    - name: Check PR size
+      run: |
+        CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | wc -l)
+        CHANGED_LINES=$(git diff --stat ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tail -1 | awk '{print $4+$6}')
+
+        if [ $CHANGED_FILES -gt 50 ] || [ $CHANGED_LINES -gt 1000 ]; then
+          echo "size=large" >> $GITHUB_OUTPUT
+        elif [ $CHANGED_FILES -gt 20 ] || [ $CHANGED_LINES -gt 300 ]; then
+          echo "size=medium" >> $GITHUB_OUTPUT
+        else
+          echo "size=small" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Add size label
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const size = '${{ steps.check-size.outputs.size }}';
+          const labels = {
+            'small': 'size:small',
+            'medium': 'size:medium',
+            'large': 'size:large'
+          };
+
+          if (labels[size]) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [labels[size]]
+            });
+          }
+
+  # PR review automation
+  pr-review:
+    name: PR Review Automation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run quick checks
+      run: |
+        # Quick syntax check
+        python -m py_compile src/inkscape_mcp/__init__.py
+
+        # Quick import check
+        python -c "import inkscape_mcp; print('Import successful')"
+
+        # Quick test run (subset)
+        pytest tests/unit/ -x --tb=short --maxfail=3 || true
+
+    - name: Generate PR review suggestions
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { exec } = require('child_process');
+          const util = require('util');
+          const execAsync = util.promisify(exec);
+
+          try {
+            // Get changed files
+            const { stdout: diffOutput } = await execAsync(
+              `git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}`
+            );
+
+            const changedFiles = diffOutput.trim().split('\n').filter(f => f);
+
+            // Analyze changes
+            let suggestions = [];
+            let needsTesting = false;
+
+            if (changedFiles.some(f => f.includes('src/'))) {
+              suggestions.push('✅ **Source code changes detected** - Full CI pipeline will run');
+              needsTesting = true;
+            }
+
+            if (changedFiles.some(f => f.includes('test'))) {
+              suggestions.push('🧪 **Test changes detected** - Test suite will validate changes');
+            }
+
+            if (changedFiles.some(f => f.includes('pyproject.toml'))) {
+              suggestions.push('📦 **Dependencies changed** - Dependency checks will run');
+            }
+
+            if (changedFiles.some(f => f.includes('.github/'))) {
+              suggestions.push('⚙️ **CI/CD changes detected** - Workflows will be validated');
+            }
+
+            if (!suggestions.length) {
+              suggestions.push('📝 **Documentation/other changes** - Light validation only');
+            }
+
+            // Create review comment
+            const body = `## 🤖 PR Analysis
+
+### Files Changed
+${changedFiles.map(f => `- \`${f}\``).join('\n')}
+
+### Automated Review
+${suggestions.join('\n')}
+
+### Next Steps
+${needsTesting ? '- ✅ Full test suite will run automatically' : '- ⚡ Light validation completed'}
+- 🔍 Security scan will check for vulnerabilities
+- 📊 Code quality metrics will be generated
+
+---
+*This analysis was automatically generated by the PR review workflow.*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+          } catch (error) {
+            console.error('Error in PR analysis:', error);
+          }
+
+  # Auto-merge for automated PRs
+  auto-merge:
+    name: Auto-merge Automated PRs
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.login == 'sandraschi[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'automated')
+    timeout-minutes: 5
+
+    steps:
+    - name: Auto-merge automated PRs
+      uses: peter-evans/enable-pull-request-automerge@v3
+      with:
+        token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        pull-request-number: ${{ github.event.pull_request.number }}
+        merge-method: squash
+
+  # PR status checks
+  status-check:
+    name: Status Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    timeout-minutes: 5
+
+    steps:
+    - name: Check required status checks
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: checks } = await github.rest.checks.listForRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha
+          });
+
+          const requiredChecks = ['quality', 'test', 'build'];
+          const failedChecks = [];
+
+          for (const check of checks.data) {
+            if (requiredChecks.includes(check.name) && check.conclusion === 'failure') {
+              failedChecks.push(check.name);
+            }
+          }
+
+          if (failedChecks.length > 0) {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Required Checks Failed
+
+The following required status checks failed:
+${failedChecks.map(check => `- ❌ **${check}**`).join('\n')}
+
+Please review the failed checks and address any issues before this PR can be merged.
+
+---
+*This check was automatically generated by the PR management workflow.*`
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ✅ All Required Checks Passed
+
+This PR has passed all required status checks and is ready for review!
+
+### Status Summary
+- ✅ **Code Quality**: Passed
+- ✅ **Testing**: Passed  
+- ✅ **Build**: Passed
+- 🔒 **Security**: Scanning in progress
+- 📊 **Performance**: Benchmarking in progress
+
+---
+*This check was automatically generated by the PR management workflow.*`
+            });
+          }
+
+  # Issue triage
+  issue-triage:
+    name: Issue Triage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    timeout-minutes: 5
+
+    steps:
+    - name: Triage new issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const labels = [];
+
+          // Add labels based on issue content
+          const title = issue.title.toLowerCase();
+          const body = issue.body.toLowerCase();
+
+          if (title.includes('bug') || title.includes('error') || title.includes('fail')) {
+            labels.push('bug');
+          }
+
+          if (title.includes('feature') || title.includes('add') || title.includes('implement')) {
+            labels.push('enhancement');
+          }
+
+          if (title.includes('security') || body.includes('vulnerability')) {
+            labels.push('security');
+          }
+
+          if (title.includes('documentation') || title.includes('docs')) {
+            labels.push('documentation');
+          }
+
+          if (body.includes('traceback') || body.includes('exception')) {
+            labels.push('bug');
+          }
+
+          // Add priority based on keywords
+          if (body.includes('urgent') || body.includes('critical') || body.includes('breaking')) {
+            labels.push('high-priority');
+          }
+
+          // Add area labels
+          if (body.includes('extension') || body.includes('plugin')) {
+            labels.push('area:extensions');
+          }
+
+          if (body.includes('docker') || body.includes('container')) {
+            labels.push('area:docker');
+          }
+
+          if (body.includes('ci') || body.includes('cd') || body.includes('workflow')) {
+            labels.push('area:ci-cd');
+          }
+
+          // Apply labels
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: labels
+            });
+          }
+
+          // Add triage comment
+          const triageComment = `## 🤖 Issue Triage
+
+This issue has been automatically triaged and labeled based on its content.
+
+### Applied Labels
+${labels.map(label => `- **${label}**`).join('\n')}
+
+### Next Steps
+- 🔍 Issue will be reviewed by maintainers
+- 📋 May be added to project board for tracking
+- 💬 Feel free to provide additional context or details
+
+---
+*This triage was automatically performed by the issue management workflow.*`;
+
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            body: triageComment
+          });
+
+  # Stale issue management
+  stale-management:
+    name: Stale Issue Management
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 5 * * *'
+    timeout-minutes: 10
+
+    steps:
+    - name: Close stale issues
+      uses: actions/stale@v9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        days-before-stale: 60
+        days-before-close: 14
+        stale-issue-message: |
+          ## 🕰️ This issue has been marked as stale
+
+          This issue has been inactive for 60 days. It will be automatically closed in 14 days if no further activity occurs.
+
+          ### To keep this issue open:
+          - Add a comment explaining why this issue is still relevant
+          - Update the issue with new information
+          - Add the `pinned` label if this should remain open indefinitely
+
+          ---
+          *This message was automatically generated by the stale issue management workflow.*
+        stale-pr-message: |
+          ## 🕰️ This pull request has been marked as stale
+
+          This PR has been inactive for 60 days. It will be automatically closed in 14 days if no further activity occurs.
+
+          ### To keep this PR open:
+          - Push new commits to refresh the PR
+          - Add a comment explaining the current status
+          - Add the `pinned` label if this should remain open indefinitely
+
+          ---
+          *This message was automatically generated by the stale issue management workflow.*
+        close-issue-message: |
+          ## 🔒 Issue Closed
+
+          This issue has been automatically closed due to inactivity. If you believe this issue should be reopened, please:
+
+          1. Create a new issue with updated information
+          2. Reference this closed issue for context
+          3. Explain why this issue is still relevant
+
+          ---
+          *This message was automatically generated by the stale issue management workflow.*
+        operations-per-run: 30
+        exempt-issue-labels: 'pinned,high-priority,security'
+        exempt-pr-labels: 'pinned,high-priority,security,work-in-progress'

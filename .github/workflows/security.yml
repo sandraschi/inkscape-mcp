@@ -1,0 +1,222 @@
+name: Security
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [ master, main, develop ]
+    paths:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'poetry.lock'
+      - 'Pipfile.lock'
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'poetry.lock'
+      - 'Pipfile.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Dependency vulnerability scanning
+  vuln-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Scan with pip-audit
+      run: |
+        pip install pip-audit
+        pip-audit --format json --output pip-audit-results.json || true
+
+    - name: Scan with safety
+      run: |
+        pip install safety
+        safety check --full-report --output safety-results.json || true
+
+    - name: Scan with bandit
+      run: |
+        pip install bandit[toml]
+        bandit -r src/ -f json -o bandit-results.json || true
+
+    - name: Upload scan results
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan-results
+        path: |
+          pip-audit-results.json
+          safety-results.json
+          bandit-results.json
+
+    - name: Create security issue on high vulnerabilities
+      if: github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('pip-audit-results.json', 'utf8'));
+
+          const highVulns = results.vulnerabilities?.filter(v => v.severity === 'high') || [];
+
+          if (highVulns.length > 0) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 High Security Vulnerabilities Found (${highVulns.length})`,
+              body: `## High Priority Security Vulnerabilities
+
+Found ${highVulns.length} high-severity vulnerabilities in dependencies.
+
+### Details
+${highVulns.map(v => `- **${v.package}**: ${v.description}`).join('\n')}
+
+### Actions Required
+- Review and update vulnerable dependencies
+- Consider pinning versions or finding alternative packages
+- Run security audit locally: \`pip-audit\` or \`safety check\`
+
+*This issue was automatically created by the security scan workflow.*`,
+              labels: ['security', 'dependencies', 'high-priority']
+            });
+          }
+
+  # CodeQL security analysis
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-and-quality
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  # Secret scanning
+  secrets:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Scan for secrets
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        config-path: .gitleaks.toml
+
+  # SBOM generation
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install cyclonedx
+      run: pip install cyclonedx-bom
+
+    - name: Generate SBOM
+      run: |
+        # Install package in editable mode to get dependencies
+        pip install -e .
+
+        # Generate SBOM
+        cyclonedx-bom --format json --output sbom.json .
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.json
+
+  # License compliance check
+  license:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Check licenses
+      run: |
+        pip install pip-licenses
+        pip-licenses --format=json --output-file=licenses.json
+
+        # Check for GPL licenses that might be problematic
+        python -c "
+        import json
+        with open('licenses.json', 'r') as f:
+            licenses = json.load(f)
+
+        problematic = [pkg for pkg in licenses if 'GPL' in pkg.get('License', '').upper()]
+        if problematic:
+            print('⚠️  Found GPL-licensed dependencies:')
+            for pkg in problematic:
+                print(f'  - {pkg[\"Name\"]}: {pkg[\"License\"]}')
+            exit(1)
+        else:
+            print('✅ No GPL-licensed dependencies found')
+        "
+
+    - name: Upload license report
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-report
+        path: licenses.json

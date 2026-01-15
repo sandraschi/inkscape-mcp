@@ -1,0 +1,61 @@
+# PR Labeler configuration
+# Automatically labels PRs based on files changed
+
+# Code changes
+'source code':
+  - src/**
+
+'tests':
+  - tests/**
+
+'documentation':
+  - docs/**
+  - README.md
+  - CHANGELOG.md
+  - *.md
+
+'dependencies':
+  - pyproject.toml
+  - requirements*.txt
+  - poetry.lock
+  - Pipfile.lock
+
+'ci/cd':
+  - .github/**
+
+'docker':
+  - Dockerfile
+  - docker-compose*.yml
+  - DOCKER_PLAN.md
+
+'security':
+  - any:
+    - '**/security/**'
+    - '**/auth/**'
+    - '**/crypto/**'
+
+# Extensions and plugins
+'extensions':
+  - src/inkscape_mcp/plugins/**
+
+# Vector operations
+'vector-graphics':
+  - src/inkscape_mcp/tools/vector_operations.py
+
+# File operations
+'file-operations':
+  - src/inkscape_mcp/tools/file_operations.py
+
+# Analysis tools
+'analysis':
+  - src/inkscape_mcp/tools/analysis.py
+
+# System tools
+'system':
+  - src/inkscape_mcp/tools/system.py
+
+# Core infrastructure
+'infrastructure':
+  - src/inkscape_mcp/server.py
+  - src/inkscape_mcp/config.py
+  - src/inkscape_mcp/__init__.py

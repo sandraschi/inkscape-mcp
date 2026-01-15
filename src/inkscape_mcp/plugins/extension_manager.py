@@ -10,7 +10,6 @@ from typing import Dict, List, Any, Optional
 import xml.etree.ElementTree as ET
 import logging
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
 
 from ..config import InkscapeConfig
 from ..cli_wrapper import InkscapeCliWrapper

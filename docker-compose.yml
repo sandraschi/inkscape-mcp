@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Main Inkscape MCP Server
+  inkscape-mcp:
+    build:
+      context: .
+      target: production
+      args:
+        VERSION: ${VERSION:-1.2.0}
+    container_name: inkscape-mcp-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - INKSCAPE_MCP_CONFIG_PATH=/app/config.yaml
+      - INKSCAPE_MCP_LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import inkscape_mcp; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - inkscape-network
+
+  # Development service with hot reload
+  inkscape-mcp-dev:
+    build:
+      context: .
+      target: development
+    container_name: inkscape-mcp-dev
+    ports:
+      - "8001:8000"
+    volumes:
+      - .:/app
+      - ./config.dev.yaml:/app/config.yaml:ro
+    environment:
+      - INKSCAPE_MCP_CONFIG_PATH=/app/config.yaml
+      - INKSCAPE_MCP_LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app/src
+    command: python -m uvicorn inkscape_mcp.main:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - dev
+    networks:
+      - inkscape-network
+
+  # Testing service
+  inkscape-mcp-test:
+    build:
+      context: .
+      target: development
+    container_name: inkscape-mcp-test
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app/src
+    command: pytest tests/ -v --tb=short --cov=src/inkscape_mcp
+    profiles:
+      - test
+    networks:
+      - inkscape-network
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: inkscape-mcp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    profiles:
+      - cache
+    networks:
+      - inkscape-network
+
+  # PostgreSQL for advanced storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: inkscape-mcp-postgres
+    environment:
+      POSTGRES_DB: inkscape_mcp
+      POSTGRES_USER: inkscape
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    profiles:
+      - db
+    networks:
+      - inkscape-network
+
+networks:
+  inkscape-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  postgres_data:
+
+# Development override
+x-dev-overrides: &dev-overrides
+  environment:
+    - INKSCAPE_MCP_LOG_LEVEL=DEBUG
+    - INKSCAPE_MCP_DEBUG=true
+
+# Production override
+x-prod-overrides: &prod-overrides
+  environment:
+    - INKSCAPE_MCP_LOG_LEVEL=INFO
+    - INKSCAPE_MCP_DEBUG=false
+  restart: unless-stopped

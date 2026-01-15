@@ -1,0 +1,360 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      release_notes:
+        description: 'Additional release notes'
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Pre-release validation
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Determine version and tag
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+        else
+          # Manual trigger - bump version
+          VERSION_TYPE=${{ github.event.inputs.version_type || 'patch' }}
+          python -c "
+          import re
+          with open('pyproject.toml', 'r') as f:
+              content = f.read()
+          version_match = re.search(r'version = \"([^\"]+)\"', content)
+          if version_match:
+              current = version_match.group(1)
+              major, minor, patch = map(int, current.split('.'))
+              if '$VERSION_TYPE' == 'major':
+                  major += 1
+                  minor = 0
+                  patch = 0
+              elif '$VERSION_TYPE' == 'minor':
+                  minor += 1
+                  patch = 0
+              else:  # patch
+                  patch += 1
+              VERSION = f'{major}.{minor}.{patch}'
+              TAG = f'v{VERSION}'
+              print(f'version={VERSION}')
+              print(f'tag={TAG}')
+              print(f'is_prerelease=false')
+          "
+        fi
+
+    - name: Run full test suite
+      run: |
+        pytest tests/ -v --tb=short --cov=src/inkscape_mcp --cov-fail-under=85
+
+    - name: Run linting and type checking
+      run: |
+        ruff check .
+        ruff format --check .
+        mypy src/inkscape_mcp tests/
+
+    - name: Build and test package
+      run: |
+        pip install build twine
+        python -m build
+        twine check dist/*
+        pip install --no-deps dist/*.whl
+        python -c "import inkscape_mcp; print(f'Version: {inkscape_mcp.__version__}')"
+
+  # Create GitHub release
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release]
+    timeout-minutes: 10
+    if: needs.validate-release.outputs.version
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        VERSION=${{ needs.validate-release.outputs.version }}
+        TAG=${{ needs.validate-release.outputs.tag }}
+
+        # Extract changelog section for this version
+        awk -v version="$VERSION" '
+        BEGIN { in_section = 0; content = "" }
+        /^## \[/ { if (in_section) exit; if ($0 ~ version) in_section = 1; next }
+        in_section { if (/^## \[/ && !in_section) exit; content = content $0 "\n" }
+        END { print content }
+        ' CHANGELOG.md > release_notes.md
+
+        # Add additional notes if provided
+        if [ -n "${{ github.event.inputs.release_notes }}" ]; then
+          echo -e "\n### Additional Notes\n${{ github.event.inputs.release_notes }}" >> release_notes.md
+        fi
+
+        # Set output
+        {
+          echo 'notes<<EOF'
+          cat release_notes.md
+          echo EOF
+        } >> $GITHUB_OUTPUT
+
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.validate-release.outputs.tag }}
+        release_name: Release ${{ needs.validate-release.outputs.version }}
+        body: ${{ steps.changelog.outputs.notes }}
+        draft: false
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
+
+  # Publish to PyPI
+  pypi-publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [validate-release, github-release]
+    timeout-minutes: 10
+    environment: release
+    if: needs.validate-release.outputs.version && !needs.validate-release.outputs.is_prerelease
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload dist/*
+
+    - name: Publish to TestPyPI (for pre-releases)
+      if: needs.validate-release.outputs.is_prerelease
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      run: |
+        twine upload --repository testpypi dist/*
+
+  # Docker image build and publish
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [validate-release]
+    timeout-minutes: 20
+    if: needs.validate-release.outputs.version
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ github.repository }}
+          ghcr.io/${{ github.repository }}
+        tags: |
+          type=ref,event=tag
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+          VERSION=${{ needs.validate-release.outputs.version }}
+
+  # Homebrew formula update
+  homebrew:
+    name: Update Homebrew Formula
+    runs-on: ubuntu-latest
+    needs: [pypi-publish]
+    timeout-minutes: 10
+    if: needs.validate-release.outputs.version && !needs.validate-release.outputs.is_prerelease
+
+    steps:
+    - name: Checkout homebrew repo
+      uses: actions/checkout@v4
+      with:
+        repository: sandraschi/homebrew-inkscape-mcp
+        path: homebrew-repo
+        token: ${{ secrets.HOMEBREW_TOKEN }}
+
+    - name: Update formula
+      run: |
+        cd homebrew-repo
+        VERSION=${{ needs.validate-release.outputs.version }}
+
+        # Calculate SHA256 of the PyPI package
+        SHA256=$(curl -s "https://pypi.org/pypi/inkscape-mcp/${VERSION}/json" | jq -r '.urls[0].digests.sha256')
+
+        # Update the formula
+        sed -i "s/version \".*\"/version \"${VERSION}\"/" Formula/inkscape-mcp.rb
+        sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Formula/inkscape-mcp.rb
+
+        # Update URL to point to the new version
+        sed -i "s|url \".*\"|url \"https://files.pythonhosted.org/packages/py3/i/inkscape-mcp/inkscape_mcp-${VERSION}-py3-none-any.whl\"|" Formula/inkscape-mcp.rb
+
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        path: homebrew-repo
+        title: "Update inkscape-mcp to v${{ needs.validate-release.outputs.version }}"
+        body: |
+          Automated update of inkscape-mcp formula to v${{ needs.validate-release.outputs.version }}
+
+          - Version: ${{ needs.validate-release.outputs.version }}
+          - SHA256: ${{ env.SHA256 }}
+        branch: update-inkscape-mcp-${{ needs.validate-release.outputs.version }}
+        delete-branch: true
+        token: ${{ secrets.HOMEBREW_TOKEN }}
+
+  # Post-release notifications
+  notify:
+    name: Release Notifications
+    runs-on: ubuntu-latest
+    needs: [pypi-publish, docker]
+    if: always() && needs.validate-release.outputs.version
+    timeout-minutes: 5
+
+    steps:
+    - name: Notify on success
+      if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+      run: |
+        echo "🎉 Release ${{ needs.validate-release.outputs.version }} completed successfully!"
+        echo "📦 Published to PyPI"
+        echo "🐳 Docker images built and pushed"
+        if [ "${{ needs.validate-release.outputs.is_prerelease }}" != "true" ]; then
+          echo "🍺 Homebrew formula updated"
+        fi
+
+    - name: Notify on partial failure
+      if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+      run: |
+        echo "⚠️  Release ${{ needs.validate-release.outputs.version }} completed with some issues"
+        echo "Please check the failed jobs above"
+
+  # Version bump (for manual releases)
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    needs: [pypi-publish]
+    if: github.event_name == 'workflow_dispatch' && needs.validate-release.outputs.version
+    timeout-minutes: 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Update version in pyproject.toml
+      run: |
+        VERSION=${{ needs.validate-release.outputs.version }}
+        sed -i "s/version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
+
+    - name: Update version in __init__.py
+      run: |
+        VERSION=${{ needs.validate-release.outputs.version }}
+        sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/inkscape_mcp/__init__.py
+
+    - name: Create version bump commit
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add pyproject.toml src/inkscape_mcp/__init__.py
+        git commit -m "Bump version to ${{ needs.validate-release.outputs.version }}" || true
+
+    - name: Create version tag
+      run: |
+        git tag ${{ needs.validate-release.outputs.tag }}
+
+    - name: Push version bump
+      run: |
+        git push origin ${{ needs.validate-release.outputs.tag }}
+        git push origin ${{ github.ref_name }}

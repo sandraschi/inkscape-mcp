@@ -6,10 +6,7 @@ Designed for Unity/VRChat workflows to reduce vertex counts and file sizes.
 """
 
 import inkex
-from inkex import Image
-import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 
@@ -63,7 +60,7 @@ class AGBatchTrace(inkex.EffectExtension):
         # Add tracing actions
         actions = []
         actions.append('select-all')  # Select the bitmap
-        actions.append(f'object-to-path')  # Convert to path (trace)
+        actions.append('object-to-path')  # Convert to path (trace)
         if simplify:
             actions.append('selection-simplify')  # Simplify the path
 

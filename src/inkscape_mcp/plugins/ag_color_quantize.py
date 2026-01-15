@@ -6,8 +6,7 @@ Forces colors into specified palette to maintain brand consistency.
 """
 
 import inkex
-from inkex import PathElement, Style
-import colorsys
+from inkex import PathElement
 
 
 class AGColorQuantize(inkex.EffectExtension):

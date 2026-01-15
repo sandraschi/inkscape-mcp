@@ -314,36 +314,22 @@ async def inkscape_system(
             ).model_dump()
 
         elif operation == "list_extensions":
-            # List available extensions
-            try:
-                from ..plugins.extension_manager import ExtensionManager
-                ext_manager = ExtensionManager(cli_wrapper, config)
-                ext_manager.discover_extensions()
-
-                extensions = ext_manager.list_extensions()
-
-                return SystemResult(
-                    success=True,
-                    operation="list_extensions",
-                    message=f"Found {len(extensions)} extensions",
-                    data={
-                        "extensions": extensions,
-                        "total_count": len(extensions),
-                        "categories": list(set(ext.get("category", "general") for ext in extensions)),
-                    },
-                    execution_time_ms=(time.time() - start_time) * 1000,
-                ).model_dump()
-            except Exception as e:
-                return SystemResult(
-                    success=False,
-                    operation="list_extensions",
-                    message=f"Failed to list extensions: {str(e)}",
-                    error=str(e),
-                    execution_time_ms=(time.time() - start_time) * 1000,
-                ).model_dump()
+            # Extension system disabled - plugins directory removed
+            return SystemResult(
+                success=True,
+                operation="list_extensions",
+                message="Extension system disabled - plugins directory removed",
+                data={
+                    "extensions": [],
+                    "total_count": 0,
+                    "categories": [],
+                    "note": "Extension system temporarily disabled"
+                },
+                execution_time_ms=(time.time() - start_time) * 1000,
+            ).model_dump()
 
         elif operation == "execute_extension":
-            # Execute an Inkscape extension
+            # Extension system disabled - plugins directory removed
             if not extension_id:
                 return SystemResult(
                     success=False,
@@ -353,33 +339,14 @@ async def inkscape_system(
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
 
-            try:
-                from ..plugins.extension_manager import ExtensionManager
-                ext_manager = ExtensionManager(cli_wrapper, config)
-                ext_manager.discover_extensions()
-
-                result = await ext_manager.execute_extension(
-                    extension_id=extension_id,
-                    input_file=input_file,
-                    output_file=output_file,
-                    parameters=extension_params or {}
-                )
-
-                return SystemResult(
-                    success=result.get("success", False),
-                    operation="execute_extension",
-                    message=result.get("extension_name", extension_id) + " executed",
-                    data=result,
-                    execution_time_ms=(time.time() - start_time) * 1000,
-                ).model_dump()
-            except Exception as e:
-                return SystemResult(
-                    success=False,
-                    operation="execute_extension",
-                    message=f"Failed to execute extension {extension_id}: {str(e)}",
-                    error=str(e),
-                    execution_time_ms=(time.time() - start_time) * 1000,
-                ).model_dump()
+            return SystemResult(
+                success=False,
+                operation="execute_extension",
+                message=f"Extension system disabled - cannot execute {extension_id}",
+                error="Extension system temporarily disabled",
+                data={"note": "Extension system temporarily disabled"},
+                execution_time_ms=(time.time() - start_time) * 1000,
+            ).model_dump()
 
         elif operation == "help":
             # Provide help information

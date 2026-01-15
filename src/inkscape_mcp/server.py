@@ -13,7 +13,7 @@ from fastmcp import FastMCP
 
 from .cli_wrapper import InkscapeCliWrapper
 from .config import InkscapeConfig
-from .plugins import PluginManager
+# from .plugins import PluginManager
 
 # Import all tool categories from legacy tools
 # from .tools_legacy.file_operations_tools import FileOperationTools

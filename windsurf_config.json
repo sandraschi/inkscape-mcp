@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "inkscape-mcp": {
+      "command": "uvx",
+      "args": ["inkscape-mcp"],
+      "description": "Professional vector graphics and SVG editing through Inkscape CLI with AI-powered automation - 39 operations across file management, vector editing, analysis, and system management",
+      "capabilities": {
+        "tools": {
+          "enabled": true,
+          "listChanged": true
+        },
+        "resources": {
+          "enabled": true,
+          "listChanged": true,
+          "subscribe": true
+        },
+        "prompts": {
+          "enabled": true
+        }
+      },
+      "timeout": {
+        "initialize": 30000,
+        "message": 120000
+      },
+      "metadata": {
+        "version": "1.2.0",
+        "author": "Sandra Schipal",
+        "homepage": "https://github.com/sandraschi/inkscape-mcp",
+        "license": "MIT",
+        "tags": ["vector-graphics", "svg", "inkscape", "design", "automation", "creative-tools"],
+        "categories": ["Design", "Productivity", "Creative", "Development"]
+      }
+    }
+  }
+}

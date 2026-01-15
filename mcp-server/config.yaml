@@ -1,0 +1,35 @@
+# Inkscape MCP Server Configuration for MCPB Bundle
+# This configuration is optimized for bundled deployment
+
+# Core Settings
+log_level: INFO
+debug: false
+
+# Inkscape Configuration
+inkscape:
+  executable: inkscape
+  timeout: 60
+  batch_process: true
+  no_remote_resources: true
+
+# Extension System
+enable_extensions: true
+extension_dirs: []
+disabled_extensions: []
+extension_config: {}
+
+# Process Management
+max_concurrent_processes: 4
+process_timeout: 60
+
+# File System
+allowed_directories: []
+temp_directory: "/tmp"
+
+# Security
+allow_network_access: false
+allow_file_system_access: true
+
+# Performance
+cache_enabled: true
+optimization_level: medium

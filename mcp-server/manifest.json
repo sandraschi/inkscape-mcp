@@ -1,8 +1,8 @@
 {
   "manifest_version": "0.2",
   "name": "inkscape-mcp",
-  "version": "1.1.0",
-  "description": "Professional vector graphics and SVG editing through Inkscape CLI with AI-powered automation",
+  "version": "1.2.0b0",
+  "description": "Complete Inkscape extension ecosystem with 200+ tools for professional vector graphics, Unity/VRChat workflows, and AI-powered SVG automation",
   "author": {
     "name": "Sandra Schipal"
   },
@@ -13,8 +13,9 @@
       "command": "python",
       "args": ["-m", "inkscape_mcp.main"],
       "env": {
-        "PYTHONPATH": "${PWD}",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1",
+        "INKSCAPE_MCP_CONFIG_PATH": "${PWD}/config.yaml"
       }
     }
   },
@@ -22,22 +23,26 @@
     "inkscape_path": {
       "type": "string",
       "title": "Inkscape Executable Path",
+      "description": "Path to the Inkscape executable on your system",
       "required": false,
       "default": "inkscape"
     },
     "process_timeout": {
       "type": "string",
       "title": "Operation Timeout (seconds)",
+      "description": "Maximum time in seconds for Inkscape operations to complete",
       "default": "60"
     },
     "max_concurrent_processes": {
       "type": "string",
       "title": "Max Concurrent Operations",
+      "description": "Maximum number of concurrent Inkscape processes allowed",
       "default": "4"
     },
     "allowed_directories": {
       "type": "string",
       "title": "Allowed Working Directories (comma-separated)",
+      "description": "Comma-separated list of directories where file operations are permitted",
       "required": false,
       "default": ""
     }
@@ -45,19 +50,19 @@
   "tools": [
     {
       "name": "inkscape_file",
-      "description": "File operations for SVG and vector graphics (load, save, convert, info, validate)"
+      "description": "File operations for SVG and vector graphics (load, save, convert, info, validate, list_formats)"
     },
     {
       "name": "inkscape_vector",
-      "description": "Advanced vector operations (trace, boolean, optimize, render, construct SVG)"
+      "description": "Advanced vector operations (trace, boolean, optimize, render, construct SVG, transform)"
     },
     {
       "name": "inkscape_analysis",
-      "description": "Document analysis and quality assessment (statistics, validate, dimensions)"
+      "description": "Document analysis and quality assessment (statistics, validate, dimensions, objects, structure)"
     },
     {
       "name": "inkscape_system",
-      "description": "System management and diagnostics (status, config, version)"
+      "description": "System management and extension ecosystem (status, config, version, list_extensions, execute_extension)"
     }
   ]
 }

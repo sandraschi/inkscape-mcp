@@ -1,43 +1,46 @@
 """Comprehensive document analysis for Inkscape SVG files.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 6 document analysis operations into a single tool to prevent tool explosion
-while maintaining clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
+Consolidates 6 document analysis operations into single interface. Prevents tool explosion while maintaining
+clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
+- statistics: Get comprehensive document statistics
+- validate: Validate SVG structure and syntax
+- dimensions: Get document dimensions and aspect ratio
+- quality: Analyze SVG quality metrics
+- objects: List all objects in document with IDs and types
+- structure: Analyze document structure hierarchy
+
+OPERATIONS DETAIL:
 
 **Document Statistics**:
-- statistics: Get comprehensive document statistics (dimensions, file size, object count, layers)
+  - statistics: Get comprehensive document statistics (dimensions, file size, object count, layers)
 
 **Validation**:
-- validate: Validate SVG structure and syntax, report errors and warnings
+  - validate: Validate SVG structure and syntax, report errors and warnings
 
 **Dimension Analysis**:
-- dimensions: Get document dimensions with aspect ratio and unit information
+  - dimensions: Get document dimensions with aspect ratio and unit information
 
-**Quality Assessment** (Planned):
-- quality: Analyze SVG quality metrics (complexity, optimization potential, standards compliance)
+**Quality Assessment**:
+  - quality: Analyze SVG quality metrics (complexity, optimization potential, standards compliance)
 
-**Object Discovery** (Planned):
-- objects: List all objects in document with IDs, types, and properties
+**Object Discovery**:
+  - objects: List all objects in document with IDs, types, and properties
 
-**Structure Analysis** (Planned):
-- structure: Analyze document structure (layers, groups, hierarchy)
-
-PREREQUISITES:
-- Requires Inkscape CLI installation (1.0+ recommended)
-- Input file must be a valid SVG document
-- File must be readable and accessible
+**Structure Analysis**:
+  - structure: Analyze document structure (layers, groups, hierarchy)
 
 Args:
-    operation (Literal, required): The analysis operation to perform. Must be one of:
-        "statistics", "validate", "dimensions", "quality", "objects", "structure".
+    operation (Literal, required): The analysis operation to perform. Must be one of: "statistics", "validate",
+        "dimensions", "quality", "objects", "structure".
         - "statistics": Get comprehensive document statistics (requires: input_path)
         - "validate": Validate SVG structure and syntax (requires: input_path)
         - "dimensions": Get document dimensions and aspect ratio (requires: input_path)
-        - "quality": Analyze SVG quality metrics (requires: input_path) - Planned
-        - "objects": List document objects with IDs and types (requires: input_path) - Planned
-        - "structure": Analyze document structure hierarchy (requires: input_path) - Planned
+        - "quality": Analyze SVG quality metrics (requires: input_path)
+        - "objects": List document objects with IDs and types (requires: input_path)
+        - "structure": Analyze document structure hierarchy (requires: input_path)
 
     input_path (str, required): Path to input SVG file. Required for all operations.
         Must be a valid file path accessible by the system. File must be readable.
@@ -47,7 +50,27 @@ Args:
     config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
+    FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
+    next steps, and recovery options for failed operations.
+
+Examples:
+    # Get document statistics
+    result = await inkscape_analysis(
+        operation="statistics",
+        input_path="drawing.svg"
+    )
+
+    # Validate SVG structure
+    result = await inkscape_analysis(
+        operation="validate",
+        input_path="drawing.svg"
+    )
+
+    # List all objects in document
+    result = await inkscape_analysis(
+        operation="objects",
+        input_path="drawing.svg"
+    )
 
     Success Response:
     {

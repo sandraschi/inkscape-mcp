@@ -1,50 +1,75 @@
 """System operations and diagnostics for Inkscape MCP server.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 7 system management operations into a single tool to prevent tool explosion
-while maintaining clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
+Consolidates 7 system management operations into single interface. Prevents tool explosion while maintaining
+clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
+- status: Get comprehensive server and Inkscape status
+- help: Get help information and tool descriptions
+- diagnostics: Run diagnostic checks and system readiness
+- version: Get server version and protocol information
+- config: View current configuration settings
+- list_extensions: Discover and list available Inkscape extensions
+- execute_extension: Execute Inkscape extensions with parameters
+
+OPERATIONS DETAIL:
 
 **Status & Health**:
-- status: Get comprehensive server and Inkscape status, tool availability, and system health
+  - status: Get comprehensive server and Inkscape status, tool availability, and system health
 
 **Version Information**:
-- version: Get server version, protocol version, architecture, and Inkscape requirements
+  - version: Get server version, protocol version, architecture, and Inkscape requirements
 
 **Diagnostics**:
-- diagnostics: Run diagnostic checks to verify configuration, dependencies, and system readiness
+  - diagnostics: Run diagnostic checks to verify configuration, dependencies, and system readiness
 
 **Help & Documentation**:
-- help: Get comprehensive help information including tool descriptions and getting started guide
+  - help: Get comprehensive help information including tool descriptions and getting started guide
 
 **Extension Management**:
-- list_extensions: Discover and list all available Inkscape extensions with metadata
-- execute_extension: Execute Inkscape extensions with parameters and file I/O
+  - list_extensions: Discover and list all available Inkscape extensions with metadata
+  - execute_extension: Execute Inkscape extensions with parameters and file I/O
 
 **Configuration**:
-- config: View current configuration including Inkscape executable path, timeouts, and settings
-
-PREREQUISITES:
-- No prerequisites required (operations are self-contained)
-- Diagnostics may require Inkscape installation for full verification
-- Configuration operations require valid config object
+  - config: View current configuration including Inkscape executable path, timeouts, and settings
 
 Args:
-    operation (Literal, required): The system operation to perform. Must be one of:
-        "status", "help", "diagnostics", "version", "config".
+    operation (Literal, required): The system operation to perform. Must be one of: "status", "help", "diagnostics",
+        "version", "config", "list_extensions", "execute_extension".
         - "status": Get server and Inkscape status (no additional parameters)
         - "help": Get help information and tool descriptions (no additional parameters)
         - "diagnostics": Run diagnostic checks (no additional parameters)
         - "version": Get version information (no additional parameters)
         - "config": View current configuration (no additional parameters)
+        - "list_extensions": List available Inkscape extensions (no additional parameters)
+        - "execute_extension": Execute Inkscape extension (requires: extension_id, additional parameters)
+
+    extension_id (str | None): Identifier for Inkscape extension. Required for: execute_extension operation.
 
     cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
 
     config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
+    FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
+    next steps, and recovery options for failed operations.
+
+Examples:
+    # Get server status
+    result = await inkscape_system(
+        operation="status"
+    )
+
+    # Get help information
+    result = await inkscape_system(
+        operation="help"
+    )
+
+    # Run diagnostics
+    result = await inkscape_system(
+        operation="diagnostics"
+    )
 
     Success Response (status operation):
     {
@@ -182,7 +207,7 @@ Errors:
 """
 
 import time
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -223,7 +248,7 @@ async def inkscape_system(
                     )
                     inkscape_available = True
                     inkscape_version = result.strip().split("\n")[0] if result else "unknown"
-            except:
+            except Exception:
                 pass
 
             return SystemResult(

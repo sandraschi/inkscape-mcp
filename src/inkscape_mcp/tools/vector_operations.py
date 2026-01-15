@@ -1,53 +1,122 @@
 """Advanced vector operations for Inkscape SVG documents.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 23+ advanced vector operations into a single tool to prevent tool explosion
-while maintaining full functionality. Follows FastMCP 2.14.1+ SOTA standards.
+Consolidates 23+ advanced vector operations into single interface. Prevents tool explosion while maintaining
+full functionality and improving discoverability. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
-
-**Raster-to-Vector Conversion**:
-- trace_image: Convert raster images to vector paths using potrace algorithm
-
-**Code Generation**:
+- trace_image: Convert raster images to vector paths
 - generate_barcode_qr: Generate QR codes and barcodes as SVG elements
-- generate_laser_dot: Create animated laser pointer dot for presentations
-
-**Path Manipulation**:
-- path_simplify: Reduce path complexity by removing unnecessary nodes
-- path_clean: Remove unnecessary elements and optimize paths
-- path_combine: Merge multiple paths into single path
-- path_break_apart: Separate compound paths into individual paths
-- path_inset_outset: Dynamic path offset (expand or contract)
-
-**Object Operations**:
 - apply_boolean: Boolean operations (union, difference, intersection, exclusion)
-- object_to_path: Convert shapes (rectangles, circles, etc.) to editable paths
-- object_raise: Raise object in Z-order (move up in layer stack)
-- object_lower: Lower object in Z-order (move down in layer stack)
-
-**Text Operations**:
-- text_to_path: Convert text elements to editable vector paths
-
-**Document Operations**:
-- query_document: Get document statistics (dimensions, object count)
 - measure_object: Query object dimensions and bounding box
-- count_nodes: Count path nodes for complexity analysis
-- fit_canvas_to_drawing: Resize canvas to match drawing bounds
-- set_document_units: Normalize document coordinate systems (px, mm, in)
-
-**Export & Rendering**:
+- optimize_svg: Clean and optimize SVG structure
 - render_preview: Generate PNG preview at specified DPI
+- path_operations: Path manipulation (simplify, clean, combine, break_apart)
+- text_to_path: Convert text elements to editable vector paths
 - export_dxf: Export to CAD format (DXF)
 - layers_to_files: Export layers as separate files
+- fit_canvas_to_drawing: Resize canvas to match drawing bounds
+- object_raise: Raise object in Z-order
+- object_lower: Lower object in Z-order
+- set_document_units: Normalize document coordinate systems
+- generate_laser_dot: Create animated laser pointer dot
+
+OPERATIONS DETAIL:
+
+**Raster-to-Vector Conversion**:
+  - trace_image: Convert raster images to vector paths using potrace algorithm
+
+**Code Generation**:
+  - generate_barcode_qr: Generate QR codes and barcodes as SVG elements
+  - generate_laser_dot: Create animated laser pointer dot for presentations
+
+**Path Manipulation**:
+  - path_operations: Path manipulation (simplify, clean, combine, break_apart, inset/outset)
+  - apply_boolean: Boolean operations (union, difference, intersection, exclusion)
+
+**Object Operations**:
+  - object_to_path: Convert shapes (rectangles, circles, etc.) to editable paths
+  - object_raise: Raise object in Z-order (move up in layer stack)
+  - object_lower: Lower object in Z-order (move down in layer stack)
+
+**Text Operations**:
+  - text_to_path: Convert text elements to editable vector paths
+
+**Document Operations**:
+  - query_document: Get document statistics (dimensions, object count)
+  - measure_object: Query object dimensions and bounding box
+  - count_nodes: Count path nodes for complexity analysis
+  - fit_canvas_to_drawing: Resize canvas to match drawing bounds
+  - set_document_units: Normalize document coordinate systems (px, mm, in)
+
+**Export & Rendering**:
+  - render_preview: Generate PNG preview at specified DPI
+  - export_dxf: Export to CAD format (DXF)
+  - layers_to_files: Export layers as separate files
 
 **Optimization**:
-- optimize_svg: Clean and optimize SVG structure
-- scour_svg: Remove metadata and unnecessary elements
+  - optimize_svg: Clean and optimize SVG structure
+  - scour_svg: Remove metadata and unnecessary elements
 
-**Advanced Features** (Planned):
-- create_mesh_gradient: Create SVG mesh gradients
-- construct_svg: Generate SVG from text description
+Args:
+    operation (Literal, required): The vector operation to perform. Must be one of: "trace_image", "generate_barcode_qr",
+        "apply_boolean", "measure_object", "optimize_svg", "render_preview", "path_operations", "text_to_path",
+        "export_dxf", "layers_to_files", "fit_canvas_to_drawing", "object_raise", "object_lower", "set_document_units",
+        "generate_laser_dot".
+
+    input_path (str | None): Path to input SVG file. Required for most operations.
+        Must be a valid file path accessible by the system.
+
+    output_path (str | None): Path for output file. Required for export/optimization operations.
+        Directory must exist and be writable.
+
+    object_id (str | None): Unique identifier for SVG object. Required for: measure_object, object_raise, object_lower.
+        Must match an existing object ID in the SVG document.
+
+    boolean_type (str | None): Type of boolean operation. Must be one of: "union", "difference", "intersection", "exclusion".
+        Required for: apply_boolean operation.
+
+    barcode_data (str | None): Data to encode in barcode/QR. Required for: generate_barcode_qr operation.
+
+    optimization_type (str | None): Type of optimization. Must be one of: "simplify", "scour", "clean".
+        Required for: optimize_svg operation.
+
+    path_operation (str | None): Type of path operation. Must be one of: "simplify", "clean", "combine", "break_apart", "inset", "outset".
+        Required for: path_operations operation.
+
+    units (str | None): Document units for normalization. Must be one of: "px", "mm", "in", "pt", "pc".
+        Required for: set_document_units operation.
+
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+
+Returns:
+    FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
+    next steps, and recovery options for failed operations.
+
+Examples:
+    # Convert bitmap to vector paths
+    result = await inkscape_vector(
+        operation="trace_image",
+        input_path="bitmap.png",
+        output_path="vector.svg"
+    )
+
+    # Apply boolean union operation
+    result = await inkscape_vector(
+        operation="apply_boolean",
+        boolean_type="union",
+        input_path="shapes.svg",
+        output_path="combined.svg"
+    )
+
+    # Measure object dimensions
+    result = await inkscape_vector(
+        operation="measure_object",
+        input_path="drawing.svg",
+        object_id="rect1"
+    )
 
 PREREQUISITES:
 - Requires Inkscape CLI installation (1.0+ recommended, 1.2+ for Actions API)

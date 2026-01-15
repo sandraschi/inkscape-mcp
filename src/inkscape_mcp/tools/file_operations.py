@@ -1,14 +1,13 @@
 """Comprehensive file operations for Inkscape SVG documents.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 6 file operations (load, save, convert, info, validate, list_formats) into a single
-interface. Prevents tool explosion while maintaining full functionality and improving discoverability.
-Follows FastMCP 2.14.1+ SOTA standards.
+Consolidates 6 file operations into single interface. Prevents tool explosion while maintaining
+full functionality and improving discoverability. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
 - load: Load and validate SVG files
 - save: Save SVG files with formatting options
-- convert: Convert between vector formats (SVG, PDF, EPS, AI, CDR, PNG, PS, WMF, EMF, XAML)
+- convert: Convert between vector formats
 - info: Get comprehensive file metadata and statistics
 - validate: Validate SVG structure and syntax
 - list_formats: Enumerate all supported export formats
@@ -25,14 +24,8 @@ OPERATIONS DETAIL:
   - validate: Checks SVG validity using Inkscape query commands, reports issues
   - list_formats: Shows all available export formats supported by Inkscape
 
-PREREQUISITES:
-- Requires Inkscape CLI installation (1.0+ recommended, 1.2+ for Actions API)
-- Supports all Inkscape-compatible SVG features
-- Cross-platform file path handling via pathlib
-
 Args:
-    operation (Literal, required): The file operation to perform. Must be one of:
-        "load", "save", "convert", "info", "validate", "list_formats".
+    operation (Literal, required): The file operation to perform. Must be one of: "load", "save", "convert", "info", "validate", "list_formats".
         - "load": Load SVG file and validate structure (requires: input_path)
         - "save": Save SVG with options (requires: input_path, output_path)
         - "convert": Convert between formats (requires: input_path, output_path, format)
@@ -40,7 +33,7 @@ Args:
         - "validate": Validate SVG structure (requires: input_path)
         - "list_formats": List supported formats (no additional parameters required)
 
-    input_path (str | None): Path to input SVG file. Required for: load, save, convert, info, validate.
+    input_path (str | None): Path to input SVG file. Required for: load, save, convert, info, validate operations.
         Must be a valid file path accessible by the system.
 
     output_path (str | None): Path for output file. Required for: save, convert operations.
@@ -58,46 +51,29 @@ Args:
     config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
 
 Returns:
-    FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
+    FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
+    next steps, and recovery options for failed operations.
 
-    Success Response:
-    {
-      "success": true,
-      "operation": "operation_name",
-      "summary": "Human-readable conversational summary (e.g., 'Successfully loaded drawing.svg')",
-      "result": {
-        "data": {
-          "input_path": "path/to/input.svg",
-          "output_path": "path/to/output.svg",
-          "file_info": {
-            "width": 100.0,
-            "height": 200.0,
-            "file_size": 1536,
-            "format": "svg"
-          },
-          "validation_results": {
-            "valid": true,
-            "errors": []
-          },
-          "formats": ["svg", "pdf", "eps", "png", ...]
-        },
-        "execution_time_ms": 123.45
-      },
-      "next_steps": ["Use inkscape_vector tool for path operations", "Convert to PDF format"],
-      "context": {
-        "operation_details": "Technical details about file operation"
-      },
-      "suggestions": ["Try inkscape_vector tool for advanced operations", "Use convert operation for format changes"],
-      "follow_up_questions": ["Would you like to convert this file to another format?", "Need to optimize the SVG?"]
-    }
+Examples:
+    # Load and validate an SVG file
+    result = await inkscape_file(
+        operation="load",
+        input_path="drawing.svg"
+    )
 
-    Error Response (Error Recovery Pattern):
-    {
-      "success": false,
-      "operation": "operation_name",
-      "error": "Error type (e.g., FileNotFoundError)",
-      "message": "Human-readable error description",
-      "recovery_options": ["Check file path and permissions", "Verify Inkscape installation", "Ensure output directory exists"],
+    # Convert SVG to PDF
+    result = await inkscape_file(
+        operation="convert",
+        input_path="drawing.svg",
+        output_path="drawing.pdf",
+        format="pdf"
+    )
+
+    # Get file information
+    result = await inkscape_file(
+        operation="info",
+        input_path="drawing.svg"
+    )
       "diagnostic_info": {
         "file_exists": false,
         "inkscape_available": true,

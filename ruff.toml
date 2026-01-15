@@ -1,0 +1,25 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = [
+    "F",   # Pyflakes (The basics)
+    "E",   # Pycodestyle errors
+    "W",   # Pycodestyle warnings
+    "I",   # Isort (Keeps imports clean, preventing Semantic Dilution)
+    "N",   # Pep8-naming (Keeps the ontology consistent)
+    "UP",  # Pyupgrade (Ensures we use 2026-era syntax)
+    "B",   # Flake8-bugbear (Catches logic traps)
+    "C4",  # Flake8-comprehensions (Forces efficient data structures)
+    "ARG", # Flake8-unused-arguments (Prevents "cruft" in MCP tools)
+    "PTH", # Flake8-use-pathlib (Modern filesystem interaction)
+    "ERA", # Eradicate (Removes commented-out code "slop")
+]
+ignore = ["E501"]
+
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastmcp.FastMCP"]
+
+[lint.isort]
+force-single-line = true
+known-first-party = ["inkscape_mcp"]

@@ -1,0 +1,17 @@
+[package]
+name = "inkscape-mcp"
+version = "1.2.0"
+edition = "2021"
+authors = ["Sandra <sandraschipal@hotmail.com>"]
+description = "Zed extension bridge for Inkscape MCP server"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.2.0"
+
+[profile.release]
+lto = true
+opt-level = "z"
+strip = true

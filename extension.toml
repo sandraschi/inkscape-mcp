@@ -1,0 +1,10 @@
+id = "inkscape-mcp"
+name = "Inkscape MCP Server"
+version = "1.2.0"
+schema_version = 1
+authors = ["Sandra <sandraschipal@hotmail.com>"]
+description = "Full-featured Inkscape vector graphics automation server for MCP"
+repository = "https://github.com/sandraschipal/inkscape-mcp"
+
+[context_servers.inkscape-mcp]
+name = "Inkscape Vector Tools"

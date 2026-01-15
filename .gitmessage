@@ -1,0 +1,16 @@
+<type>: <short summary>
+
+# ---------------------------------------------------------
+# Types:
+#   feat:     New features or tools
+#   fix:      Bug fixes
+#   docs:     Documentation updates
+#   style:    Code style/formatting changes
+#   refactor: Code refactoring without feature changes
+#   test:     Testing related changes
+#   chore:    Maintenance tasks (build, deps, etc.)
+#   perf:     Performance improvements
+#   ci:       CI/CD and automation changes
+# ---------------------------------------------------------
+
+# Detailed description (Explain the 'Why', not the 'What'):

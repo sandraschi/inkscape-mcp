@@ -1,7 +1,8 @@
 """System operations and diagnostics for Inkscape MCP server.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 7 system management operations into single interface. Prevents tool explosion while maintaining
+Consolidates 7 system management operations into single interface. Prevents tool explosion
+while maintaining
 clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
@@ -35,7 +36,8 @@ OPERATIONS DETAIL:
   - config: View current configuration including Inkscape executable path, timeouts, and settings
 
 Args:
-    operation (Literal, required): The system operation to perform. Must be one of: "status", "help", "diagnostics",
+    operation (Literal, required): The system operation to perform. Must be one of:
+        "status", "help", "diagnostics",
         "version", "config", "list_extensions", "execute_extension".
         - "status": Get server and Inkscape status (no additional parameters)
         - "help": Get help information and tool descriptions (no additional parameters)
@@ -43,13 +45,17 @@ Args:
         - "version": Get version information (no additional parameters)
         - "config": View current configuration (no additional parameters)
         - "list_extensions": List available Inkscape extensions (no additional parameters)
-        - "execute_extension": Execute Inkscape extension (requires: extension_id, additional parameters)
+        - "execute_extension": Execute Inkscape extension (requires: extension_id, additional
+        parameters)
 
-    extension_id (str | None): Identifier for Inkscape extension. Required for: execute_extension operation.
+    extension_id (str | None): Identifier for Inkscape extension. Required for:
+        execute_extension operation.
 
-    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command
+        execution.
 
-    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path
+        and settings.
 
 Returns:
     FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
@@ -97,11 +103,13 @@ Examples:
         },
         "execution_time_ms": 45.67
       },
-      "next_steps": ["Use inkscape_file for basic operations", "Run diagnostics if issues detected"],
+      "next_steps": ["Use inkscape_file for basic operations",
+        "Run diagnostics if issues detected"],
       "context": {
         "operation_details": "All systems operational"
       },
-      "suggestions": ["Verify Inkscape version meets requirements", "Check configuration if tools unavailable"],
+      "suggestions": ["Verify Inkscape version meets requirements",
+        "Check configuration if tools unavailable"],
       "follow_up_questions": ["Need help getting started?", "Experiencing any issues?"]
     }
 
@@ -113,7 +121,8 @@ Examples:
       "result": {
         "data": {
           "server": "Inkscape MCP Server",
-          "description": "Professional vector graphics and SVG editing through Model Context Protocol",
+          "description": "Professional vector graphics and SVG editing through Model Context
+            Protocol",
           "tools": [
             "inkscape_file: Basic file operations",
             "inkscape_vector: Advanced vector operations",
@@ -133,7 +142,8 @@ Examples:
         "operation_details": "Complete tool reference available"
       },
       "suggestions": ["Start with file operations", "Progress to vector operations"],
-      "follow_up_questions": ["Which operation would you like to try first?", "Need examples for specific operations?"]
+      "follow_up_questions": ["Which operation would you like to try first?",
+        "Need examples for specific operations?"]
     }
 
     Error Response (Error Recovery Pattern):
@@ -142,13 +152,15 @@ Examples:
       "operation": "operation_name",
       "error": "Error type (e.g., ValueError)",
       "message": "Human-readable error description",
-      "recovery_options": ["Verify operation name is correct", "Check configuration is loaded", "Ensure Inkscape is installed"],
+      "recovery_options": ["Verify operation name is correct", "Check configuration is loaded",
+        "Ensure Inkscape is installed"],
       "diagnostic_info": {
         "config_loaded": false,
         "inkscape_available": false,
         "operation_valid": true
       },
-      "alternative_solutions": ["Run diagnostics operation", "Check server logs", "Verify installation"]
+      "alternative_solutions": ["Run diagnostics operation", "Check server logs",
+        "Verify installation"]
     }
 
 Examples:
@@ -180,30 +192,30 @@ Examples:
 Errors:
     - ValueError: Invalid operation or parameter values
         Recovery options:
-        → Verify operation is one of: status, help, diagnostics, version, config
-        → Check operation name spelling and case sensitivity
-        → Ensure no additional parameters are provided for system operations
+        - Verify operation is one of: status, help, diagnostics, version, config
+        - Check operation name spelling and case sensitivity
+        - Ensure no additional parameters are provided for system operations
 
     - FileNotFoundError: Configuration file not found
         Recovery options:
-        → Verify configuration file exists in expected location
-        → Check file permissions (read access required)
-        → Ensure configuration is properly initialized
-        → Run diagnostics to identify configuration issues
+        - Verify configuration file exists in expected location
+        - Check file permissions (read access required)
+        - Ensure configuration is properly initialized
+        - Run diagnostics to identify configuration issues
 
     - PermissionError: Insufficient permissions for system operations
         Recovery options:
-        → Check user permissions for reading configuration
-        → Verify file system permissions
-        → Run with appropriate user privileges
-        → Check antivirus or security software blocking access
+        - Check user permissions for reading configuration
+        - Verify file system permissions
+        - Run with appropriate user privileges
+        - Check antivirus or security software blocking access
 
     - ConnectionError: Cannot connect to Inkscape or system services
         Recovery options:
-        → Verify Inkscape installation (run inkscape --version manually)
-        → Check Inkscape executable path in configuration
-        → Ensure Inkscape is accessible from command line
-        → Run diagnostics operation to identify connection issues
+        - Verify Inkscape installation (run inkscape --version manually)
+        - Check Inkscape executable path in configuration
+        - Ensure Inkscape is accessible from command line
+        - Run diagnostics operation to identify connection issues
 """
 
 import time
@@ -224,7 +236,8 @@ class SystemResult(BaseModel):
 
 
 async def inkscape_system(
-    operation: Literal["status", "help", "diagnostics", "version", "config", "list_extensions", "execute_extension"],
+    operation: Literal["status", "help", "diagnostics", "version", "config", "list_extensions",
+        "execute_extension"],
     extension_id: Optional[str] = None,
     extension_params: Optional[Dict[str, Any]] = None,
     input_file: Optional[str] = None,

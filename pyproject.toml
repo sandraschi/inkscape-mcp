@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=65.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "inkscape-mcp"
-version = "1.0.0"
-description = "FastMCP 2.13 server for professional vector graphics and SVG editing using Inkscape - portmanteau architecture"
+version = "1.2.0b0"
+description = "FastMCP 2.14.3+ server for professional vector graphics and SVG editing using Inkscape - portmanteau architecture"
 readme = "README.md"
 authors = [
     {name = "Sandra Schipal", email = "sandra@sandraschi.dev"},
@@ -32,8 +32,8 @@ classifiers = [
 ]
 
 dependencies = [
-    # Core FastMCP dependencies - upgraded to 2.13+
-    "fastmcp>=2.13.0,<3.0.0",
+    # Core FastMCP dependencies - upgraded to 2.14.3+
+    "fastmcp>=2.14.3,<3.0.0",
     "pydantic>=2.0.0,<3.0.0",
     "typing-extensions>=4.5.0,<5.0.0",
     
@@ -61,13 +61,88 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sandraschi/gimp-mcp"
-Documentation = "https://github.com/sandraschi/gimp-mcp#readme"
-Issues = "https://github.com/sandraschi/gimp-mcp/issues"
-Source = "https://github.com/sandraschi/gimp-mcp"
+Homepage = "https://github.com/sandraschi/inkscape-mcp"
+Documentation = "https://github.com/sandraschi/inkscape-mcp#readme"
+Issues = "https://github.com/sandraschi/inkscape-mcp/issues"
+Source = "https://github.com/sandraschi/inkscape-mcp"
 
 [project.scripts]
-"gimp-mcp" = "gimp_mcp.main:main"
+"inkscape-mcp" = "inkscape_mcp.main:main"
+
+[project.urls]
+Homepage = "https://github.com/sandraschi/inkscape-mcp"
+Documentation = "https://github.com/sandraschi/inkscape-mcp#readme"
+Repository = "https://github.com/sandraschi/inkscape-mcp"
+Issues = "https://github.com/sandraschi/inkscape-mcp/issues"
+Changelog = "https://github.com/sandraschi/inkscape-mcp/blob/main/CHANGELOG.md"
+
+# Tool definitions for MCPB and other tool managers
+[tool.hatch]
+metadata.hooks.fancy-pypi-readme = { content-type = "text/markdown" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/inkscape_mcp"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+    "hatchling>=1.21.0",
+    "build>=1.2.0",
+    "twine>=5.0.0",
+    "bandit>=1.7.0",
+    "safety>=3.0.0",
+]
+
+# PyPI Publishing Configuration
+[tool.hatch.build.targets.wheel]
+packages = ["src/inkscape_mcp"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "src/inkscape_mcp/__init__.py"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "F", "E", "W", "I", "N", "UP", "B", "C4", "ARG", "PTH", "ERA"
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastmcp.FastMCP"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+known-first-party = ["inkscape_mcp"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
 
 [project.optional-dependencies]
 # HTTP server support
@@ -104,11 +179,7 @@ dev = [
     "mkdocs-redirects>=1.1.2,<2.0.0",
     
     # Type stubs
-    "types-python-dotenv>=1.0.0,<2.0.0",
-    "types-psutil>=5.9.0,<6.0.0",
-    "types-python-dateutil>=2.8.0,<3.0.0",
     "types-requests>=2.28.0,<3.0.0",
-    "types-pyyaml>=6.0.0,<7.0.0",
 ]
 
 docs = [
@@ -124,12 +195,31 @@ docs = [
 where = ["src"]
 
 [tool.ruff]
+target-version = "py312"
 line-length = 100
-target-version = "py310"
 
-[tool.ruff.lint]
-select = ["E", "F", "W"]
-ignore = ["E501"]  # Line length handled by formatter
+[lint]
+select = [
+    "F",   # Pyflakes (The basics)
+    "E",   # Pycodestyle errors
+    "W",   # Pycodestyle warnings
+    "I",   # Isort (Keeps imports clean)
+    "N",   # Pep8-naming (Keeps ontology consistent)
+    "UP",  # Pyupgrade (Modern syntax)
+    "B",   # Flake8-bugbear (Logic traps)
+    "C4",  # Flake8-comprehensions (Efficient data structures)
+    "ARG", # Flake8-unused-arguments (Prevents cruft)
+    "PTH", # Flake8-use-pathlib (Modern filesystem)
+    "ERA", # Eradicate (Removes commented-out code)
+]
+ignore = ["E501"]
+
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastmcp.FastMCP"]
+
+[lint.isort]
+force-single-line = true
+known-first-party = ["inkscape_mcp"]
 
 [tool.black]
 line-length = 100
@@ -159,16 +249,16 @@ analysis = [
 ]
 
 all = [
-    "gimp-mcp[http,analysis]"
+    "inkscape-mcp[http,analysis]"
 ]
 
 # MCP Server Configuration
 [tool.fastmcp]
-name = "gimp-mcp"
-display_name = "GIMP MCP Server"
-version = "3.0.0"
-description = "FastMCP 2.13+ server for professional image editing using GIMP - portmanteau architecture"
-entry_point = "gimp_mcp.main:main"
+name = "inkscape-mcp"
+display_name = "Inkscape MCP Server"
+version = "1.2.0b0"
+description = "FastMCP 2.14.3+ server for professional vector graphics using Inkscape - portmanteau architecture"
+entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"
 
 

@@ -1,7 +1,8 @@
 """Advanced vector operations for Inkscape SVG documents.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 23+ advanced vector operations into single interface. Prevents tool explosion while maintaining
+Consolidates 23+ advanced vector operations into single interface. Prevents tool explosion
+while maintaining
 full functionality and improving discoverability. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
@@ -59,9 +60,12 @@ OPERATIONS DETAIL:
   - scour_svg: Remove metadata and unnecessary elements
 
 Args:
-    operation (Literal, required): The vector operation to perform. Must be one of: "trace_image", "generate_barcode_qr",
-        "apply_boolean", "measure_object", "optimize_svg", "render_preview", "path_operations", "text_to_path",
-        "export_dxf", "layers_to_files", "fit_canvas_to_drawing", "object_raise", "object_lower", "set_document_units",
+    operation (Literal, required): The vector operation to perform. Must be one of:
+        "trace_image", "generate_barcode_qr",
+        "apply_boolean", "measure_object", "optimize_svg", "render_preview", "path_operations",
+        "text_to_path",
+        "export_dxf", "layers_to_files", "fit_canvas_to_drawing", "object_raise", "object_lower",
+        "set_document_units",
         "generate_laser_dot".
 
     input_path (str | None): Path to input SVG file. Required for most operations.
@@ -70,26 +74,34 @@ Args:
     output_path (str | None): Path for output file. Required for export/optimization operations.
         Directory must exist and be writable.
 
-    object_id (str | None): Unique identifier for SVG object. Required for: measure_object, object_raise, object_lower.
+    object_id (str | None): Unique identifier for SVG object. Required for: measure_object,
+        object_raise, object_lower.
         Must match an existing object ID in the SVG document.
 
-    boolean_type (str | None): Type of boolean operation. Must be one of: "union", "difference", "intersection", "exclusion".
+    boolean_type (str | None): Type of boolean operation. Must be one of: "union", "difference",
+        "intersection", "exclusion".
         Required for: apply_boolean operation.
 
-    barcode_data (str | None): Data to encode in barcode/QR. Required for: generate_barcode_qr operation.
+    barcode_data (str | None): Data to encode in barcode/QR. Required for:
+        generate_barcode_qr operation.
 
-    optimization_type (str | None): Type of optimization. Must be one of: "simplify", "scour", "clean".
+    optimization_type (str | None): Type of optimization. Must be one of: "simplify", "scour",
+        "clean".
         Required for: optimize_svg operation.
 
-    path_operation (str | None): Type of path operation. Must be one of: "simplify", "clean", "combine", "break_apart", "inset", "outset".
+    path_operation (str | None): Type of path operation. Must be one of: "simplify", "clean",
+        "combine", "break_apart", "inset", "outset".
         Required for: path_operations operation.
 
-    units (str | None): Document units for normalization. Must be one of: "px", "mm", "in", "pt", "pc".
+    units (str | None): Document units for normalization. Must be one of: "px", "mm", "in",
+        "pt", "pc".
         Required for: set_document_units operation.
 
-    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command
+        execution.
 
-    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path
+        and settings.
 
 Returns:
     FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
@@ -168,7 +180,8 @@ Args:
 
     cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
 
-    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path
+        and settings.
 
 Returns:
     FastMCP 2.14.1+ Enhanced Response Pattern (Structured Returns):
@@ -206,13 +219,15 @@ Returns:
       "operation": "operation_name",
       "error": "Error type (e.g., ValueError)",
       "message": "Human-readable error description",
-      "recovery_options": ["Provide object_ids or set select_all=true", "Verify object IDs exist in document"],
+      "recovery_options": ["Provide object_ids or set select_all=true",
+        "Verify object IDs exist in document"],
       "diagnostic_info": {
         "object_ids_provided": false,
         "select_all": false,
         "valid_operation_types": ["union", "difference", "intersection", "exclusion"]
       },
-      "alternative_solutions": ["Use query_document to list available object IDs", "Use select_all=true for all objects"]
+      "alternative_solutions": ["Use query_document to list available object IDs",
+        "Use select_all=true for all objects"]
     }
 
 Examples:
@@ -289,30 +304,30 @@ Examples:
 Errors:
     - FileNotFoundError: Input file does not exist or is not readable
         Recovery options:
-        → Verify file path is correct and accessible
-        → Check file permissions (read access required)
-        → Ensure file is a valid SVG document
+        - Verify file path is correct and accessible
+        - Check file permissions (read access required)
+        - Ensure file is a valid SVG document
 
     - ValueError: Invalid parameters or object IDs
         Recovery options:
-        → For apply_boolean: Provide object_ids (list with 2+ items) OR set select_all=True
-        → Verify operation_type is one of: union, difference, intersection, exclusion
-        → Ensure object_id exists in document (use query_document to list IDs)
-        → Check all required parameters are provided for the operation
+        - For apply_boolean: Provide object_ids (list with 2+ items) OR set select_all=True
+        - Verify operation_type is one of: union, difference, intersection, exclusion
+        - Ensure object_id exists in document (use query_document to list IDs)
+        - Check all required parameters are provided for the operation
 
     - InkscapeExecutionError: Inkscape CLI command failed
         Recovery options:
-        → Verify Inkscape installation (run inkscape --version)
-        → Check CLI arguments are valid for Inkscape version
-        → Ensure output directory exists and is writable
-        → Check process timeout settings in config
-        → Verify object IDs exist in the SVG document
+        - Verify Inkscape installation (run inkscape --version)
+        - Check CLI arguments are valid for Inkscape version
+        - Ensure output directory exists and is writable
+        - Check process timeout settings in config
+        - Verify object IDs exist in the SVG document
 
     - NotImplementedError: Operation not yet implemented
         Recovery options:
-        → Check supported operations list in documentation
-        → Use alternative operations that provide similar functionality
-        → Check if operation is available in newer Inkscape versions
+        - Check supported operations list in documentation
+        - Use alternative operations that provide similar functionality
+        - Check if operation is available in newer Inkscape versions
 """
 
 import time
@@ -497,13 +512,14 @@ async def _generate_barcode_qr(
     """Generate QR code or barcode."""
     try:
         # Create basic SVG with QR-like pattern (placeholder implementation)
-        svg_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+        svg_template = '''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
   <rect width="200" height="200" fill="white"/>
   <text x="100" y="100" text-anchor="middle" font-family="monospace" font-size="12">
     {barcode_data}
   </text>
-</svg>"""
+</svg>'''
+        svg_content = svg_template.format(barcode_data=barcode_data)
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(svg_content)

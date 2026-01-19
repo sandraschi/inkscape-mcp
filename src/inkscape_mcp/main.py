@@ -161,19 +161,19 @@ class InkscapeMCPServer:
                 logger.error("Configuration validation failed - aborting initialization")
                 return False
 
-            # Initialize GIMP detector
-            self.gimp_detector = InkscapeDetector()
+            # Initialize Inkscape detector
+            self.inkscape_detector = InkscapeDetector()
 
-            # Try to detect GIMP installation
-            gimp_path = None
+            # Try to detect Inkscape installation
+            inkscape_path = None
             try:
-                gimp_path = self.gimp_detector.detect_gimp_installation()
+                inkscape_path = self.inkscape_detector.detect_inkscape_installation()
             except Exception as e:
-                logger.warning(f"Error detecting GIMP installation: {e}")
+                logger.warning(f"Error detecting Inkscape installation: {e}")
 
-            if gimp_path:
-                logger.info(f"Found GIMP at: {gimp_path}")
-                self.config.gimp_executable = str(gimp_path)
+            if inkscape_path:
+                logger.info(f"Found Inkscape at: {inkscape_path}")
+                self.config.inkscape_executable = str(inkscape_path)
 
                 # Initialize CLI wrapper
                 try:
@@ -183,7 +183,7 @@ class InkscapeMCPServer:
                     logger.error(f"Failed to initialize GIMP CLI wrapper: {e}")
                     self.cli_wrapper = None
             else:
-                logger.warning("GIMP not found. Running in limited functionality mode")
+                logger.warning("Inkscape not found. Running in limited functionality mode")
                 self.cli_wrapper = None
 
             # Register portmanteau tools (v3.0.0 architecture)
@@ -218,7 +218,7 @@ class InkscapeMCPServer:
             # We wrap them to inject cli_wrapper and config
 
             @self.mcp.tool()
-            async def gimp_file_tool(
+            async def inkscape_file_tool(
                 operation: str,
                 input_path: str = None,
                 output_path: str = None,
@@ -228,7 +228,7 @@ class InkscapeMCPServer:
                 progressive: bool = False,
             ) -> Dict[str, Any]:
                 """File operations: load, save, convert, info, validate, list_formats."""
-                return await gimp_file(
+                return await inkscape_file(
                     operation=operation,
                     input_path=input_path,
                     output_path=output_path,
@@ -241,7 +241,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_transform_tool(
+            async def inkscape_transform_tool(
                 operation: str,
                 input_path: str,
                 output_path: str,
@@ -255,7 +255,7 @@ class InkscapeMCPServer:
                 fill_color: str = "transparent",
             ) -> Dict[str, Any]:
                 """Transforms: resize, crop, rotate, flip, scale, perspective, autocrop."""
-                return await gimp_transform(
+                return await inkscape_transform(
                     operation=operation,
                     input_path=input_path,
                     output_path=output_path,
@@ -272,7 +272,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_color_tool(
+            async def inkscape_color_tool(
                 operation: str,
                 input_path: str,
                 output_path: str,
@@ -287,7 +287,7 @@ class InkscapeMCPServer:
                 mode: str = "luminosity",
             ) -> Dict[str, Any]:
                 """Color adjustments: brightness_contrast, levels, curves, hue_saturation, etc."""
-                return await gimp_color(
+                return await inkscape_color(
                     operation=operation,
                     input_path=input_path,
                     output_path=output_path,
@@ -305,7 +305,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_filter_tool(
+            async def inkscape_filter_tool(
                 operation: str,
                 input_path: str,
                 output_path: str,
@@ -315,7 +315,7 @@ class InkscapeMCPServer:
                 effect: str = "oilify",
             ) -> Dict[str, Any]:
                 """Filters: blur, sharpen, noise, edge_detect, artistic, enhance, distort."""
-                return await gimp_filter(
+                return await inkscape_filter(
                     operation=operation,
                     input_path=input_path,
                     output_path=output_path,
@@ -328,7 +328,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_layer_tool(
+            async def inkscape_layer_tool(
                 operation: str,
                 input_path: str,
                 output_path: str,
@@ -339,7 +339,7 @@ class InkscapeMCPServer:
                 visible: bool = True,
             ) -> Dict[str, Any]:
                 """Layer management: create, duplicate, delete, merge, flatten, reorder, info."""
-                return await gimp_layer(
+                return await inkscape_layer(
                     operation=operation,
                     input_path=input_path,
                     output_path=output_path,
@@ -353,7 +353,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_analysis_tool(
+            async def inkscape_analysis_tool(
                 operation: str,
                 input_path: str,
                 compare_path: str = None,
@@ -362,7 +362,7 @@ class InkscapeMCPServer:
                 report_format: str = "detailed",
             ) -> Dict[str, Any]:
                 """Image analysis: quality, statistics, histogram, compare, detect_issues, report."""
-                return await gimp_analysis(
+                return await inkscape_analysis(
                     operation=operation,
                     input_path=input_path,
                     compare_path=compare_path,
@@ -374,7 +374,7 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_batch_tool(
+            async def inkscape_batch_tool(
                 operation: str,
                 input_directory: str,
                 output_directory: str,
@@ -386,7 +386,7 @@ class InkscapeMCPServer:
                 max_workers: int = 4,
             ) -> Dict[str, Any]:
                 """Batch processing: resize, convert, process, watermark, rename, optimize."""
-                return await gimp_batch(
+                return await inkscape_batch(
                     operation=operation,
                     input_directory=input_directory,
                     output_directory=output_directory,
@@ -401,14 +401,14 @@ class InkscapeMCPServer:
                 )
 
             @self.mcp.tool()
-            async def gimp_system_tool(
+            async def inkscape_system_tool(
                 operation: str,
                 topic: str = None,
                 level: str = "basic",
                 cache_action: str = "status",
             ) -> Dict[str, Any]:
                 """System: status, help, diagnostics, cache, config, performance, tools, version."""
-                return await gimp_system(
+                return await inkscape_system(
                     operation=operation,
                     topic=topic,
                     level=level,
@@ -419,14 +419,14 @@ class InkscapeMCPServer:
 
             # Track registered tools
             self.tools = {
-                "gimp_file": gimp_file_tool,
-                "gimp_transform": gimp_transform_tool,
-                "gimp_color": gimp_color_tool,
-                "gimp_filter": gimp_filter_tool,
-                "gimp_layer": gimp_layer_tool,
-                "gimp_analysis": gimp_analysis_tool,
-                "gimp_batch": gimp_batch_tool,
-                "gimp_system": gimp_system_tool,
+                "inkscape_file": inkscape_file_tool,
+                "inkscape_transform": inkscape_transform_tool,
+                "inkscape_color": inkscape_color_tool,
+                "inkscape_filter": inkscape_filter_tool,
+                "inkscape_layer": inkscape_layer_tool,
+                "inkscape_analysis": inkscape_analysis_tool,
+                "inkscape_batch": inkscape_batch_tool,
+                "inkscape_system": inkscape_system_tool,
             }
 
             return True

@@ -25,7 +25,8 @@ OPERATIONS DETAIL:
   - list_formats: Shows all available export formats supported by Inkscape
 
 Args:
-    operation (Literal, required): The file operation to perform. Must be one of: "load", "save", "convert", "info", "validate", "list_formats".
+    operation (Literal, required): The file operation to perform. Must be one of:
+        "load", "save", "convert", "info", "validate", "list_formats".
         - "load": Load SVG file and validate structure (requires: input_path)
         - "save": Save SVG with options (requires: input_path, output_path)
         - "convert": Convert between formats (requires: input_path, output_path, format)
@@ -33,7 +34,8 @@ Args:
         - "validate": Validate SVG structure (requires: input_path)
         - "list_formats": List supported formats (no additional parameters required)
 
-    input_path (str | None): Path to input SVG file. Required for: load, save, convert, info, validate operations.
+    input_path (str | None): Path to input SVG file. Required for: load, save, convert, info,
+        validate operations.
         Must be a valid file path accessible by the system.
 
     output_path (str | None): Path for output file. Required for: save, convert operations.
@@ -46,9 +48,11 @@ Args:
     validate_structure (bool): Whether to validate SVG structure during load operations.
         Default: True. When True, uses Inkscape query commands to verify file validity.
 
-    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command
+        execution.
 
-    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path
+        and settings.
 
 Returns:
     FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
@@ -79,7 +83,8 @@ Examples:
         "inkscape_available": true,
         "permissions": "read-only"
       },
-      "alternative_solutions": ["Use list_formats to verify supported formats", "Check file extension matches format"]
+      "alternative_solutions": ["Use list_formats to verify supported formats",
+        "Check file extension matches format"]
     }
 
 Examples:
@@ -125,31 +130,31 @@ Examples:
 Errors:
     - FileNotFoundError: Input file does not exist or is not readable
         Recovery options:
-        → Verify file path is correct and accessible
-        → Check file permissions (read access required)
-        → Ensure file is a valid SVG document
-        → Use absolute paths if relative paths fail
+        - Verify file path is correct and accessible
+        - Check file permissions (read access required)
+        - Ensure file is a valid SVG document
+        - Use absolute paths if relative paths fail
 
     - InkscapeExecutionError: Inkscape CLI command failed
         Recovery options:
-        → Verify Inkscape installation (run inkscape --version)
-        → Check CLI arguments are valid for Inkscape version
-        → Ensure output directory exists and is writable
-        → Check process timeout settings in config
+        - Verify Inkscape installation (run inkscape --version)
+        - Check CLI arguments are valid for Inkscape version
+        - Ensure output directory exists and is writable
+        - Check process timeout settings in config
 
     - ValueError: Invalid format or parameters
         Recovery options:
-        → Verify format is supported (use list_formats operation)
-        → Check output_path is provided for write operations (save, convert)
-        → Ensure format parameter matches file extension
-        → Validate all required parameters are provided
+        - Verify format is supported (use list_formats operation)
+        - Check output_path is provided for write operations (save, convert)
+        - Ensure format parameter matches file extension
+        - Validate all required parameters are provided
 
     - PermissionError: Cannot write to output location
         Recovery options:
-        → Check write permissions on output directory
-        → Ensure output path is not read-only
-        → Verify sufficient disk space available
-        → Check if file is locked by another process
+        - Check write permissions on output directory
+        - Ensure output path is not read-only
+        - Verify sufficient disk space available
+        - Check if file is locked by another process
 """
 
 import time

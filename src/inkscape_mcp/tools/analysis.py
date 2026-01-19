@@ -1,7 +1,8 @@
 """Comprehensive document analysis for Inkscape SVG files.
 
 PORTMANTEAU PATTERN RATIONALE:
-Consolidates 6 document analysis operations into single interface. Prevents tool explosion while maintaining
+Consolidates 6 document analysis operations into single interface. Prevents tool explosion
+while maintaining
 clean separation of concerns. Follows FastMCP 2.14.1+ SOTA standards.
 
 SUPPORTED OPERATIONS:
@@ -33,7 +34,8 @@ OPERATIONS DETAIL:
   - structure: Analyze document structure (layers, groups, hierarchy)
 
 Args:
-    operation (Literal, required): The analysis operation to perform. Must be one of: "statistics", "validate",
+    operation (Literal, required): The analysis operation to perform. Must be one of:
+        "statistics", "validate",
         "dimensions", "quality", "objects", "structure".
         - "statistics": Get comprehensive document statistics (requires: input_path)
         - "validate": Validate SVG structure and syntax (requires: input_path)
@@ -45,9 +47,11 @@ Args:
     input_path (str, required): Path to input SVG file. Required for all operations.
         Must be a valid file path accessible by the system. File must be readable.
 
-    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command execution.
+    cli_wrapper (Any): Injected CLI wrapper dependency. Required. Handles Inkscape command
+        execution.
 
-    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path and settings.
+    config (Any): Injected configuration dependency. Required. Contains Inkscape executable path
+        and settings.
 
 Returns:
     FastMCP 2.14.1+ Enhanced Response Pattern with success/error states, execution timing,
@@ -100,7 +104,8 @@ Examples:
         "operation_details": "Technical details about analysis results"
       },
       "suggestions": ["Related analysis operations", "Optimization recommendations"],
-      "follow_up_questions": ["Would you like to optimize this SVG?", "Need to validate specific elements?"]
+      "follow_up_questions": ["Would you like to optimize this SVG?",
+        "Need to validate specific elements?"]
     }
 
     Error Response (Error Recovery Pattern):
@@ -109,7 +114,8 @@ Examples:
       "operation": "operation_name",
       "error": "Error type (e.g., FileNotFoundError)",
       "message": "Human-readable error description",
-      "recovery_options": ["Check file path and permissions", "Verify SVG file is valid", "Ensure Inkscape is installed"],
+      "recovery_options": ["Check file path and permissions", "Verify SVG file is valid",
+        "Ensure Inkscape is installed"],
       "diagnostic_info": {
         "file_exists": false,
         "inkscape_available": true,
@@ -158,29 +164,29 @@ Examples:
 Errors:
     - FileNotFoundError: Input SVG file does not exist or is not readable
         Recovery options:
-        → Verify file path is correct and accessible
-        → Check file permissions (read access required)
-        → Ensure file is a valid SVG document
-        → Use absolute paths if relative paths fail
+        - Verify file path is correct and accessible
+        - Check file permissions (read access required)
+        - Ensure file is a valid SVG document
+        - Use absolute paths if relative paths fail
 
     - ValueError: Invalid SVG format or operation parameter
         Recovery options:
-        → Verify operation is one of: statistics, validate, dimensions, quality, objects, structure
-        → Check SVG file format (must be valid XML/SVG)
-        → Ensure file extension matches content
+        - Verify operation is one of: statistics, validate, dimensions, quality, objects, structure
+        - Check SVG file format (must be valid XML/SVG)
+        - Ensure file extension matches content
 
     - InkscapeExecutionError: Inkscape CLI command failed
         Recovery options:
-        → Verify Inkscape installation (run inkscape --version)
-        → Check CLI arguments are valid for Inkscape version
-        → Check process timeout settings in config
-        → Verify SVG file is not corrupted
+        - Verify Inkscape installation (run inkscape --version)
+        - Check CLI arguments are valid for Inkscape version
+        - Check process timeout settings in config
+        - Verify SVG file is not corrupted
 
     - NotImplementedError: Operation not yet implemented
         Recovery options:
-        → Check supported operations list (currently: statistics, validate, dimensions)
-        → Use alternative operations that provide similar functionality
-        → Check if operation is available in newer versions
+        - Check supported operations list (currently: statistics, validate, dimensions)
+        - Use alternative operations that provide similar functionality
+        - Check if operation is available in newer versions
 """
 
 import time

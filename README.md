@@ -21,17 +21,33 @@ Professional vector graphics, SVG editing, and extension ecosystem through Model
 
 Inkscape-MCP provides Claude and other AI agents with professional vector graphics and universal format translation capabilities through Inkscape. This MCP server enables powerful SVG operations, raster-to-vector conversion, boolean geometry operations, and format translation via a clean, standardized interface.
 
-## 🚀 **Coming Soon: AI SVG Construction**
+## 🚀 **AI SVG Generation System (Now Available!)**
 
-**Transform natural language into professional SVG vector graphics.** Tell Claude "create a coat of arms with a lion rampant and medieval shield" and watch it generate production-ready SVG code automatically.
+**Transform natural language into professional SVG vector graphics.** Tell Claude "create a coat of arms with a lion rampant and medieval shield" and watch it generate production-ready SVG files automatically.
 
+### 🎯 **Now Available in v1.3.0!**
 - **🤖 AI-Powered SVG Generation**: Natural language to professional vector graphics
-- **🎨 Style-Aware Creation**: Heraldic, technical, decorative, and illustrative styles
-- **🛡️ Enterprise Security**: Validated SVG generation with safety checks
-- **🔄 Iterative Refinement**: Conversational improvement of generated designs
-- **📚 SVG Repository**: Versioned asset management and intelligent search
+- **🎨 Style Presets**: geometric, organic, technical, heraldic, abstract styles
+- **⚡ Quality Levels**: draft, standard, high, ultra with intelligent optimization
+- **🛡️ Enterprise Security**: Validated SVG generation with comprehensive safety measures
+- **🔄 Inkscape Post-Processing**: Automatic application of professional vector operations
+- **📚 SVG Repository**: Versioned asset management with metadata and search
+- **🎯 Conversational Refinement**: Iterative improvement cycles with user feedback
 
-See [AI SVG Construction Plan](docs/AI_SVG_CONSTRUCTION_PLAN.md) for technical details.
+### Quick Example
+```python
+# Generate a heraldic coat of arms
+generate_svg(
+    description="coat of arms with lions rampant and a golden crown",
+    style_preset="heraldic",
+    dimensions="600x800",
+    model="flux-dev",
+    quality="high",
+    post_processing=["simplify", "optimize"]
+)
+```
+
+See [AI SVG Generation Documentation](docs/USAGE.md#ai-svg-generation) for complete usage guide.
 
 ## 🚀 Installation
 
@@ -159,6 +175,7 @@ See the extension files:
 
 | Tool | Operations | Description |
 |------|------------|-------------|
+| `generate_svg` | 1 | **AI SVG Generation**: Create vector graphics from natural language descriptions |
 | `inkscape_file` | 6 | File operations: load, save, convert, info, validate, list_formats |
 | `inkscape_vector` | **23** | **Complete vector operations suite** - all categories above |
 | `inkscape_analysis` | 6 | Document analysis: quality, statistics, validate, objects, dimensions |

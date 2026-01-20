@@ -367,6 +367,7 @@ async def inkscape_system(
                 "server": "Inkscape MCP Server",
                 "description": "Professional vector graphics and SVG editing through Model Context Protocol",
                 "tools": [
+                    "generate_svg: AI-powered SVG generation from natural language descriptions",
                     "inkscape_file: Basic file operations (load, save, convert, info, validate, list_formats)",
                     "inkscape_vector: Advanced vector operations (23 operations including trace, boolean, optimize, render)",
                     "inkscape_analysis: Document analysis (quality, statistics, validate, objects, dimensions, structure)",
@@ -374,6 +375,7 @@ async def inkscape_system(
                 ],
                 "getting_started": [
                     "Ensure Inkscape 1.0+ is installed",
+                    "Use generate_svg for AI-powered SVG creation from natural language",
                     "Use inkscape_file for basic operations",
                     "Use inkscape_vector for advanced vector editing",
                     "Use inkscape_analysis to understand your SVGs",

@@ -13,16 +13,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 
-from .main import mcp
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-def register_agentic_tools():
+def register_agentic_tools(mcp_instance=None):
     """Register agentic workflow tools with sampling capabilities."""
+    # Import mcp dynamically to avoid circular imports
+    if mcp_instance is None:
+        from .main import mcp as mcp_instance
 
-    @mcp.tool()
+    @mcp_instance.tool()
     async def generate_svg(
         ctx: Any,
         description: str = "a simple geometric design",
@@ -203,7 +205,7 @@ def register_agentic_tools():
                 "message": "An unexpected error occurred during SVG generation. Try simplifying your request or contact support."
             }
 
-    @mcp.tool()
+    @mcp_instance.tool()
     async def agentic_inkscape_workflow(
         workflow_prompt: str,
         available_tools: List[str],
@@ -264,7 +266,7 @@ def register_agentic_tools():
                 "message": "An error occurred while setting up the agentic workflow."
             }
 
-    @mcp.tool()
+    @mcp_instance.tool()
     async def intelligent_vector_processing(
         documents: List[Dict[str, Any]],
         processing_goal: str,
@@ -326,7 +328,7 @@ def register_agentic_tools():
                 "message": "An error occurred while setting up intelligent vector processing."
             }
 
-    @mcp.tool()
+    @mcp_instance.tool()
     async def conversational_inkscape_assistant(
         user_query: str,
         context_level: str = "comprehensive",

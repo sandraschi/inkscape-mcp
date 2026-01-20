@@ -13,12 +13,12 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 async def test_ai_svg_generation():
     """Test the AI SVG generation functionality."""
     try:
-        from inkscape_mcp.main import GimpMCPServer
+        from inkscape_mcp.main import InkscapeMCPServer
 
         print("Testing AI SVG Generation in Inkscape MCP...")
 
         # Create server instance
-        server = GimpMCPServer()
+        server = InkscapeMCPServer()
         print("PASS: Server instance created")
 
         # Initialize server

@@ -39,6 +39,15 @@ from .tools import (
 
 # Legacy imports for backwards compatibility
 
+# Import agentic workflow tools
+try:
+    from .agentic import register_agentic_tools
+    AGENTIC_TOOLS_AVAILABLE = True
+except ImportError:
+    # Agentic tools may not be available in all configurations
+    register_agentic_tools = None
+    AGENTIC_TOOLS_AVAILABLE = False
+
 # Configure structured logging
 logger = setup_logging(component="main")
 
@@ -195,6 +204,14 @@ class InkscapeMCPServer:
                 # Count total operations
                 total_ops = sum(len(t["operations"]) for t in PORTMANTEAU_TOOLS)
                 logger.info(f"Total operations available: {total_ops}")
+
+                # Register agentic workflow tools
+                if AGENTIC_TOOLS_AVAILABLE and register_agentic_tools:
+                    try:
+                        register_agentic_tools(self.mcp)
+                        logger.info("Agentic workflow tools registered")
+                    except Exception as e:
+                        logger.warning(f"Failed to register agentic tools: {e}")
             else:
                 logger.warning("Portmanteau registration failed, falling back to legacy tools")
                 # Fall back to legacy tool registration
@@ -483,6 +500,14 @@ class InkscapeMCPServer:
             logger.info(
                 f"Legacy tool registration: {successful_count}/{total_count} categories registered"
             )
+
+            # Register agentic workflow tools even with legacy tools
+            if AGENTIC_TOOLS_AVAILABLE and register_agentic_tools:
+                try:
+                    register_agentic_tools(self.mcp)
+                    logger.info("Agentic workflow tools registered with legacy setup")
+                except Exception as e:
+                    logger.warning(f"Failed to register agentic tools with legacy setup: {e}")
 
             return successful_count > 0
 

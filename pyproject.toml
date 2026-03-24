@@ -4,19 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "inkscape-mcp"
-version = "1.2.0b0"
-description = "FastMCP 2.14.3+ server for professional vector graphics and SVG editing using Inkscape - portmanteau architecture"
+version = "2.0.0b0"
+description = "MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.1+)"
 readme = "README.md"
 authors = [
     {name = "Sandra Schipal", email = "sandra@sandraschi.dev"},
     {name = "FastMCP Community", email = "fastmcp@example.com"}
 ]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Content Creators",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows :: Windows 10",
     "Operating System :: POSIX :: Linux",
@@ -32,8 +30,8 @@ classifiers = [
 ]
 
 dependencies = [
-    # Core FastMCP dependencies - upgraded to 2.14.3+
-    "fastmcp>=2.14.3,<3.0.0",
+    # Core FastMCP dependencies - upgraded to 3.1 (SEP-1577 sampling)
+    "fastmcp>=3.1",
     "pydantic>=2.0.0,<3.0.0",
     "typing-extensions>=4.5.0,<5.0.0",
     
@@ -54,20 +52,15 @@ dependencies = [
     "pyyaml>=6.0.0,<7.0.0",
     "python-dateutil>=2.8.2,<3.0.0",
     "click>=8.1.3,<9.0.0",
+    "loguru>=0.7.0",
     
     # Async utilities
     "anyio>=4.5.0,<5.0.0",
-    "httpx>=0.27.0,<1.0.0"
+    "httpx>=0.27.0,<1.0.0",
+
+    # Inkscape extension API — required for plugins/ scripts
+    "inkex>=1.2.0"
 ]
-
-[project.urls]
-Homepage = "https://github.com/sandraschi/inkscape-mcp"
-Documentation = "https://github.com/sandraschi/inkscape-mcp#readme"
-Issues = "https://github.com/sandraschi/inkscape-mcp/issues"
-Source = "https://github.com/sandraschi/inkscape-mcp"
-
-[project.scripts]
-"inkscape-mcp" = "inkscape_mcp.main:main"
 
 [project.urls]
 Homepage = "https://github.com/sandraschi/inkscape-mcp"
@@ -76,15 +69,13 @@ Repository = "https://github.com/sandraschi/inkscape-mcp"
 Issues = "https://github.com/sandraschi/inkscape-mcp/issues"
 Changelog = "https://github.com/sandraschi/inkscape-mcp/blob/main/CHANGELOG.md"
 
-# Tool definitions for MCPB and other tool managers
-[tool.hatch]
-metadata.hooks.fancy-pypi-readme = { content-type = "text/markdown" }
+[project.scripts]
+"inkscape-mcp" = "inkscape_mcp.main:main"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/inkscape_mcp"]
 
-[tool.uv]
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
@@ -138,11 +129,7 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 
-[tool.uv]
-dev-dependencies = [
-    "ruff>=0.4.0",
-    "mypy>=1.10.0",
-]
+
 
 [project.optional-dependencies]
 # HTTP server support
@@ -154,9 +141,9 @@ http = [
 
 dev = [
     # Testing
-    "pytest>=7.4.0,<8.0.0",
+    "pytest>=8.0.0,<9.0.0",
     "pytest-cov>=4.1.0,<5.0.0",
-    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-asyncio>=0.23.0,<1.0.0",
     "pytest-mock>=3.11.0,<4.0.0",
     "pytest-xdist>=3.3.1,<4.0.0",
     "pytest-html>=4.0.0,<5.0.0",
@@ -194,32 +181,7 @@ docs = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.ruff]
-target-version = "py312"
-line-length = 100
 
-[lint]
-select = [
-    "F",   # Pyflakes (The basics)
-    "E",   # Pycodestyle errors
-    "W",   # Pycodestyle warnings
-    "I",   # Isort (Keeps imports clean)
-    "N",   # Pep8-naming (Keeps ontology consistent)
-    "UP",  # Pyupgrade (Modern syntax)
-    "B",   # Flake8-bugbear (Logic traps)
-    "C4",  # Flake8-comprehensions (Efficient data structures)
-    "ARG", # Flake8-unused-arguments (Prevents cruft)
-    "PTH", # Flake8-use-pathlib (Modern filesystem)
-    "ERA", # Eradicate (Removes commented-out code)
-]
-ignore = ["E501"]
-
-[lint.flake8-bugbear]
-extend-immutable-calls = ["fastmcp.FastMCP"]
-
-[lint.isort]
-force-single-line = true
-known-first-party = ["inkscape_mcp"]
 
 [tool.black]
 line-length = 100
@@ -230,18 +192,7 @@ include = '\.pyi?$'
 profile = "black"
 line_length = 100
 
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-check_untyped_defs = true
-no_implicit_optional = true
-strict_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
+
 
 # Advanced analysis dependencies
 analysis = [
@@ -257,93 +208,6 @@ all = [
 name = "inkscape-mcp"
 display_name = "Inkscape MCP Server"
 version = "1.2.0b0"
-description = "FastMCP 2.14.3+ server for professional vector graphics using Inkscape - portmanteau architecture"
+description = "Inkscape MCP server (FastMCP 3.1+), portmanteau tools"
 entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"
-
-
-# Core Image File Tools
-[[tool.dxt.tools]]
-name = "load_image"
-description = "Load an image file and return metadata"
-category = "files"
-
-[[tool.dxt.tools]]
-name = "save_image"
-description = "Save processed image to specified format"
-category = "files"
-
-[[tool.dxt.tools]]
-name = "get_image_info"
-description = "Extract comprehensive image metadata"
-category = "files"
-
-[[tool.dxt.tools]]
-name = "convert_format"
-description = "Convert image between different formats"
-category = "files"
-
-# Transform Tools
-[[tool.dxt.tools]]
-name = "resize_image"
-description = "Resize image with quality preservation"
-category = "transform"
-
-[[tool.dxt.tools]]
-name = "crop_image"
-description = "Crop image to specified rectangle"
-category = "transform"
-
-[[tool.dxt.tools]]
-name = "rotate_image"
-description = "Rotate image by specified degrees"
-category = "transform"
-
-# Color Adjustment Tools
-[[tool.dxt.tools]]
-name = "adjust_brightness_contrast"
-description = "Adjust brightness and contrast"
-category = "color"
-
-[[tool.dxt.tools]]
-name = "adjust_hue_saturation"
-description = "Adjust HSL color values"
-category = "color"
-
-[[tool.dxt.tools]]
-name = "color_balance"
-description = "Professional color balance adjustment"
-category = "color"
-
-# Filter Tools
-[[tool.dxt.tools]]
-name = "apply_blur"
-description = "Apply blur effect with specified method"
-category = "filters"
-
-[[tool.dxt.tools]]
-name = "apply_sharpen"
-description = "Unsharp mask sharpening"
-category = "filters"
-
-[[tool.dxt.tools]]
-name = "noise_reduction"
-description = "Intelligent noise reduction"
-category = "filters"
-
-# Batch Processing Tools
-[[tool.dxt.tools]]
-name = "batch_resize"
-description = "Resize multiple images"
-category = "batch"
-
-[[tool.dxt.tools]]
-name = "batch_convert"
-description = "Convert multiple images to target format"
-category = "batch"
-
-[tool.dxt.config]
-log_level = "INFO"
-max_workers = 4
-request_timeout = 60.0
-gimp_timeout = 30.0

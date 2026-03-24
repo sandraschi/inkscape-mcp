@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>AG: Batch Trace Bitmaps</name>
+    <id>org.project_ag.batch_trace</id>
+    <param name="input_dir" type="path" mode="folder" gui-text="Input Directory">~/Pictures</param>
+    <param name="output_dir" type="path" mode="folder" gui-text="Output Directory">~/Documents</param>
+    <param name="colors" type="int" min="2" max="256" gui-text="Max Colors">8</param>
+    <param name="simplify" type="bool" gui-text="Simplify Paths">true</param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu>
+            <submenu>Project AG</submenu>
+        </effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">ag_batch_trace.py</command>
+    </script>
+</inkscape-extension>

@@ -1,8 +1,8 @@
 {
   "manifest_version": "0.2",
   "name": "inkscape-mcp",
-  "version": "1.2.0b0",
-  "description": "Complete Inkscape extension ecosystem with 200+ tools for professional vector graphics, Unity/VRChat workflows, and AI-powered SVG automation",
+  "version": "2.0.0b0",
+  "description": "MCP server for Inkscape CLI-backed SVG and vector workflows (FastMCP 3.1+). Portmanteau tools: file, vector, analysis, system; optional sampling/agentic tools when dependencies are installed.",
   "author": {
     "name": "Sandra Schipal"
   },
@@ -50,19 +50,23 @@
   "tools": [
     {
       "name": "inkscape_file",
-      "description": "File operations for SVG and vector graphics (load, save, convert, info, validate, list_formats)"
+      "description": "File operations: load, convert, info, validate, list_formats (save may be limited; check server)"
     },
     {
       "name": "inkscape_vector",
-      "description": "Advanced vector operations (trace, boolean, optimize, render, construct SVG, transform)"
+      "description": "Vector operations: trace_image, boolean, path_simplify, render_preview, QR/barcode, query/measure, etc."
     },
     {
       "name": "inkscape_analysis",
-      "description": "Document analysis and quality assessment (statistics, validate, dimensions, objects, structure)"
+      "description": "Document analysis: statistics, validate, dimensions"
     },
     {
       "name": "inkscape_system",
-      "description": "System management and extension ecosystem (status, config, version, list_extensions, execute_extension)"
+      "description": "System: status, version, diagnostics, help, config, extensions"
+    },
+    {
+      "name": "list_local_models",
+      "description": "List local LLM endpoints (Ollama / LM Studio) when available"
     }
   ]
 }

@@ -125,7 +125,10 @@
         "input_path": "shapes.svg",
         "output_path": "union_result.svg",
         "operation_type": "union",
-        "object_ids": ["shape1", "shape2"]
+        "object_ids": [
+          "shape1",
+          "shape2"
+        ]
       },
       "expected_output": "Shapes successfully combined with clean union result"
     },
@@ -139,7 +142,10 @@
         "input_path": "shapes.svg",
         "output_path": "difference_result.svg",
         "operation_type": "difference",
-        "object_ids": ["base_shape", "cutout_shape"]
+        "object_ids": [
+          "base_shape",
+          "cutout_shape"
+        ]
       },
       "expected_output": "Shape subtraction completed with precise cutout"
     },
@@ -202,7 +208,7 @@
         "input_path": "shapes.svg",
         "output_path": "paths.svg"
       },
-      "expected_output": "All objects converted to fully editable Bézier paths"
+      "expected_output": "All objects converted to fully editable B\u00e9zier paths"
     },
     {
       "title": "SVG Optimization",
@@ -440,6 +446,1079 @@
         "operation": "config"
       },
       "expected_output": "Current configuration settings and available options"
+    },
+    {
+      "title": "File load example 39",
+      "description": "Demonstrate inkscape_file load",
+      "user_input": "Open this SVG and confirm it loads",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design0.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File info example 40",
+      "description": "Demonstrate inkscape_file info",
+      "user_input": "Dimensions and size for this file",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "page1.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File validate example 41",
+      "description": "Demonstrate inkscape_file validate",
+      "user_input": "Is this SVG well-formed?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "icon2.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File convert example 42",
+      "description": "Demonstrate inkscape_file convert",
+      "user_input": "Export to PDF for print",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo3.svg",
+        "output_path": "out3.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File list_formats example 43",
+      "description": "Demonstrate inkscape_file list_formats",
+      "user_input": "Which export types exist?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File load example 44",
+      "description": "Demonstrate inkscape_file load",
+      "user_input": "Open this SVG and confirm it loads",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design5.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File info example 45",
+      "description": "Demonstrate inkscape_file info",
+      "user_input": "Dimensions and size for this file",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "page6.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File validate example 46",
+      "description": "Demonstrate inkscape_file validate",
+      "user_input": "Is this SVG well-formed?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "icon7.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File convert example 47",
+      "description": "Demonstrate inkscape_file convert",
+      "user_input": "Export to PDF for print",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo8.svg",
+        "output_path": "out8.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File list_formats example 48",
+      "description": "Demonstrate inkscape_file list_formats",
+      "user_input": "Which export types exist?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File load example 49",
+      "description": "Demonstrate inkscape_file load",
+      "user_input": "Open this SVG and confirm it loads",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design10.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File info example 50",
+      "description": "Demonstrate inkscape_file info",
+      "user_input": "Dimensions and size for this file",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "page11.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File validate example 51",
+      "description": "Demonstrate inkscape_file validate",
+      "user_input": "Is this SVG well-formed?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "icon12.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File convert example 52",
+      "description": "Demonstrate inkscape_file convert",
+      "user_input": "Export to PDF for print",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo13.svg",
+        "output_path": "out13.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File list_formats example 53",
+      "description": "Demonstrate inkscape_file list_formats",
+      "user_input": "Which export types exist?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File load example 54",
+      "description": "Demonstrate inkscape_file load",
+      "user_input": "Open this SVG and confirm it loads",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design15.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File info example 55",
+      "description": "Demonstrate inkscape_file info",
+      "user_input": "Dimensions and size for this file",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "page16.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File validate example 56",
+      "description": "Demonstrate inkscape_file validate",
+      "user_input": "Is this SVG well-formed?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "icon17.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File convert example 57",
+      "description": "Demonstrate inkscape_file convert",
+      "user_input": "Export to PDF for print",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo18.svg",
+        "output_path": "out18.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File list_formats example 58",
+      "description": "Demonstrate inkscape_file list_formats",
+      "user_input": "Which export types exist?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File load example 59",
+      "description": "Demonstrate inkscape_file load",
+      "user_input": "Open this SVG and confirm it loads",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "load",
+        "input_path": "design20.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File info example 60",
+      "description": "Demonstrate inkscape_file info",
+      "user_input": "Dimensions and size for this file",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "info",
+        "input_path": "page21.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File validate example 61",
+      "description": "Demonstrate inkscape_file validate",
+      "user_input": "Is this SVG well-formed?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "icon22.svg"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File convert example 62",
+      "description": "Demonstrate inkscape_file convert",
+      "user_input": "Export to PDF for print",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "convert",
+        "input_path": "logo23.svg",
+        "output_path": "out23.pdf",
+        "format": "pdf"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "File list_formats example 63",
+      "description": "Demonstrate inkscape_file list_formats",
+      "user_input": "Which export types exist?",
+      "tool_call": "inkscape_file",
+      "parameters": {
+        "operation": "list_formats"
+      },
+      "expected_output": "Structured result with success flag and data or error"
+    },
+    {
+      "title": "Vector trace_image example 0",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file0 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in0.png",
+        "output_path": "out0.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 1",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file1",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy1.svg",
+        "output_path": "simp1.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 2",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file2",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc2.svg",
+        "output_path": "prev2.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 3",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file3",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay3.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 4",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file4",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p4.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector trace_image example 5",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file5 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in5.png",
+        "output_path": "out5.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 6",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file6",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy6.svg",
+        "output_path": "simp6.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 7",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file7",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc7.svg",
+        "output_path": "prev7.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 8",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file8",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay8.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 9",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file9",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p9.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector trace_image example 10",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file10 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in10.png",
+        "output_path": "out10.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 11",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file11",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy11.svg",
+        "output_path": "simp11.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 12",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file12",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc12.svg",
+        "output_path": "prev12.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 13",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file13",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay13.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 14",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file14",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p14.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector trace_image example 15",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file15 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in15.png",
+        "output_path": "out15.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 16",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file16",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy16.svg",
+        "output_path": "simp16.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 17",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file17",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc17.svg",
+        "output_path": "prev17.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 18",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file18",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay18.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 19",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file19",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p19.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector trace_image example 20",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file20 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in20.png",
+        "output_path": "out20.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 21",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file21",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy21.svg",
+        "output_path": "simp21.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 22",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file22",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc22.svg",
+        "output_path": "prev22.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 23",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file23",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay23.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 24",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file24",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p24.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector trace_image example 25",
+      "description": "inkscape_vector trace_image",
+      "user_input": "Trace bitmap file25 to SVG",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "trace_image",
+        "input_path": "in25.png",
+        "output_path": "out25.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector path_simplify example 26",
+      "description": "inkscape_vector path_simplify",
+      "user_input": "Simplify paths in file26",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "path_simplify",
+        "input_path": "busy26.svg",
+        "output_path": "simp26.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector render_preview example 27",
+      "description": "inkscape_vector render_preview",
+      "user_input": "PNG preview of file27",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "render_preview",
+        "input_path": "doc27.svg",
+        "output_path": "prev27.png"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector query_document example 28",
+      "description": "inkscape_vector query_document",
+      "user_input": "Summarize objects in file28",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "query_document",
+        "input_path": "lay28.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Vector count_nodes example 29",
+      "description": "inkscape_vector count_nodes",
+      "user_input": "Node count for object in file29",
+      "tool_call": "inkscape_vector",
+      "parameters": {
+        "operation": "count_nodes",
+        "input_path": "p29.svg"
+      },
+      "expected_output": "Vector operation result or not-implemented notice"
+    },
+    {
+      "title": "Analysis statistics 0",
+      "description": "inkscape_analysis statistics",
+      "user_input": "Run statistics on sheet0.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "sheet0.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis validate 1",
+      "description": "inkscape_analysis validate",
+      "user_input": "Run validate on sheet1.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "sheet1.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis dimensions 2",
+      "description": "inkscape_analysis dimensions",
+      "user_input": "Run dimensions on sheet2.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "sheet2.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis statistics 3",
+      "description": "inkscape_analysis statistics",
+      "user_input": "Run statistics on sheet3.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "sheet3.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis validate 4",
+      "description": "inkscape_analysis validate",
+      "user_input": "Run validate on sheet4.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "sheet4.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis dimensions 5",
+      "description": "inkscape_analysis dimensions",
+      "user_input": "Run dimensions on sheet5.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "sheet5.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis statistics 6",
+      "description": "inkscape_analysis statistics",
+      "user_input": "Run statistics on sheet6.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "sheet6.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis validate 7",
+      "description": "inkscape_analysis validate",
+      "user_input": "Run validate on sheet7.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "sheet7.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis dimensions 8",
+      "description": "inkscape_analysis dimensions",
+      "user_input": "Run dimensions on sheet8.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "sheet8.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis statistics 9",
+      "description": "inkscape_analysis statistics",
+      "user_input": "Run statistics on sheet9.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "sheet9.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis validate 10",
+      "description": "inkscape_analysis validate",
+      "user_input": "Run validate on sheet10.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "sheet10.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis dimensions 11",
+      "description": "inkscape_analysis dimensions",
+      "user_input": "Run dimensions on sheet11.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "sheet11.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis statistics 12",
+      "description": "inkscape_analysis statistics",
+      "user_input": "Run statistics on sheet12.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "statistics",
+        "input_path": "sheet12.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis validate 13",
+      "description": "inkscape_analysis validate",
+      "user_input": "Run validate on sheet13.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "validate",
+        "input_path": "sheet13.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "Analysis dimensions 14",
+      "description": "inkscape_analysis dimensions",
+      "user_input": "Run dimensions on sheet14.svg",
+      "tool_call": "inkscape_analysis",
+      "parameters": {
+        "operation": "dimensions",
+        "input_path": "sheet14.svg"
+      },
+      "expected_output": "Analysis payload with measurements or validation"
+    },
+    {
+      "title": "System status 0",
+      "description": "inkscape_system status",
+      "user_input": "Server status please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "status"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System version 1",
+      "description": "inkscape_system version",
+      "user_input": "Server version please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "version"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System help 2",
+      "description": "inkscape_system help",
+      "user_input": "Server help please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "help"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System diagnostics 3",
+      "description": "inkscape_system diagnostics",
+      "user_input": "Server diagnostics please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "diagnostics"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System config 4",
+      "description": "inkscape_system config",
+      "user_input": "Server config please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "config"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System list_extensions 5",
+      "description": "inkscape_system list_extensions",
+      "user_input": "Server list_extensions please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "list_extensions"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System status 6",
+      "description": "inkscape_system status",
+      "user_input": "Server status please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "status"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System version 7",
+      "description": "inkscape_system version",
+      "user_input": "Server version please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "version"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System help 8",
+      "description": "inkscape_system help",
+      "user_input": "Server help please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "help"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System diagnostics 9",
+      "description": "inkscape_system diagnostics",
+      "user_input": "Server diagnostics please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "diagnostics"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System config 10",
+      "description": "inkscape_system config",
+      "user_input": "Server config please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "config"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System list_extensions 11",
+      "description": "inkscape_system list_extensions",
+      "user_input": "Server list_extensions please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "list_extensions"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System status 12",
+      "description": "inkscape_system status",
+      "user_input": "Server status please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "status"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System version 13",
+      "description": "inkscape_system version",
+      "user_input": "Server version please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "version"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System help 14",
+      "description": "inkscape_system help",
+      "user_input": "Server help please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "help"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System diagnostics 15",
+      "description": "inkscape_system diagnostics",
+      "user_input": "Server diagnostics please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "diagnostics"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System config 16",
+      "description": "inkscape_system config",
+      "user_input": "Server config please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "config"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System list_extensions 17",
+      "description": "inkscape_system list_extensions",
+      "user_input": "Server list_extensions please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "list_extensions"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System status 18",
+      "description": "inkscape_system status",
+      "user_input": "Server status please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "status"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "System version 19",
+      "description": "inkscape_system version",
+      "user_input": "Server version please",
+      "tool_call": "inkscape_system",
+      "parameters": {
+        "operation": "version"
+      },
+      "expected_output": "System tool structured response"
+    },
+    {
+      "title": "Local models discovery 0",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 1",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 2",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 3",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 4",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 5",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 6",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 7",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 8",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
+    },
+    {
+      "title": "Local models discovery 9",
+      "description": "list_local_models",
+      "user_input": "What local LLM endpoints are available?",
+      "tool_call": "list_local_models",
+      "parameters": {},
+      "expected_output": "List of models or empty if none"
     }
   ],
   "configuration_examples": [

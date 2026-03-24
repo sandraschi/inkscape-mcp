@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>AG: Create CSS Animation</name>
+    <id>org.project_ag.layer_animation</id>
+    <param name="duration" type="float" min="0.1" max="60.0" gui-text="Duration (seconds)">2.0</param>
+    <param name="loop" type="bool" gui-text="Loop Animation">true</param>
+    <param name="easing" type="optiongroup" gui-text="Easing Function">
+        <option value="ease">ease</option>
+        <option value="linear">linear</option>
+        <option value="ease-in">ease-in</option>
+        <option value="ease-out">ease-out</option>
+        <option value="ease-in-out">ease-in-out</option>
+    </param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu>
+            <submenu>Project AG</submenu>
+        </effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">ag_layer_animation.py</command>
+    </script>
+</inkscape-extension>

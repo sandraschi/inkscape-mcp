@@ -1,0 +1,25 @@
+# inkscape-mcp
+> Professional vector graphics and SVG operations for AI agents through the Model Context Protocol. Provides AI agents with comprehensive vector graphics capabilities including AI-powered SVG generation...
+
+This project includes automated llms.txt generation for AI accessibility.
+
+## Docs
+- [Readme](README.md): Professional vector graphics and SVG operations for AI agents through the Model Context Protocol.
+- [Prd](PRD.md): **Version:** 1.3.0
+- [Features](docs\FEATURES.md): Transform natural language into professional SVG vector graphics using advanced AI models.
+- [Changelog](CHANGELOG.md): All notable changes to this project will be documented in this file.
+- [Troubleshooting](docs\TROUBLESHOOTING.md): **Error:** `Inkscape executable not found`
+- [Usage](docs\USAGE.md): Generate SVG graphics from natural language descriptions:
+- [Ai Svg Construction Plan](docs\AI_SVG_CONSTRUCTION_PLAN.md): **Transform natural language into professional SVG vector graphics.** Tell Claude "create a coat of ...
+- [Architecture](docs\ARCHITECTURE.md): The Inkscape MCP Server provides AI agents with comprehensive vector graphics capabilities through a...
+- [Publish](PUBLISH.md): **Publishing Inkscape MCP to PyPI with uv**
+- [Inkscape Mcp Technical Spec](INKSCAPE_MCP_TECHNICAL_SPEC.md): The Inkscape MCP (Model Context Protocol) Server provides comprehensive vector graphics editing capa...
+
+## Configuration
+- [Pyproject](pyproject.toml): Python project configuration and dependencies
+- [Package](web_sota\package.json): Node.js project configuration and dependencies
+- [Cargo](Cargo.toml): Rust project configuration and dependencies
+- [Config](.git\config): Application configuration files
+
+## Optional
+- [Changelog](CHANGELOG.md): Project changelog information

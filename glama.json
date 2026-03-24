@@ -2,11 +2,11 @@
   "mcpServers": {
     "inkscape-mcp": {
       "command": "python",
-      "args": ["-m", "src.inkscape_mcp.main"],
+      "args": ["-m", "inkscape_mcp.main"],
       "env": {
-        "PYTHONPATH": "${workspaceFolder}"
+        "PYTHONPATH": "${workspaceFolder}/src"
       },
-      "description": "Professional vector graphics and SVG editing through Inkscape CLI with AI-powered automation - 39 operations across file management, vector editing, analysis, and system management",
+      "description": "Inkscape CLI MCP server (FastMCP 3.1+): inkscape_file, inkscape_vector, inkscape_analysis, inkscape_system, list_local_models",
       "capabilities": {
         "tools": {
           "enabled": true,
@@ -26,7 +26,7 @@
         "message": 120000
       },
       "metadata": {
-        "version": "1.1.0",
+        "version": "2.0.0b0",
         "author": "Sandra Schipal",
         "homepage": "https://github.com/sandraschi/inkscape-mcp",
         "license": "MIT",

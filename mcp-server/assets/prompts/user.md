@@ -1,10 +1,10 @@
-# Inkscape MCP Server - User Interaction Guide
+# Inkscape MCP Server — user interaction guide
 
-## Welcome to Professional Vector Graphics Automation
+## What you can ask for
 
-Welcome to the Inkscape MCP Server, your intelligent partner for vector graphics creation, editing, and automation! This server transforms Inkscape's powerful vector editing capabilities into an AI-driven workflow, allowing you to create, modify, and optimize SVG files through natural language commands.
+This MCP server drives **Inkscape from the command line**. You describe the outcome (export PDF, trace PNG, simplify paths, check SVG health); the assistant maps that to `inkscape_file`, `inkscape_vector`, `inkscape_analysis`, or `inkscape_system`. **Install Inkscape** on the same machine as the MCP server.
 
-Whether you're designing logos, creating technical illustrations, optimizing web graphics, or automating creative workflows, the Inkscape MCP Server provides professional-grade vector editing through an intuitive conversational interface.
+If a tool returns `success: false`, read `message` / `error` and adjust paths, permissions, or timeouts before retrying.
 
 ## Getting Started - Your First Vector Graphics Operations
 
@@ -560,47 +560,184 @@ The server implements intelligent recovery for common issues:
 - "Create component library graphics"
 - "Produce documentation examples automatically"
 
-## Future Capabilities
+## Long-form tutorials (step patterns)
 
-### Planned Features
+### Tutorial A — Inspect an SVG before editing
 
-**Enhanced AI Integration:**
-- More sophisticated SVG generation from descriptions
-- Intelligent design suggestions and improvements
-- Automated design system compliance checking
+1. Ask to **load** or **validate** the file (`inkscape_file`, `operation`: `load` or `validate`, `input_path`: absolute or workspace path).
+2. If valid, ask for **info** to capture width/height and size.
+3. Optionally run **statistics** (`inkscape_analysis`) to summarize the document.
+4. Only then request **convert** or **path_simplify** so failures are easier to attribute.
 
-**Advanced Collaboration:**
-- Real-time multi-user editing capabilities
-- Version control integration with conflict resolution
-- Design review and approval workflows
+### Tutorial B — Raster logo to PDF handoff
 
-**Extended Format Support:**
-- Additional import/export formats
-- 3D model integration and conversion
-- Animation and interactive content support
+1. Put the PNG/JPEG on disk; call **trace_image** (`inkscape_vector`) with `input_path` and `output_path` ending in `.svg`.
+2. Open-result check: **validate** the new SVG.
+3. **convert** to PDF (`inkscape_file`) with explicit `format`: `pdf` and a new `output_path`.
+4. If the PDF is empty or clipped, re-run **info** on the SVG and adjust canvas in Inkscape manually once, then automate again.
 
-**Performance Improvements:**
-- GPU-accelerated operations where applicable
-- Streaming processing for very large files
-- Intelligent caching and optimization
+### Tutorial C — Batch-style prompts (sequential, not parallel unless user confirms)
 
-### Community and Ecosystem
+1. List targets: e.g. `icons/*.svg`.
+2. For each file: **validate** → **path_simplify** (if needed) → **render_preview** for a quick raster sanity check.
+3. Aggregate success/failure tables for the user; do not hide stderr-equivalent messages returned in JSON.
 
-**Template Marketplace:**
-- Shared design templates and components
-- Community-contributed processing pipelines
-- Best practice collections and examples
+### Tutorial D — QR code asset
 
-**Integration Ecosystem:**
-- Connections with other design tools
-- Web application integrations
-- API access for custom applications
+1. Choose payload (URL or text); call **generate_barcode_qr** with `barcode_data` and `output_path` `.svg`.
+2. **convert** to PNG if a raster deliverable is required.
 
-**Learning Resources:**
-- Interactive tutorials and guides
-- Best practices documentation
-- Community support and discussion
+### Tutorial E — When Inkscape is missing
+
+1. Ask the user to install Inkscape or provide the full path to `inkscape.exe` / binary.
+2. Retry **status** (`inkscape_system`) until `success` shows Inkscape available.
+3. If the host blocks subprocesses, stop: MCP cannot drive Inkscape without CLI access.
+
+### Tutorial F — Extension commands
+
+1. **list_extensions** to discover IDs.
+2. **execute_extension** only when the user explicitly wants that extension and understands side effects.
+3. Log outputs verbatim for auditability.
+
+### Tutorial G — Boolean cleanup
+
+1. Ensure objects have stable IDs if the tool requires `object_ids`; otherwise use workflow guidance from the tool response.
+2. Run **apply_boolean** with explicit `operation_type` (`union`, `difference`, `intersection`, etc.—match server expectations).
+3. Save via **convert** or downstream pipeline; verify geometry with **dimensions**.
+
+### Tutorial H — Document units for CNC / mm workflows
+
+1. **set_document_units** with `units` such as `mm` when supported.
+2. Re-query **info** / **dimensions** to confirm scale.
+
+### Phrasing library (copy-friendly)
+
+- "Run inkscape_system status and then inkscape_file validate on `X`."
+- "If validate passes, inkscape_file convert `X` to `Y.pdf` with format pdf."
+- "Trace `scan.png` to `out.svg` with inkscape_vector trace_image."
+- "Simplify paths: inkscape_vector path_simplify on `busy.svg` with a reasonable threshold, write `busy.simple.svg`."
+
+### Safety checklist
+
+- Confirm overwrite targets.
+- Use absolute paths when the client is unclear about cwd.
+- Quote Windows paths with spaces when typing JSON parameters.
 
 ---
 
-**Remember**: The Inkscape MCP Server is your intelligent vector graphics partner. Start with simple operations, explore the extensive capabilities gradually, and build sophisticated automation workflows as you become familiar with the system. Every operation is designed to be conversational and intuitive while providing professional-grade results.
+**Closing note**: Prefer small, verifiable steps. If the server returns `not implemented` for an operation, choose another approach or document the gap for manual Inkscape work.
+
+## Scenario catalog (natural language → tools)
+
+Each item below is a pattern you can paste or paraphrase. Replace paths with real files.
+
+1. **Health check**: "Run inkscape_system with operation status; confirm Inkscape is available before we touch files."
+2. **Quick SVG sanity**: "Use inkscape_file validate on `C:\work\ui.svg` and report success or errors."
+3. **Dimensions only**: "inkscape_file info on `logo.svg` — I need pixel width and height."
+4. **PDF export**: "Convert `diagram.svg` to `diagram.pdf` with inkscape_file convert; format pdf."
+5. **EPS handoff**: "Export `sign.svg` to `sign.eps` if the server lists eps support; otherwise suggest an alternative."
+6. **PNG preview**: "Generate a PNG preview of `mockup.svg` via inkscape_vector render_preview; pick a sensible dpi."
+7. **Trace scan**: "Trace `scan.jpg` to `scan.svg` using trace_image; warn me if the output is huge."
+8. **Simplify for web**: "path_simplify `hero.svg` to `hero.light.svg` with a moderate threshold."
+9. **Clean imported art**: "path_clean on `imported.svg` saving to `imported.clean.svg`."
+10. **QR for URL**: "Create `qr.svg` encoding `https://example.com` with generate_barcode_qr."
+11. **Document stats**: "inkscape_analysis statistics on `poster.svg`."
+12. **Validate before print**: "validate on `card.svg`, then convert to pdf if valid."
+13. **Measure an object**: "measure_object on `tech.svg` for object id `path123` (adjust id to match file)."
+14. **Count nodes**: "count_nodes for `ornament.svg` to see if simplification is warranted."
+15. **Z-order tweak**: "Raise object `layer1` with object_raise; write to `raised.svg`."
+16. **Lower background**: "object_lower for `bg_rect` in `scene.svg`."
+17. **Set mm units**: "set_document_units to mm on `cnc.svg`, output `cnc.mm.svg`."
+18. **List formats**: "list_formats — what can we export to?"
+19. **Server version**: "inkscape_system version for debugging."
+20. **Diagnostics**: "Run diagnostics when exports silently fail."
+21. **Help text**: "inkscape_system help — summarize tools for the user in plain language."
+22. **Show config**: "Display current MCP-related configuration via config operation."
+23. **Extensions list**: "list_extensions — I need to know if a bundled extension exists."
+24. **Run named extension**: "execute_extension only after I confirm the extension id and parameters."
+25. **Dimensions analysis**: "inkscape_analysis dimensions on `banner.svg`."
+26. **Re-validate after edit**: "After any boolean, validate the output svg again."
+27. **Sequential batch**: "For each svg in this folder (user lists them), validate then render_preview to a sibling png."
+28. **Failure triage**: "If convert fails, run diagnostics then status, then report the error field verbatim."
+29. **Large file caution**: "Before simplify on a 5MB svg, warn about time and offer to proceed or split work."
+30. **Local models**: "list_local_models — any local LLM for optional sampling workflows?"
+
+## Parameter cheat sheet (user-facing)
+
+- **input_path**: existing file the tool reads.
+- **output_path**: where to write when the operation produces a file.
+- **format**: export format string (e.g., `pdf`, `png`) for convert.
+- **operation**: the portmanteau branch name; spelling must match server expectations.
+- **operation_type**: for booleans, the boolean mode string supported by the server.
+- **object_ids**: list of SVG id attributes when targeting specific elements.
+- **threshold**: simplification aggressiveness; higher often removes more points.
+- **dpi**: rasterization resolution for previews/exports that honor it.
+
+## What not to expect
+
+- The MCP server is not a full Inkscape GUI. Some niche dialog-only features may be unavailable.
+- Perfect print color fidelity may still need human proofing.
+- Automatic layout or brand-new illustration from vague prompts may require sampling tools or manual design work.
+
+## Collaboration tips
+
+Ask the user for: Inkscape version, OS, example file path, and the exact error JSON when something breaks. Offer minimal repro steps (one svg, one operation) before complex pipelines.
+
+## Practice dialogue (assistant behavior)
+
+User: "Make this svg smaller for web." Assistant: "I will run info to see dimensions and node complexity, then suggest path_simplify or scour steps with your approval." User: "OK." Assistant: *calls tools in order and reports file sizes before/after.*
+
+## Kids gloves for destructive ops
+
+Deleting, overwriting, or boolean-combining shared assets should be confirmed. Mention backups when touching production paths.
+
+## After successful export
+
+Suggest quick visual verification in a viewer (browser, Inkscape, or PDF reader) especially when fonts or clip paths are involved.
+
+## If the assistant hallucinates a tool name
+
+Correct to the four portmanteau tools plus `list_local_models` and any optional agentic tools the session actually registered. Use `help` output as ground truth when unsure.
+
+## Desktop vs MCP
+
+Remind users they can always finish edge cases in Inkscape interactively; MCP accelerates repeatable CLI-safe tasks.
+
+## Revision hygiene
+
+When sharing prompts or examples publicly, scrub personal paths and secrets from `barcode_data` or embedded URLs.
+
+## Extra walkthrough — print shop handoff
+
+Start with `validate` on the customer SVG. Run `info` to confirm physical size if `viewBox` and units are unclear. Export PDF with `convert`; if the client needs CMYK, state that Inkscape RGB workflows may require a prepress step outside MCP. Keep the original SVG alongside derived PDFs. If fonts are missing, stop and ask the customer to outline text in Inkscape before automation proceeds.
+
+## Extra walkthrough — web icon pipeline
+
+Validate each icon SVG. `path_simplify` only if file size is excessive. `render_preview` at 96 dpi to spot visual regressions. Prefer keeping SVG for delivery; generate PNG only when the target stack requires raster. Document which simplification threshold was used so the team can reproduce results.
+
+## Extra walkthrough — recovering from a bad boolean
+
+If the output looks empty, re-run `validate` on the source, check `object_ids`, and try a smaller selection set. Keep intermediate files (`before.svg`, `after.svg`) so you can diff in version control or Inkscape’s XML editor.
+
+## Quick FAQ
+
+**Q: Can MCP edit text content?**  
+**A:** Only through operations exposed by the server; otherwise edit in Inkscape.
+
+**Q: Does it run headless?**  
+**A:** It uses the Inkscape CLI; a GUI is not required for supported actions.
+
+**Q: Can I trust automatic measurements?**  
+**A:** Cross-check critical dimensions manually for contractual work.
+
+## Voice and tone
+
+Ask for concrete paths, desired output format, and whether overwriting is acceptable. Short confirmations save time compared to long capability speeches. When unsure, run `help` or `list_formats` once instead of guessing operation names from memory.
+
+## One-page summary
+
+You have four main Inkscape tool groups plus optional helpers. File ops handle IO and export listing. Vector ops handle geometry and previews. Analysis reads metrics. System tells you whether Inkscape is wired up. Start with **status** and **validate**, end with **convert** or **render_preview** when delivering artifacts.
+
+See `assets/prompts/examples.json` in the MCPB bundle for over one hundred worked parameter examples you can echo or adapt when training teammates on how to phrase requests.
+
+Also read `configuration.md` and `troubleshooting.md` in the same folder when Claude Desktop surfaces configuration panes or when you need copy-paste env snippets for Inkscape path detection on Windows versus macOS versus Linux hosts. Keep screenshots in `assets/screenshots/` as visual anchors when onboarding designers who rarely read JSON or Markdown prompts without pictures in practice today.

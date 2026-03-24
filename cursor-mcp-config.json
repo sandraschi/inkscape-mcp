@@ -1,8 +1,13 @@
 {
   "mcpServers": {
     "inkscape-mcp": {
-      "command": "inkscape-mcp",
-      "args": []
+      "command": "uv",
+      "args": [
+        "--directory",
+        "D:/Dev/repos/inkscape-mcp",
+        "run",
+        "inkscape-mcp"
+      ]
     }
   }
 }

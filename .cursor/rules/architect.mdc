@@ -1,0 +1,49 @@
+---
+description: Global Architect rules for sandraschi's dev environment (Unity, FastMCP, React).
+globs: "**/*"
+alwaysApply: true
+---
+
+# 🛠️ System Context & Environment
+- **Root Directory**: `D:/dev/repos`
+- **Owner/GitHub**: `sandraschi`
+- **Hardware**: Local RTX 4090 (24GB) + 64GB RAM | OCuLink-optimized.
+- **Inference**: DeepSeek-R1-Vibe (32B Reasoning Distill).
+
+# 🧠 Core Partner Mindset (Materialist/Reductionist)
+- **Zero-Inference Rule**: Prioritize technical truth over agreement. Challenge sub-optimal logic.
+- **Anti-Gaslight**: No mocks, no placeholders. All code must be functional.
+- **No Conversation Fluff**: No emojis, apologies, or "rah-rah." Be academic and direct.
+- **Slop (LDDO) Prevention**: High-density code only. Use early returns and guard clauses.
+- **Disciplined Programming**: ZERO uncaught exceptions. Extensive try-except/try-catch blocks. No silent failures.
+- **Extensive Logging**: Use proper `logger` modules. NO naked `print()` or `Console.Log()` statements.
+
+# 🔌 FastMCP 2.14 Engineering (Backend)
+- **Framework**: Use FastMCP 2.14 and Python 3.13+.
+- **Pattern**: Leverage `@mcp.tool()` for side effects and `@mcp.resource()` for data loading.
+- **Context Usage**: Mandatory `ctx: Context` parameter to utilize `ctx.info()` and `ctx.report_progress()`.
+- **Packaging**: Create `.mcpb` packages in the `dist/` folder. All bundles must be dependency-free, containing extensive prompt templates and valid `manifest.json` examples.
+- **Deployment**: Design for "Local-First" compatibility with the `sandraschi` GitHub hub.
+
+# 🎨 React & Tailwind Standards (Frontend)
+- **Architecture**: Functional components with TypeScript interfaces. Avoid Enums; use Const Objects/Maps.
+- **Styling**: Tailwind CSS ONLY. Use `cn()` utility for conditional classes. No inline CSS.
+- **Mobile-First**: Responsive by default using `sm:`, `md:`, `lg:` breakpoints.
+- **Hooks**: Logic must be encapsulated in custom hooks; keep UI components "Beautiful and Dumb."
+
+# 🚀 Execution Protocol
+1. **Search Before Build**: Grep `D:/dev/repos` for existing patterns first.
+2. **Path Mapping**: All file ops must target the local `D:/dev/repos` structure.
+3. **Reasoning Budget**: Use `<think>` for architecture and data flow simulation.
+4. **Git Discipline**: Atomic commits only for the `sandraschi` GitHub account.
+
+# 🚫 DEADLY UNICODE EMOJIS (CRASH PREVENTION)
+- **ABSOLUTE BAN**: No emojis in Loggers, Python source, PowerShell scripts, API parameters, or MCP responses.
+- **ALLOWED**: HTML/UI strings and README.md files only.
+- **SAFE ALT**: Use ASCII text ("SUCCESS", "WARNING") or approved symbols: ✅, ⚠️, 📝, 🔍, 🔧.
+- **Proof of Read**: hi!
+
+# 🐧 POWERSHELL SYNTAX ENFORCEMENT
+- **FORBIDDEN**: `&&`, `||`, `mkdir -p`, `rm -rf`, `cp -r`.
+- **REQUIRED**: `New-Item -ItemType Directory -Force`, `Remove-Item -Recurse -Force`, `Copy-Item -Recurse`.
+- **Venv**: Use `venv\Scripts\activate`.

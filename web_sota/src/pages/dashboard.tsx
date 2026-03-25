@@ -1,117 +1,106 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileType, Layers, PenTool } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Activity, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface HealthPayload {
+    status?: string;
+    server?: string;
+    version?: string;
+    providers?: {
+        ollama?: { available?: boolean };
+        inkscape?: { available?: boolean; version_line?: string | null };
+    };
+}
 
 export function Dashboard() {
+    const [h, setH] = useState<HealthPayload | null>(null);
+    const [err, setErr] = useState<string | null>(null);
+
+    const load = async () => {
+        setErr(null);
+        try {
+            const res = await fetch("/api/health");
+            if (!res.ok) {
+                setErr(`HTTP ${res.status}`);
+                setH(null);
+                return;
+            }
+            setH(await res.json());
+        } catch (e) {
+            setH(null);
+            setErr(e instanceof Error ? e.message : "Failed");
+        }
+    };
+
+    useEffect(() => {
+        void load();
+    }, []);
+
+    const inkOk = h?.providers?.inkscape?.available;
+    const ollOk = h?.providers?.ollama?.available;
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-white">Inkscape Dashboard</h2>
-                    <p className="text-slate-400">Vector graphics operations and system status</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-white">Overview</h2>
+                    <p className="text-slate-400">Quick snapshot from GET /api/health. Details on the Status page.</p>
                 </div>
+                <Button variant="outline" size="sm" onClick={() => void load()} className="border-slate-800 text-slate-300">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                </Button>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-slate-800 bg-slate-950/50">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-200">
-                            SVG Documents
-                        </CardTitle>
-                        <Layers className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-white">12</div>
-                        <p className="text-xs text-slate-400">
-                            +2 newly processed
-                        </p>
-                    </CardContent>
-                </Card>
+            {err && <p className="text-yellow-400">{err}</p>}
 
+            <div className="grid gap-4 md:grid-cols-3">
                 <Card className="border-slate-800 bg-slate-950/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-200">
-                            System Load
-                        </CardTitle>
+                        <CardTitle className="text-sm font-medium text-slate-200">Server</CardTitle>
                         <Activity className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">Nominal</div>
-                        <p className="text-xs text-slate-400">
-                            Inkscape CLI ready
-                        </p>
+                        <div className="text-lg font-semibold text-white">{h?.server ?? "—"}</div>
+                        <p className="text-xs text-slate-400">{h?.version ?? ""}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-slate-800 bg-slate-950/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-200">
-                            Active Paths
-                        </CardTitle>
-                        <PenTool className="h-4 w-4 text-purple-500" />
+                        <CardTitle className="text-sm font-medium text-slate-200">Inkscape CLI</CardTitle>
+                        {inkOk ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-red-400" />}
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">1,402</div>
-                        <p className="text-xs text-slate-400">
-                            Optimized via simplify
-                        </p>
+                        <div className="text-lg font-semibold text-white">{inkOk ? "Available" : "Not found"}</div>
+                        <p className="truncate text-xs text-slate-400">{h?.providers?.inkscape?.version_line ?? ""}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-slate-800 bg-slate-950/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-200">
-                            Success Rate
-                        </CardTitle>
-                        <FileType className="h-4 w-4 text-orange-500" />
+                        <CardTitle className="text-sm font-medium text-slate-200">Ollama (optional)</CardTitle>
+                        {ollOk ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-slate-500" />}
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">99.8%</div>
-                        <p className="text-xs text-slate-400">
-                            Conversion reliability
-                        </p>
+                        <div className="text-lg font-semibold text-white">{ollOk ? "Reachable" : "Off / unreachable"}</div>
+                        <p className="text-xs text-slate-400">Only needed for /api/generate-svg</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 border-slate-800 bg-slate-950/50">
-                    <CardHeader>
-                        <CardTitle className="text-white">Processing History</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[200px] flex items-center justify-center border border-dashed border-slate-800 rounded-md bg-slate-900/20">
-                            <span className="text-slate-500 text-sm">Operation volume graph placeholder</span>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="col-span-3 border-slate-800 bg-slate-950/50">
-                    <CardHeader>
-                        <CardTitle className="text-white">Recent Operations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex items-center">
-                                <span className="relative flex h-2 w-2 mr-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <div className="ml-2 space-y-1">
-                                    <p className="text-sm font-medium leading-none text-white">Path Tracing</p>
-                                    <p className="text-xs text-slate-400">vienna_logo.png • active</p>
-                                </div>
-                                <div className="ml-auto font-mono text-xs text-slate-400">00:12</div>
-                            </div>
-                            <div className="flex items-center">
-                                <span className="relative flex h-2 w-2 mr-2 bg-slate-700 rounded-full"></span>
-                                <div className="ml-2 space-y-1">
-                                    <p className="text-sm font-medium leading-none text-white text-opacity-50">SVG Export</p>
-                                    <p className="text-xs text-slate-500">diagram_v2.svg • completed</p>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="flex flex-wrap gap-3 text-sm">
+                <Link to="/status" className="text-blue-400 hover:underline">
+                    Full status JSON →
+                </Link>
+                <Link to="/logs" className="text-blue-400 hover:underline">
+                    Logs →
+                </Link>
+                <Link to="/help" className="text-blue-400 hover:underline">
+                    Help →
+                </Link>
             </div>
         </div>
     );

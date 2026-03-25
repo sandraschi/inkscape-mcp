@@ -1,4 +1,4 @@
-"""Inkscape MCP Tools - FastMCP 2.14.1+ Portmanteau Architecture.
+"""Inkscape MCP Tools — FastMCP 3.1+ portmanteau surface.
 
 Consolidated tools for vector graphics operations with reduced cognitive load and better discoverability.
 

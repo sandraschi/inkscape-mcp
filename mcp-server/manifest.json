@@ -67,6 +67,10 @@
     {
       "name": "list_local_models",
       "description": "List local LLM endpoints (Ollama / LM Studio) when available"
+    },
+    {
+      "name": "generate_heraldry",
+      "description": "Heraldic SVG generation (e.g. trumponia); optional post-processing via other tools"
     }
   ]
 }

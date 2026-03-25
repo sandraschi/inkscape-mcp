@@ -207,7 +207,7 @@ all = [
 [tool.fastmcp]
 name = "inkscape-mcp"
 display_name = "Inkscape MCP Server"
-version = "1.2.0b0"
+version = "2.0.0b0"
 description = "Inkscape MCP server (FastMCP 3.1+), portmanteau tools"
 entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"

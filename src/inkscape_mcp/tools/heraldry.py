@@ -8,6 +8,7 @@ import os
 import time
 from typing import Any, Dict, List, Literal, Optional
 
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -111,22 +112,36 @@ async def generate_heraldry_trumponia(
 def register_heraldry_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
     """Register heraldry tools with FastMCP server."""
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations=ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=True,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+    )
     async def generate_heraldry(
         operation: Literal["trumponia", "custom"] = "trumponia",
         output_path: Optional[str] = None,
         ctx: Any = None,
     ) -> Dict[str, Any]:
-        """Generate heraldic vector assets.
+        """GENERATE_HERALDRY — Emit heraldic SVG assets (preset compositions).
+
+        PORTMANTEAU RATIONALE: Single entry point for heraldry; `operation` selects preset.
 
         Args:
-            operation: The type of heraldry to generate.
-            output_path: Destination for the generated SVG.
+            operation: trumponia (implemented) or custom (not yet implemented).
+            output_path: Destination SVG path; default under config temp directory.
+            ctx: Reserved for future sampling context.
+
+        Returns:
+            Dict with success, operation, message, data, execution_time_ms.
+
+        Errors:
+            Write failures or missing temp directory — see message.
         """
         if not output_path:
-            output_path = os.path.join(
-                config.temp_directory, f"heraldry_{operation}.svg"
-            )
+            output_path = os.path.join(config.temp_directory, f"heraldry_{operation}.svg")
 
         if operation == "trumponia":
             return await generate_heraldry_trumponia(output_path, cli_wrapper, config)

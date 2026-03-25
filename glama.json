@@ -1,12 +1,20 @@
 {
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
   "mcpServers": {
     "inkscape-mcp": {
-      "command": "python",
-      "args": ["-m", "inkscape_mcp.main"],
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${workspaceFolder}",
+        "run",
+        "inkscape-mcp",
+        "--mode",
+        "stdio"
+      ],
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
+        "PYTHONUNBUFFERED": "1"
       },
-      "description": "Inkscape CLI MCP server (FastMCP 3.1+): inkscape_file, inkscape_vector, inkscape_analysis, inkscape_system, list_local_models",
+      "description": "Inkscape CLI MCP server (FastMCP 3.1+): portmanteau tools for SVG/vector workflows, optional heraldry and SEP-1577 agentic tools when sampling is available; MCP prompts/resources; HTTP+REST optional.",
       "capabilities": {
         "tools": {
           "enabled": true,
@@ -30,9 +38,62 @@
         "author": "Sandra Schipal",
         "homepage": "https://github.com/sandraschi/inkscape-mcp",
         "license": "MIT",
-        "tags": ["vector-graphics", "svg", "inkscape", "design", "automation", "creative-tools"],
+        "tags": [
+          "inkscape",
+          "svg",
+          "vector-graphics",
+          "mcp",
+          "fastmcp",
+          "automation",
+          "design",
+          "creative-tools"
+        ],
         "categories": ["Design", "Productivity", "Creative", "Development"]
       }
+    }
+  },
+  "maintainers": ["sandraschi"],
+  "name": "inkscape-mcp",
+  "description": "MCP server for Inkscape-backed SVG and vector operations. FastMCP 3.1+ with portmanteau tools, registered prompts/resources, optional sampling agentic workflows, REST bridge on HTTP, and MCPB packaging.",
+  "type": "mcp_server",
+  "status": "beta",
+  "framework": "FastMCP 3.1+",
+  "tools": 10,
+  "transport": ["stdio", "http"],
+  "keywords": [
+    "inkscape",
+    "svg",
+    "vector",
+    "mcp-server",
+    "fastmcp",
+    "graphics",
+    "automation"
+  ],
+  "features": {
+    "vector_editing": {
+      "enabled": true,
+      "capabilities": [
+        "boolean_ops",
+        "path_ops",
+        "trace",
+        "barcode_qr",
+        "export_convert"
+      ]
+    },
+    "document_analysis": {
+      "enabled": true,
+      "capabilities": ["statistics", "validate", "dimensions", "structure"]
+    },
+    "agentic_sampling": {
+      "enabled": true,
+      "capabilities": ["sep_1577", "generate_svg", "workflow_orchestration"]
+    },
+    "mcpb_packaging": {
+      "enabled": true
+    },
+    "rest_bridge": {
+      "enabled": true,
+      "capabilities": ["health", "help", "logs", "generate_svg_ollama"]
     }
   }
 }

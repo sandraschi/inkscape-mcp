@@ -13,6 +13,7 @@ You need **Python 3.12+**, **[uv](https://docs.astral.sh/uv/)**, and **Inkscape*
 | [docs/USAGE.md](docs/USAGE.md) | How to use the tools from an agent |
 | [docs/AI_SAMPLING.md](docs/AI_SAMPLING.md) | Agentic tools, `ctx.sample()`, Ollama env |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, transports, modules |
+| [llms.txt](llms.txt) / [llms-full.txt](llms-full.txt) | LLM index + full tool/env/run manifest (fleet) |
 
 More: [Docs index](docs/README.md) · [API](docs/API.md) · [Features](docs/FEATURES.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changelog](CHANGELOG.md)
 

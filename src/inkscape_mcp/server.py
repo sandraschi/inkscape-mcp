@@ -62,11 +62,12 @@ class InkscapeMcpServer:
         self.config = config or InkscapeConfig()
         self.mcp = FastMCP("Inkscape MCP", version="1.2.0")
         self.app = self.mcp  # Add app attribute for ASGI compatibility
-        
+
         # Set module-level app for ASGI loader
         import inkscape_mcp.server
+
         inkscape_mcp.server.app = self.mcp
-        
+
         self.tools = {}  # Store tool instances for later reference
         self.inkscape = InkscapeCliWrapper(self.config)
         self.logger = logging.getLogger(__name__)

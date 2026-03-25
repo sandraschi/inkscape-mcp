@@ -1,41 +1,39 @@
 """
-Inkscape MCP Server - FastMCP 2.13+ Portmanteau Architecture
+Inkscape MCP Server — FastMCP 3.1+ portmanteau entry point.
 
-This module serves as the main entry point for the Inkscape MCP server, providing
-an interface between the MCP protocol and Inkscape's vector graphics functionality.
-
-PORTMANTEAU ARCHITECTURE (v1.0.0):
-Instead of 50+ individual tools, Inkscape MCP consolidates related operations into 4
-master portmanteau tools. Each tool handles a specific domain with multiple operations.
-
-Tools:
-- inkscape_file: File operations (load, save, convert, info, validate)
-- inkscape_vector: Advanced vector operations (trace, boolean, path, optimize)
-- inkscape_analysis: Document analysis (quality, statistics, structure)
-- inkscape_system: System operations (status, help, version)
+Exposes MCP tools that shell out to the Inkscape CLI, optional heraldry and
+agentic (sampling) tools, REST `/api/*` when HTTP transport is used, and
+registered MCP prompts/resources (see prompts_resources.py).
 """
 
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
-from .transport import run_server_async
 from .config import InkscapeConfig, load_config
 from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
-
-from .tools import (
-    inkscape_analysis,
-    inkscape_file,
-    inkscape_system,
-    inkscape_vector,
-    list_local_models,
+from .mcp_tool_types import (
+    InkscapeAnalysisOperation,
+    InkscapeFileOperation,
+    InkscapeSystemOperation,
+    InkscapeVectorOperation,
 )
+from .prompts_resources import register_prompts_and_resources
+from .tools import inkscape_analysis as inkscape_analysis_tool
+from .tools import inkscape_file as inkscape_file_tool
+from .tools import inkscape_system as inkscape_system_tool
+from .tools import inkscape_vector as inkscape_vector_tool
+from .tools import list_local_models as list_local_models_tool
+from .tools.heraldry import register_heraldry_tools
+from .transport import run_server_async
 
 # Import agentic workflow tools
 try:
@@ -113,13 +111,23 @@ class InkscapeMCPServer:
                     logger.error(f"Failed to initialize Inkscape CLI wrapper: {e}")
                     self.cli_wrapper = None
             else:
-                logger.warning(
-                    "Inkscape not found. Running in limited functionality mode"
-                )
+                logger.warning("Inkscape not found. Running in limited functionality mode")
                 self.cli_wrapper = None
 
             # Register portmanteau tools
             self._register_portmanteau_tools()
+
+            try:
+                register_heraldry_tools(self.mcp, self.cli_wrapper, self.config)
+                logger.info("Heraldry tools registered")
+            except Exception as e:
+                logger.warning("Failed to register heraldry tools: %s", e)
+
+            try:
+                register_prompts_and_resources(self.mcp)
+                logger.info("MCP prompts and resources registered")
+            except Exception as e:
+                logger.warning("Failed to register prompts/resources: %s", e)
 
             # Register agentic workflow tools
             if AGENTIC_TOOLS_AVAILABLE and register_agentic_tools:
@@ -144,17 +152,49 @@ class InkscapeMCPServer:
             return False
 
     def _register_portmanteau_tools(self) -> None:
-        """Register all portmanteau tools with FastMCP."""
+        """Register all portmanteau tools with FastMCP (ToolBench-aligned Literals + annotations)."""
 
-        @self.mcp.tool()
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=True,
+                idempotentHint=False,
+                openWorldHint=False,
+            ),
+        )
         async def inkscape_file(
-            operation: str,
-            input_path: str = None,
-            output_path: str = None,
-            format: str = None,
+            operation: InkscapeFileOperation,
+            input_path: str = "",
+            output_path: str = "",
+            format: str = "",
         ) -> dict[str, Any]:
-            """File operations: load, save, convert, info, validate, list_formats."""
-            return await inkscape_file(
+            """INKSCAPE_FILE — Load, convert, export, and validate SVG/other files via Inkscape CLI.
+
+            PORTMANTEAU RATIONALE: One tool keeps file I/O discoverable without dozens of
+            single-purpose tools; `operation` selects the CLI behavior.
+
+            Operations:
+            - load: Read/validate path exists for editing workflows.
+            - save: Persist changes (requires paths per server policy).
+            - convert: Export to pdf/png/etc. (needs output_path, format).
+            - info: Metadata and dimensions.
+            - validate: Structural check via CLI query.
+            - list_formats: Bounded list of supported export formats (no disk read required).
+
+            Args:
+                operation: Must be one of the Literal values (schema-enumerated).
+                input_path: Source file; may be empty for list_formats only.
+                output_path: Destination for save/convert when applicable.
+                format: Target format for convert (e.g. pdf, png).
+
+            Returns:
+                Dict with success, operation, message, data, execution_time_ms, and error on failure.
+
+            Errors:
+                Missing file, permission denied, Inkscape not found — check message/error; verify
+                allowed_directories and INKSCAPE_PATH.
+            """
+            return await inkscape_file_tool(
                 operation=operation,
                 input_path=input_path,
                 output_path=output_path,
@@ -163,12 +203,40 @@ class InkscapeMCPServer:
                 config=self.config,
             )
 
-        @self.mcp.tool()
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=True,
+                idempotentHint=False,
+                openWorldHint=False,
+            ),
+        )
         async def inkscape_vector(
-            operation: str, input_path: str, output_path: str = None
+            operation: InkscapeVectorOperation,
+            input_path: str = "",
+            output_path: str = "",
         ) -> dict[str, Any]:
-            """Advanced vector operations: trace, boolean, path, optimize, scour, etc."""
-            return await inkscape_vector(
+            """INKSCAPE_VECTOR — Vector editing, booleans, trace, QR/barcode, path ops, previews.
+
+            PORTMANTEAU RATIONALE: Inkscape exposes many CLI actions; grouping avoids tool explosion.
+
+            Operations include: trace_image, generate_barcode_qr, apply_boolean, path_simplify,
+            optimize_svg, scour_svg, render_preview, query_document, measure_object, export_dxf,
+            layers_to_files, object_raise/lower, set_document_units, and others (see Literal).
+
+            Args:
+                operation: Subcommand; must match InkscapeVectorOperation.
+                input_path: Primary document path (some ops may use output-only paths in kwargs).
+                output_path: Output file when the operation writes a file.
+
+            Returns:
+                Dict with success, message, data or structured results, execution_time_ms, error.
+
+            Errors:
+                Unsupported operation, CLI timeout, invalid paths — use inkscape_system(status)
+                and confirm Inkscape install.
+            """
+            return await inkscape_vector_tool(
                 operation=operation,
                 input_path=input_path,
                 output_path=output_path,
@@ -176,31 +244,90 @@ class InkscapeMCPServer:
                 config=self.config,
             )
 
-        @self.mcp.tool()
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=True,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
+        )
         async def inkscape_analysis(
-            operation: str, input_path: str
+            operation: InkscapeAnalysisOperation, input_path: str
         ) -> dict[str, Any]:
-            """Document analysis: quality, statistics, structure, objects, dimensions."""
-            return await inkscape_analysis(
+            """INKSCAPE_ANALYSIS — Inspect SVG structure, stats, quality, and dimensions (read-only).
+
+            PORTMANTEAU RATIONALE: Analysis calls are grouped so agents can validate before mutating.
+
+            Operations: quality, statistics, validate, objects, dimensions, structure.
+
+            Args:
+                operation: Analysis mode (Literal).
+                input_path: SVG file to analyze.
+
+            Returns:
+                Dict with success, message, data (bounded per operation), execution_time_ms, error.
+
+            Errors:
+                File not found or unreadable SVG — check path and permissions.
+            """
+            return await inkscape_analysis_tool(
                 operation=operation,
                 input_path=input_path,
                 cli_wrapper=self.cli_wrapper,
                 config=self.config,
             )
 
-        @self.mcp.tool()
-        async def inkscape_system(operation: str) -> dict[str, Any]:
-            """System: status, help, diagnostics, version, config."""
-            return await inkscape_system(
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
+        )
+        async def inkscape_system(operation: InkscapeSystemOperation) -> dict[str, Any]:
+            """INKSCAPE_SYSTEM — Server/Inkscape status, help, diagnostics, version, extensions.
+
+            PORTMANTEAU RATIONALE: Operational and introspection calls stay in one discoverable tool.
+
+            Operations: status, help, diagnostics, version, config, list_extensions, execute_extension.
+
+            Args:
+                operation: System subcommand (Literal). Extension execution may require extra
+                    parameters not exposed on this MCP wrapper — prefer list_extensions first.
+
+            Returns:
+                Dict with success, message, data, execution_time_ms, error.
+
+            Errors:
+                Inkscape missing, extension disabled — message describes recovery (install PATH).
+            """
+            return await inkscape_system_tool(
                 operation=operation,
                 cli_wrapper=self.cli_wrapper,
                 config=self.config,
             )
 
-        @self.mcp.tool()
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=True,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=True,
+            ),
+        )
         async def list_local_models() -> dict[str, Any]:
-            """Discover local LLM models from Ollama and LM Studio."""
-            return await list_local_models()
+            """LIST_LOCAL_MODELS — Discover Ollama and LM Studio model IDs on localhost (read-only).
+
+            Returns:
+                Dict with success, operation, summary, result.ollama / result.lm_studio lists,
+                and errors[] for unreachable endpoints (bounded).
+
+            Errors:
+                Both endpoints down — result still returns with empty lists and diagnostic strings.
+            """
+            return await list_local_models_tool()
 
         self.tools = {
             "inkscape_file": inkscape_file,
@@ -225,7 +352,12 @@ async def main_async():
     parser = argparse.ArgumentParser(description="Inkscape MCP Server")
     parser.add_argument("--config", type=str, help="Path to config file", default=None)
     parser.add_argument("--mode", choices=["stdio", "http", "dual"], default="dual")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=10847,
+        help="HTTP port when dual/http transport is used (fleet webapp backend; Vite proxies /mcp and /api here)",
+    )
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--log-level", default="INFO")
 
@@ -235,20 +367,29 @@ async def main_async():
     log_level = getattr(logging, args.log_level.upper())
     logging.basicConfig(level=log_level, force=True)
 
+    # Bridge this CLI to transport env (run_server_async uses transport's parser when args=None)
+    os.environ["MCP_PORT"] = str(args.port)
+    if args.mode == "stdio":
+        os.environ["MCP_TRANSPORT"] = "stdio"
+    elif args.mode == "http":
+        os.environ["MCP_TRANSPORT"] = "http"
+    else:
+        # dual: HTTP for /mcp + /api (dashboard); stdio not combined here
+        os.environ["MCP_TRANSPORT"] = "http"
+
     try:
-        server = InkscapeMCPServer(
-            config_path=Path(args.config) if args.config else None
-        )
+        server = InkscapeMCPServer(config_path=Path(args.config) if args.config else None)
         if await server.initialize():
             # Set module-level app for ASGI compatibility
             import inkscape_mcp
+
             inkscape_mcp.app = server.mcp
             await run_server_async(server.mcp, server_name="Inkscape MCP Server")
         else:
             return 1
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
-    except Exception as e:
+    except Exception:
         logger.exception("Server error:")
         return 1
 

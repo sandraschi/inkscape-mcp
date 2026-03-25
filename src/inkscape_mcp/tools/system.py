@@ -236,8 +236,9 @@ class SystemResult(BaseModel):
 
 
 async def inkscape_system(
-    operation: Literal["status", "help", "diagnostics", "version", "config", "list_extensions",
-        "execute_extension"],
+    operation: Literal[
+        "status", "help", "diagnostics", "version", "config", "list_extensions", "execute_extension"
+    ],
     extension_id: Optional[str] = None,
     extension_params: Optional[Dict[str, Any]] = None,
     input_file: Optional[str] = None,
@@ -336,7 +337,7 @@ async def inkscape_system(
                     "extensions": [],
                     "total_count": 0,
                     "categories": [],
-                    "note": "Extension system temporarily disabled"
+                    "note": "Extension system temporarily disabled",
                 },
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()

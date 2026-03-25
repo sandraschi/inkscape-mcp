@@ -13,7 +13,9 @@ class AGLayerAnimation(inkex.EffectExtension):
     """Create CSS-animated SVG from layers."""
 
     def add_arguments(self, pars):
-        pars.add_argument("--duration", type=float, default=2.0, help="Animation duration in seconds")
+        pars.add_argument(
+            "--duration", type=float, default=2.0, help="Animation duration in seconds"
+        )
         pars.add_argument("--loop", type=bool, default=True, help="Loop animation")
         pars.add_argument("--easing", type=str, default="ease-in-out", help="CSS easing function")
 
@@ -53,43 +55,50 @@ class AGLayerAnimation(inkex.EffectExtension):
         frame_duration = duration / num_frames if num_frames > 1 else duration
 
         for i, layer in enumerate(layers):
-            layer_id = layer.get('id', f'layer_{i}')
+            layer_id = layer.get("id", f"layer_{i}")
             start_percent = (i / num_frames) * 100
             end_percent = ((i + 1) / num_frames) * 100
 
             # Hide all layers initially
             if i == 0:
-                css_rules.append(f"""
+                css_rules.append(
+                    f"""
                 #{layer_id} {{
                     opacity: 1;
-                    animation: ag_layer_anim {duration}s {easing} {'infinite' if loop else '1'};
+                    animation: ag_layer_anim {duration}s {easing} {"infinite" if loop else "1"};
                 }}
-                """.strip())
+                """.strip()
+                )
             else:
-                css_rules.append(f"""
+                css_rules.append(
+                    f"""
                 #{layer_id} {{
                     opacity: 0;
-                    animation: ag_layer_anim {duration}s {easing} {'infinite' if loop else '1'};
+                    animation: ag_layer_anim {duration}s {easing} {"infinite" if loop else "1"};
                 }}
-                """.strip())
+                """.strip()
+                )
 
         # Create the keyframe animation
         keyframe_rules = []
         for i in range(num_frames):
             percent = (i / num_frames) * 100
-            keyframe_rules.append(f"""
+            keyframe_rules.append(
+                f"""
             {percent:.1f}% {{
-                opacity: {'1' if i == 0 else '0'};
+                opacity: {"1" if i == 0 else "0"};
             }}
-            """.strip())
+            """.strip()
+            )
 
         # Add keyframes for each layer
         for i, layer in enumerate(layers):
-            layer_id = layer.get('id', f'layer_{i}')
+            layer_id = layer.get("id", f"layer_{i}")
             start_percent = (i / num_frames) * 100
             end_percent = ((i + 1) / num_frames) * 100
 
-            css_rules.append(f"""
+            css_rules.append(
+                f"""
             @keyframes ag_layer_anim_{layer_id} {{
                 0%, {start_percent:.1f}% {{
                     opacity: 0;
@@ -104,14 +113,18 @@ class AGLayerAnimation(inkex.EffectExtension):
                     display: none;
                 }}
             }}
-            """.strip())
+            """.strip()
+            )
 
         # Main animation keyframes
-        css_rules.insert(0, f"""
+        css_rules.insert(
+            0,
+            f"""
         @keyframes ag_layer_anim {{
             {"".join(keyframe_rules)}
         }}
-        """.strip())
+        """.strip(),
+        )
 
         return css_rules
 
@@ -129,5 +142,5 @@ class AGLayerAnimation(inkex.EffectExtension):
         defs.append(style_elem)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     AGLayerAnimation().run()

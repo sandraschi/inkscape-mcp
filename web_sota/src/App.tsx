@@ -6,6 +6,8 @@ import { Logs } from '@/pages/logs';
 import { Chat } from '@/pages/chat';
 import { Settings } from '@/pages/settings';
 import { SvgStudio } from '@/pages/svg-studio';
+import { Status } from '@/pages/status';
+import { Help } from '@/pages/help';
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
       <AppLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/status" element={<Status />} />
+          <Route path="/help" element={<Help />} />
           <Route path="/svg-studio" element={<SvgStudio />} />
           <Route path="/actions" element={<Actions />} />
           <Route path="/logs" element={<Logs />} />

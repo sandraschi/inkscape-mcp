@@ -1,25 +1,56 @@
-# inkscape-mcp
-> Professional vector graphics and SVG operations for AI agents through the Model Context Protocol. Provides AI agents with comprehensive vector graphics capabilities including AI-powered SVG generation...
+# Inkscape MCP
 
-This project includes automated llms.txt generation for AI accessibility.
+> **Inkscape MCP** is a FastMCP **3.1+** server that drives the **Inkscape CLI** for SVG and vector workflows. Agents use portmanteau tools (`inkscape_file`, `inkscape_vector`, `inkscape_analysis`, `inkscape_system`) plus optional **sampling/agentic** tools when the host supports `ctx.sample()`. Transports: **stdio** and **HTTP** (`MCP_PORT`, default **10847**); optional **REST** `/api/*` and **Vite** dashboard (**10846**) when you run the web stack.
 
-## Docs
-- [Readme](README.md): Professional vector graphics and SVG operations for AI agents through the Model Context Protocol.
-- [Prd](PRD.md): **Version:** 1.3.0
-- [Features](docs\FEATURES.md): Transform natural language into professional SVG vector graphics using advanced AI models.
-- [Changelog](CHANGELOG.md): All notable changes to this project will be documented in this file.
-- [Troubleshooting](docs\TROUBLESHOOTING.md): **Error:** `Inkscape executable not found`
-- [Usage](docs\USAGE.md): Generate SVG graphics from natural language descriptions:
-- [Ai Svg Construction Plan](docs\AI_SVG_CONSTRUCTION_PLAN.md): **Transform natural language into professional SVG vector graphics.** Tell Claude "create a coat of ...
-- [Architecture](docs\ARCHITECTURE.md): The Inkscape MCP Server provides AI agents with comprehensive vector graphics capabilities through a...
-- [Publish](PUBLISH.md): **Publishing Inkscape MCP to PyPI with uv**
-- [Inkscape Mcp Technical Spec](INKSCAPE_MCP_TECHNICAL_SPEC.md): The Inkscape MCP (Model Context Protocol) Server provides comprehensive vector graphics editing capa...
+**Full detail:** see [`llms-full.txt`](llms-full.txt) for every tool operation, environment variables, run commands, troubleshooting, and MCP config snippets.
 
-## Configuration
-- [Pyproject](pyproject.toml): Python project configuration and dependencies
-- [Package](web_sota\package.json): Node.js project configuration and dependencies
-- [Cargo](Cargo.toml): Rust project configuration and dependencies
-- [Config](.git\config): Application configuration files
+## Quick links
 
-## Optional
-- [Changelog](CHANGELOG.md): Project changelog information
+- [README.md](README.md) — overview and doc table
+- [docs/INSTALL.md](docs/INSTALL.md) — clone → `uv sync` → run
+- [docs/IDE_MCP.md](docs/IDE_MCP.md) — Cursor, Windsurf, Claude Desktop patterns
+- [docs/INKSCAPE.md](docs/INKSCAPE.md) — CLI and PATH
+- [docs/USAGE.md](docs/USAGE.md) — how to call tools
+- [docs/AI_SAMPLING.md](docs/AI_SAMPLING.md) — SEP-1577 / agentic tools
+- [docs/MCPB.md](docs/MCPB.md) — Claude Desktop `.mcpb` bundle
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — modules and transports
+- [glama.json](glama.json) — Glama / discovery metadata
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Tools (summary)
+
+| Tool | Role |
+|------|------|
+| `inkscape_file` | load, save, convert, info, validate, list_formats |
+| `inkscape_vector` | trace, boolean, paths, QR/barcode, preview, mesh, units, … |
+| `inkscape_analysis` | quality, statistics, validate, objects, dimensions, structure |
+| `inkscape_system` | status, help, diagnostics, version, config, extensions |
+| `list_local_models` | Ollama / LM Studio discovery |
+| `generate_heraldry` | Heraldic SVG (e.g. trumponia) |
+| `generate_svg`, `agentic_inkscape_workflow`, `intelligent_vector_processing`, `conversational_inkscape_assistant` | **Sampling hosts only** — see `docs/AI_SAMPLING.md` |
+
+Full per-operation lists: **`llms-full.txt` § Tools**.
+
+## Prompts and resources (MCP)
+
+Registered URIs (FastMCP 3.1):
+
+- **Prompts:** `prompt://inkscape/svg-file-workflow`, `vector-editing-workflow`, `analysis-workflow`, `sampling-agentic-workflow`, `heraldry-workflow`
+- **Resources:** `resource://inkscape/capabilities`, `resource://inkscape/skills`
+
+## Ports (fleet web stack)
+
+| Service | Port | Notes |
+|---------|------|--------|
+| Vite dev UI (`web_sota`) | **10846** | Proxies `/api` and `/mcp` to backend |
+| MCP HTTP + REST bridge | **10847** | `MCP_PORT`; MCP path default `/mcp` |
+
+## Packaging
+
+- **uv** + `pyproject.toml` — [docs/INSTALL.md](docs/INSTALL.md)
+- **justfile** — `just test`, `just mcpb-pack`, etc.
+- **MCPB** — `just mcpb-pack` → `dist/inkscape-mcp-v*.mcpb` (see [docs/MCPB.md](docs/MCPB.md))
+
+## Maintainer / upstream
+
+Repository: `https://github.com/sandraschi/inkscape-mcp` — MIT.

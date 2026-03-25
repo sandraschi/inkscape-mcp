@@ -14,9 +14,15 @@ class AGUnityPrep(inkex.EffectExtension):
 
     def add_arguments(self, pars):
         pars.add_argument("--flatten_groups", type=bool, default=True, help="Flatten all groups")
-        pars.add_argument("--reset_coordinates", type=bool, default=True, help="Reset document coordinates")
-        pars.add_argument("--optimize_paths", type=bool, default=True, help="Optimize path complexity")
-        pars.add_argument("--remove_metadata", type=bool, default=True, help="Remove Inkscape metadata")
+        pars.add_argument(
+            "--reset_coordinates", type=bool, default=True, help="Reset document coordinates"
+        )
+        pars.add_argument(
+            "--optimize_paths", type=bool, default=True, help="Optimize path complexity"
+        )
+        pars.add_argument(
+            "--remove_metadata", type=bool, default=True, help="Remove Inkscape metadata"
+        )
 
     def effect(self):
         """Prepare SVG for Unity import."""
@@ -69,7 +75,7 @@ class AGUnityPrep(inkex.EffectExtension):
     def _reset_coordinates(self):
         """Reset document coordinates to origin."""
         # Get current viewBox
-        viewbox = self.svg.get('viewBox')
+        viewbox = self.svg.get("viewBox")
         if viewbox:
             # Parse viewBox values
             try:
@@ -77,39 +83,45 @@ class AGUnityPrep(inkex.EffectExtension):
                 if len(values) >= 4:
                     x, y, width, height = values[:4]
                     # Reset to origin
-                    self.svg.set('viewBox', f'0 0 {width} {height}')
+                    self.svg.set("viewBox", f"0 0 {width} {height}")
             except ValueError:
                 pass
 
         # Reset any transforms on root element
-        if self.svg.get('transform'):
-            self.svg.set('transform', None)
+        if self.svg.get("transform"):
+            self.svg.set("transform", None)
 
     def _optimize_paths(self):
         """Optimize path complexity for Unity."""
         for elem in self.svg.iter():
             if isinstance(elem, PathElement):
                 # Remove unnecessary style attributes that Unity doesn't need
-                style_attrs_to_remove = ['filter', 'marker', 'marker-start', 'marker-mid', 'marker-end']
+                style_attrs_to_remove = [
+                    "filter",
+                    "marker",
+                    "marker-start",
+                    "marker-mid",
+                    "marker-end",
+                ]
                 for attr in style_attrs_to_remove:
                     if attr in elem.style:
                         del elem.style[attr]
 
                 # Ensure stroke-width is reasonable for UI
-                if 'stroke-width' in elem.style:
+                if "stroke-width" in elem.style:
                     try:
-                        width = float(elem.style['stroke-width'])
+                        width = float(elem.style["stroke-width"])
                         if width > 5:  # Cap maximum stroke width
-                            elem.style['stroke-width'] = '2px'
+                            elem.style["stroke-width"] = "2px"
                         elif width < 0.5:  # Minimum visible stroke
-                            elem.style['stroke-width'] = '1px'
+                            elem.style["stroke-width"] = "1px"
                     except ValueError:
-                        elem.style['stroke-width'] = '1px'
+                        elem.style["stroke-width"] = "1px"
 
     def _remove_metadata(self):
         """Remove Inkscape-specific metadata."""
         # Remove Inkscape namespace declarations
-        namespaces_to_remove = ['inkscape', 'sodipodi']
+        namespaces_to_remove = ["inkscape", "sodipodi"]
 
         # Remove metadata elements
         for elem in self.svg.iter():
@@ -127,12 +139,12 @@ class AGUnityPrep(inkex.EffectExtension):
         if defs is not None:
             children_to_remove = []
             for child in defs:
-                if child.tag.endswith('}metadata') or 'inkscape' in child.tag:
+                if child.tag.endswith("}metadata") or "inkscape" in child.tag:
                     children_to_remove.append(child)
 
             for child in children_to_remove:
                 defs.remove(child)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     AGUnityPrep().run()

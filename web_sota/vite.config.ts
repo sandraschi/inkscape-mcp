@@ -14,10 +14,14 @@ export default defineConfig({
     host: "127.0.0.1",
     proxy: {
       '/mcp': {
-        target: 'http://localhost:10847',
+        target: 'http://127.0.0.1:10847',
         changeOrigin: true,
         ws: true,
-      }
+      },
+      '/api': {
+        target: 'http://127.0.0.1:10847',
+        changeOrigin: true,
+      },
     }
   }
 });

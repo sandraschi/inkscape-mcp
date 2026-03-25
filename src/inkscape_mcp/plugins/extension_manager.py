@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExtensionParameter:
     """Represents a parameter for an Inkscape extension."""
+
     name: str
     type: str
     default: Any = None
@@ -32,6 +33,7 @@ class ExtensionParameter:
 @dataclass
 class InkscapeExtension:
     """Represents an Inkscape extension with its metadata and parameters."""
+
     id: str
     name: str
     description: str
@@ -66,23 +68,29 @@ class ExtensionManager:
         if extension_dirs is None:
             # Default Inkscape extension directories
             import platform
+
             system = platform.system().lower()
 
             if system == "windows":
                 extension_dirs = [
                     Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions",
-                    Path.cwd() / "extensions"
+                    Path.cwd() / "extensions",
                 ]
             elif system == "linux":
                 extension_dirs = [
                     Path.home() / ".config" / "inkscape" / "extensions",
                     Path("/usr/share/inkscape/extensions"),
-                    Path.cwd() / "extensions"
+                    Path.cwd() / "extensions",
                 ]
             elif system == "darwin":  # macOS
                 extension_dirs = [
-                    Path.home() / "Library" / "Application Support" / "org.inkscape.Inkscape" / "config" / "extensions",
-                    Path.cwd() / "extensions"
+                    Path.home()
+                    / "Library"
+                    / "Application Support"
+                    / "org.inkscape.Inkscape"
+                    / "config"
+                    / "extensions",
+                    Path.cwd() / "extensions",
                 ]
             else:
                 extension_dirs = [Path.cwd() / "extensions"]
@@ -155,17 +163,21 @@ class ExtensionManager:
                 elif param_type == "float":
                     param_default = float(param_default) if param_default else 0.0
                 elif param_type == "bool":
-                    param_default = param_default.lower() in ('true', '1', 'yes') if param_default else False
+                    param_default = (
+                        param_default.lower() in ("true", "1", "yes") if param_default else False
+                    )
 
-                parameters.append(ExtensionParameter(
-                    name=param_name,
-                    type=param_type,
-                    default=param_default,
-                    min_val=float(param.get("min", 0)) if param.get("min") else None,
-                    max_val=float(param.get("max", 0)) if param.get("max") else None,
-                    description=param.get("gui-text", ""),
-                    required=param.get("required", "false").lower() == "true"
-                ))
+                parameters.append(
+                    ExtensionParameter(
+                        name=param_name,
+                        type=param_type,
+                        default=param_default,
+                        min_val=float(param.get("min", 0)) if param.get("min") else None,
+                        max_val=float(param.get("max", 0)) if param.get("max") else None,
+                        description=param.get("gui-text", ""),
+                        required=param.get("required", "false").lower() == "true",
+                    )
+                )
 
             # Determine category from menu path
             category = "general"
@@ -180,7 +192,7 @@ class ExtensionManager:
                 python_file=script_path,
                 inx_file=inx_file,
                 parameters=parameters,
-                category=category
+                category=category,
             )
 
         except Exception as e:
@@ -192,7 +204,7 @@ class ExtensionManager:
         extension_id: str,
         input_file: Optional[str] = None,
         output_file: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Execute an Inkscape extension.
 
@@ -209,7 +221,7 @@ class ExtensionManager:
             return {
                 "success": False,
                 "error": f"Extension '{extension_id}' not found",
-                "available_extensions": list(self.extensions.keys())
+                "available_extensions": list(self.extensions.keys()),
             }
 
         extension = self.extensions[extension_id]
@@ -243,16 +255,12 @@ class ExtensionManager:
                 "output": result,
                 "input_file": input_file,
                 "output_file": output_file,
-                "parameters": parameters
+                "parameters": parameters,
             }
 
         except Exception as e:
             self.logger.error(f"Error executing extension {extension_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "extension_id": extension_id
-            }
+            return {"success": False, "error": str(e), "extension_id": extension_id}
 
     def list_extensions(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         """List all available extensions.
@@ -280,10 +288,10 @@ class ExtensionManager:
                         "type": param.type,
                         "default": param.default,
                         "description": param.description,
-                        "required": param.required
+                        "required": param.required,
                     }
                     for param in ext.parameters
-                ]
+                ],
             }
             for ext in extensions
         ]

@@ -512,13 +512,13 @@ async def _generate_barcode_qr(
     """Generate QR code or barcode."""
     try:
         # Create basic SVG with QR-like pattern (placeholder implementation)
-        svg_template = '''<?xml version="1.0" encoding="UTF-8"?>
+        svg_template = """<?xml version="1.0" encoding="UTF-8"?>
 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
   <rect width="200" height="200" fill="white"/>
   <text x="100" y="100" text-anchor="middle" font-family="monospace" font-size="12">
     {barcode_data}
   </text>
-</svg>'''
+</svg>"""
         svg_content = svg_template.format(barcode_data=barcode_data)
 
         with open(output_path, "w", encoding="utf-8") as f:

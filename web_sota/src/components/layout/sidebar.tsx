@@ -9,7 +9,9 @@ import {
     Activity,
     Zap,
     ScrollText,
-    Wand2
+    Wand2,
+    Server,
+    CircleHelp,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,10 +24,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
     const navItems = [
         { href: '/', label: 'Overview', icon: LayoutDashboard },
+        { href: '/status', label: 'Status', icon: Server },
+        { href: '/help', label: 'Help', icon: CircleHelp },
         { href: '/svg-studio', label: 'SVG Studio', icon: Wand2 },
         { href: '/actions', label: 'Vector Actions', icon: Zap },
-        { href: '/logs', label: 'System Logs', icon: ScrollText },
-        { href: '/chat', label: 'AI Command', icon: Bot },
+        { href: '/logs', label: 'Logs', icon: ScrollText },
+        { href: '/chat', label: 'Notes', icon: Bot },
         { href: '/settings', label: 'Settings', icon: Settings },
     ];
 

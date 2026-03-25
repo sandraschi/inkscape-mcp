@@ -85,9 +85,7 @@ class ShellModeWrapper:
         )
         # Wait for the initial ">" prompt
         try:
-            await asyncio.wait_for(
-                self._read_until_prompt(), timeout=self._startup_timeout
-            )
+            await asyncio.wait_for(self._read_until_prompt(), timeout=self._startup_timeout)
         except asyncio.TimeoutError:
             await self.close()
             raise ShellModeError(
@@ -145,13 +143,9 @@ class ShellModeWrapper:
         await self._proc.stdin.drain()
 
         try:
-            response = await asyncio.wait_for(
-                self._read_until_prompt(), timeout=self._timeout
-            )
+            response = await asyncio.wait_for(self._read_until_prompt(), timeout=self._timeout)
         except asyncio.TimeoutError:
-            raise ShellModeError(
-                f"Inkscape shell timed out ({self._timeout}s) on: {command!r}"
-            )
+            raise ShellModeError(f"Inkscape shell timed out ({self._timeout}s) on: {command!r}")
         logger.debug("Shell ← %r", response[:120])
         return response
 
@@ -280,9 +274,7 @@ class ShellModePool:
         logger.info("ShellModePool started (%d sessions)", self._size)
 
     async def close(self) -> None:
-        await asyncio.gather(
-            *(w.close() for w in self._wrappers), return_exceptions=True
-        )
+        await asyncio.gather(*(w.close() for w in self._wrappers), return_exceptions=True)
         self._wrappers.clear()
 
     def acquire(self) -> "ShellModePool._AcquiredShell":

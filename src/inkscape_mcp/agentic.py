@@ -147,9 +147,7 @@ async def _run_sep1577_loop(
                     }
                 )
 
-        final_text = (
-            getattr(result, "text", None) or getattr(result, "content", "") or ""
-        )
+        final_text = getattr(result, "text", None) or getattr(result, "content", "") or ""
         stop_reason = getattr(result, "stop_reason", None)
 
         if stop_reason in ("end_turn", "stop_sequence") or (
@@ -281,9 +279,7 @@ def register_agentic_tools(mcp_instance=None):
         )
 
         ref_hint = (
-            f"Reference SVGs to draw inspiration from: {reference_svgs}."
-            if reference_svgs
-            else ""
+            f"Reference SVGs to draw inspiration from: {reference_svgs}." if reference_svgs else ""
         )
         post_hint = (
             f"After generation, these Inkscape ops will be applied: {post_processing}."
@@ -315,9 +311,7 @@ def register_agentic_tools(mcp_instance=None):
         # Extract SVG block if the LLM wrapped it in prose
         if "<svg" in svg_content and "</svg>" in svg_content:
             start = (
-                svg_content.find("<?xml")
-                if "<?xml" in svg_content
-                else svg_content.find("<svg")
+                svg_content.find("<?xml") if "<?xml" in svg_content else svg_content.find("<svg")
             )
             end = svg_content.rfind("</svg>") + len("</svg>")
             svg_content = svg_content[start:end]
@@ -408,11 +402,7 @@ def register_agentic_tools(mcp_instance=None):
                 "steps_taken": loop_result["steps"],
                 "tool_calls": loop_result["tool_calls"],
                 "workflow_prompt": workflow_prompt,
-                **(
-                    {"warning": loop_result["warning"]}
-                    if "warning" in loop_result
-                    else {}
-                ),
+                **({"warning": loop_result["warning"]} if "warning" in loop_result else {}),
             }
         except Exception as e:
             logger.exception("SEP-1577 workflow failed: %s", e)
@@ -452,9 +442,7 @@ def register_agentic_tools(mcp_instance=None):
             }
 
         doc_count = len(documents) if documents else 0
-        doc_names = [
-            d.get("path", f"doc_{i}") for i, d in enumerate((documents or [])[:5])
-        ]
+        doc_names = [d.get("path", f"doc_{i}") for i, d in enumerate((documents or [])[:5])]
 
         system_prompt = (
             "You are a vector graphics pipeline engineer using FastMCP 3.1 SEP-1577. "
@@ -486,11 +474,7 @@ def register_agentic_tools(mcp_instance=None):
                 "processing_goal": processing_goal,
                 "document_count": doc_count,
                 "processing_strategy": processing_strategy,
-                **(
-                    {"warning": loop_result["warning"]}
-                    if "warning" in loop_result
-                    else {}
-                ),
+                **({"warning": loop_result["warning"]} if "warning" in loop_result else {}),
             }
         except Exception as e:
             logger.exception("SEP-1577 batch processing failed: %s", e)

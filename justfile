@@ -56,6 +56,36 @@ audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
 
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+# Display the SOTA Industrial Dashboard
+# ── Quality ───────────────────────────────────────────────────────────────────
+
+# Execute Ruff SOTA v13.1 linting
+lint:
+    Set-Location '{{justfile_directory()}}'
+    uv run ruff check .
+
+# Execute Ruff SOTA v13.1 fix and formatting
+fix:
+    Set-Location '{{justfile_directory()}}'
+    uv run ruff check . --fix --unsafe-fixes
+    uv run ruff format .
+
+# ── Hardening ─────────────────────────────────────────────────────────────────
+
+# Execute Bandit security audit
+check-sec:
+    Set-Location '{{justfile_directory()}}'
+    uv run bandit -r src/
+
+# Execute safety audit of dependencies
+audit-deps:
+    Set-Location '{{justfile_directory()}}'
+    uv run safety check
+
 # Inkscape MCP — fleet recipes (mcp-central-docs PACKAGING_STANDARDS.md §5)
 
 stats:

@@ -6,7 +6,7 @@ You need **Python 3.12+**, **[uv](https://docs.astral.sh/uv/)**, and **Inkscape*
 
 | Doc | What |
 |-----|------|
-| [docs/INSTALL.md](docs/INSTALL.md) | Clone → `uv sync` → run; PyPI / `uvx` |
+| [docs/INSTALL.md](docs/INSTALL.md) | Clone  `uv sync`  run; PyPI / `uvx` |
 | [docs/INKSCAPE.md](docs/INKSCAPE.md) | Install Inkscape, PATH, CLI check |
 | [docs/IDE_MCP.md](docs/IDE_MCP.md) | Cursor, VS Code, Windsurf, Glama-style config |
 | [docs/MCPB.md](docs/MCPB.md) | Claude Desktop `.mcpb` bundle |
@@ -15,7 +15,7 @@ You need **Python 3.12+**, **[uv](https://docs.astral.sh/uv/)**, and **Inkscape*
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, transports, modules |
 | [llms.txt](llms.txt) / [llms-full.txt](llms-full.txt) | LLM index + full tool/env/run manifest (fleet) |
 
-More: [Docs index](docs/README.md) · [API](docs/API.md) · [Features](docs/FEATURES.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changelog](CHANGELOG.md)
+More: [Docs index](docs/README.md)  [API](docs/API.md)  [Features](docs/FEATURES.md)  [Troubleshooting](docs/TROUBLESHOOTING.md)  [Changelog](CHANGELOG.md)
 
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/sandraschi/inkscape-mcp/ci.yml)](https://github.com/sandraschi/inkscape-mcp/actions)
 [![PyPI](https://img.shields.io/pypi/v/inkscape-mcp)](https://pypi.org/project/inkscape-mcp/)
@@ -24,4 +24,4 @@ More: [Docs index](docs/README.md) · [API](docs/API.md) · [Features](docs/FEAT
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT  see [LICENSE](LICENSE).

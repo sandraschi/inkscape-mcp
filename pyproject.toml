@@ -99,23 +99,6 @@ allow-direct-references = true
 [tool.hatch.version]
 path = "src/inkscape_mcp/__init__.py"
 
-[tool.ruff]
-target-version = "py312"
-line-length = 100
-
-[tool.ruff.lint]
-select = [
-    "F", "E", "W", "I", "N", "UP", "B", "C4", "ARG", "PTH", "ERA"
-]
-ignore = ["E501"]
-
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastmcp.FastMCP"]
-
-[tool.ruff.lint.isort]
-force-single-line = true
-known-first-party = ["inkscape_mcp"]
-
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
@@ -211,3 +194,32 @@ version = "2.0.0b0"
 description = "Inkscape MCP server (FastMCP 3.1+), portmanteau tools"
 entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# Hardened v13.1 Rule Set
+select = [
+    "E", "F", "I", "UP", "B", "S", "A", "ANN", "COM", "C4", "DTZ", "PIE", "T20", "PYI", "Q", "RSE", "RET", "SLF", "SIM", "TID", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "PERF", "FURB", "LOG", "RUF"
+]
+ignore = [
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
+    "COM812", # Trailing comma missing (handled by formatter)
+    "ISC001", # Single line implicit string concatenation (handled by formatter)
+    "PLR0913", # Too many arguments
+    "S101",   # Use of assert (standard for pytest)
+    "TRY003", # Avoid specifying long messages in exceptions
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ANN", "PLR", "TRY", "S105", "S106", "SLF001", "ARG002", "PLC0415"]
+"server.py" = ["T20", "ARG001", "ARG002"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

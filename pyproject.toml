@@ -198,15 +198,11 @@ architecture = "portmanteau"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-select = ["E", "F", "W", "C90", "I", "N", "UP", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLO", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
-ignore = ["ANN101", "ANN102", "D100", "D104", "S101", "G004", "PLR0913", "TRY003", "ANN401"]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "ANN", "PLR", "TRY", "S105", "S106", "SLF001", "ARG002", "PLC0415"]
-"server.py" = ["T20", "ARG001", "ARG002"]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+ignore = ["S101", "B008"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"

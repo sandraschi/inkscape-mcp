@@ -74,9 +74,31 @@ Resources: resource://inkscape/capabilities, resource://inkscape/skills"""
 
     @mcp.resource("resource://inkscape/skills")
     def resource_skills() -> str:
-        """LLM-oriented skill reference loaded from skills/SKILL.md (CodeMode discovery)."""
-        from pathlib import Path
-        skill_path = Path(__file__).parent / "skills" / "SKILL.md"
-        if skill_path.exists():
-            return skill_path.read_text(encoding="utf-8")
-        return "Skills file not found — expected at src/inkscape_mcp/skills/SKILL.md"
+        """LLM-oriented skill reference (mirrors fleet skill:// style content)."""
+        return """# inkscape-mcp — skills reference
+
+## inkscape_file
+- load, save, convert, info, validate, list_formats
+
+## inkscape_vector
+- trace_image, generate_barcode_qr, create_mesh_gradient, text_to_path, construct_svg,
+  apply_boolean, path_inset_outset, path_simplify, path_clean, path_combine, path_break_apart,
+  object_to_path, optimize_svg, scour_svg, measure_object, query_document, count_nodes,
+  export_dxf, layers_to_files, fit_canvas_to_drawing, render_preview, generate_laser_dot,
+  object_raise, object_lower, set_document_units
+
+## inkscape_analysis
+- quality, statistics, validate, objects, dimensions, structure
+
+## inkscape_system
+- status, help, diagnostics, version, config, list_extensions, execute_extension (if enabled)
+
+## Other
+- list_local_models: Ollama / LM Studio discovery
+- generate_heraldry: heraldic SVG (trumponia)
+
+## Agentic (sampling hosts only)
+- generate_svg, agentic_inkscape_workflow, intelligent_vector_processing, conversational_inkscape_assistant
+
+See docs/USAGE.md, docs/AI_SAMPLING.md, and llms-full.txt in the repository root for environment variables and run commands.
+"""

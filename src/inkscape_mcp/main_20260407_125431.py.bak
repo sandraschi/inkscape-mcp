@@ -154,14 +154,6 @@ class InkscapeMCPServer:
                 except Exception as e:
                     logger.warning(f"Failed to mount REST API bridge: {e}")
 
-            # Register Prefab UI (FastMCP 3.2 GenerativeUI)
-            if PREFAB_AVAILABLE and register_prefabs:
-                try:
-                    register_prefabs(self.mcp)
-                    logger.info("Prefab UI components registered")
-                except Exception as e:
-                    logger.warning(f"Failed to register Prefab UI: {e}")
-
             return True
 
         except Exception as e:
@@ -384,24 +376,15 @@ async def main_async():
     log_level = getattr(logging, args.log_level.upper())
     logging.basicConfig(level=log_level, force=True)
 
-    # Bridge this CLI to transport env.
-    # If MCP_TRANSPORT is already set externally (e.g. Claude Desktop config env),
-    # honour it — only apply the argparser value when --mode was explicitly passed.
-    explicit_mode = "--mode" in sys.argv
-    if explicit_mode:
-        os.environ["MCP_PORT"] = str(args.port)
-        if args.mode == "stdio":
-            os.environ["MCP_TRANSPORT"] = "stdio"
-        elif args.mode == "http":
-            os.environ["MCP_TRANSPORT"] = "http"
-        else:
-            os.environ["MCP_TRANSPORT"] = "http"
+    # Bridge this CLI to transport env (run_server_async uses transport's parser when args=None)
+    os.environ["MCP_PORT"] = str(args.port)
+    if args.mode == "stdio":
+        os.environ["MCP_TRANSPORT"] = "stdio"
+    elif args.mode == "http":
+        os.environ["MCP_TRANSPORT"] = "http"
     else:
-        # No --mode arg — respect whatever MCP_TRANSPORT is already set to.
-        # Fall back to http only if nothing is set at all.
-        if not os.environ.get("MCP_TRANSPORT"):
-            os.environ["MCP_TRANSPORT"] = "http"
-        os.environ.setdefault("MCP_PORT", str(args.port))
+        # dual: HTTP for /mcp + /api (dashboard); stdio not combined here
+        os.environ["MCP_TRANSPORT"] = "http"
 
     try:
         server = InkscapeMCPServer(config_path=Path(args.config) if args.config else None)

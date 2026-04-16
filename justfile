@@ -34,74 +34,77 @@ default:
 
 # Execute Ruff SOTA v13.1 linting
 lint:
-    Set-Location '{{justfile_directory()}}'
     uv run ruff check .
+    Set-Location '{{justfile_directory()}}\web_sota'
+    npx @biomejs/biome ci .
 
 # Execute Ruff SOTA v13.1 fix and formatting
 fix:
-    Set-Location '{{justfile_directory()}}'
     uv run ruff check . --fix --unsafe-fixes
     uv run ruff format .
+    Set-Location '{{justfile_directory()}}\web_sota'
+    npx @biomejs/biome check --write .
+
+# Execute pytest suite
+test:
+    uv run pytest
+
+# Execute mypy type analytics
+typecheck:
+    uv run mypy src/inkscape_mcp
+
+# Unified quality verification
+check: lint typecheck test
+    @echo check complete
 
 # ── Hardening ─────────────────────────────────────────────────────────────────
 
 # Execute Bandit security audit
 check-sec:
-    Set-Location '{{justfile_directory()}}'
     uv run bandit -r src/
 
 # Execute safety audit of dependencies
 audit-deps:
-    Set-Location '{{justfile_directory()}}'
     uv run safety check
 
-# Inkscape MCP — fleet recipes (mcp-central-docs PACKAGING_STANDARDS.md §5)
+# ── Operation ─────────────────────────────────────────────────────────────────
 
+# Quantitative snapshot of repo statistics
 stats:
     uv run python tools/repo_stats.py
 
-# --- Quality ---
-
-test:
-    uv run pytest
-
-fmt:
-    uv run ruff format .
-    uv run ruff check --fix .
-
-typecheck:
-    uv run mypy src/inkscape_mcp
-
-check: lint typecheck test
-    @echo check complete
-
-# --- Run (repo root; clone + uv sync first) ---
-
+# Launch Inkscape MCP (Dual Mode)
 run:
     uv run inkscape-mcp --mode dual
 
+# Launch Inkscape MCP (Stdio Mode)
 run-stdio:
     uv run inkscape-mcp --mode stdio
 
+# Launch Inkscape MCP (HTTP Mode)
 run-http port="10847":
     uv run inkscape-mcp --mode http --port {{port}}
 
-# --- MCPB ---
+# ── Packaging ─────────────────────────────────────────────────────────────────
 
+# Sync MCPB source artifacts
 sync-mcpb-src:
     uv run python tools/sync_mcpb_src.py
 
+# Expand MCPB examples
 expand-mcpb-examples:
     uv run python tools/expand_mcpb_examples.py
 
-# Requires Node.js (npx-cli.js via node). Writes dist/inkscape-mcp-v<version>.mcpb
+# Build MCPB bundle
 mcpb-pack: sync-mcpb-src expand-mcpb-examples
     uv run python tools/pack_mcpb.py
 
-# --- Build / publish helpers ---
-
+# Build wheel package
 build-wheel:
     uv build
 
+# ── Housekeeping ──────────────────────────────────────────────────────────────
+
+# Execute pre-commit checks on all files
 pre-commit:
     uv run pre-commit run --all-files

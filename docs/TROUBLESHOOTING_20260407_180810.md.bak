@@ -128,37 +128,12 @@
 **Common Problems:**
 - PATH environment variable not set
 - Permission issues with temp directories
-- Inkscape GUI/CLI profile lock conflict (see below)
+- Inkscape GUI conflicts
 
 **Solutions:**
 - Add Inkscape to system PATH
 - Run as administrator if needed
-
----
-
-### Inkscape GUI and CLI conflict on Windows (profile lock)
-
-**Symptom:** CLI tool calls time out or hang when Inkscape GUI is open. `inkscape_system(status)` shows `inkscape.available: false` even though Inkscape is installed and running.
-
-**Cause:** On Windows, Inkscape locks `preferences.xml` in the user profile directory (`%APPDATA%\inkscape`) when the GUI is open. Any CLI invocation (`inkscape --export-filename=...`) attempts to read and write the same profile on startup and blocks waiting for the lock, causing the MCP tool call to time out. This is an Inkscape architectural limitation, not a bug in inkscape-mcp.
-
-**Fix — isolated CLI profile (recommended):**
-
-Set `INKSCAPE_PROFILE_DIR` to a separate directory in the inkscape-mcp server environment. The CLI gets its own profile that the GUI never touches. In your Claude Desktop config (`claude_desktop_config.json`), add to the `inkscape-mcp` env block:
-
-```json
-"INKSCAPE_PROFILE_DIR": "D:/Dev/repos/inkscape-mcp/inkscape-profile"
-```
-
-The directory is created automatically on first CLI run. GUI and CLI then coexist without conflicts.
-
-**Alternative — close the GUI before CLI ops:**
-
-Not practical for interactive use, but works if you only need CLI batch processing and have no need for the GUI simultaneously.
-
-**Not recommended:** Running the GUI in a VM (VirtualBox, Windows Sandbox) to isolate it. This works in principle but is wildly overcomplicated for a profile directory problem.
-
----
+- Use `--batch-process` flag
 
 ### macOS Issues
 

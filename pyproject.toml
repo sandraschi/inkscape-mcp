@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "inkscape-mcp"
 version = "2.0.0b0"
-description = "MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.2+)"
+description = "MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.2.0+)"
 readme = "README.md"
 authors = [
     {name = "Sandra Schipal", email = "sandra@sandraschi.dev"},
@@ -186,7 +186,7 @@ all = [
 name = "inkscape-mcp"
 display_name = "Inkscape MCP Server"
 version = "2.0.0b0"
-description = "Inkscape MCP server (FastMCP 3.2+), portmanteau tools"
+description = "Inkscape MCP server (FastMCP 3.2.0+), portmanteau tools"
 entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"
 

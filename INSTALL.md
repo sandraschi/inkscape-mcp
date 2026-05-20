@@ -3,6 +3,11 @@
 ## 🚀 Quick Start (recommended)
 
 ```powershell
+# Install just if you don't have it
+winget install Casey.Just    # Windows
+# scoop install just          # Windows (alternative)
+# brew install just           # macOS
+
 git clone https://github.com/sandraschi/inkscape-mcp
 cd inkscape-mcp
 just

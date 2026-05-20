@@ -11,6 +11,7 @@ export default defineConfig({
   },
   server: {
     port: 10846,
+    strictPort: true,
     host: "127.0.0.1",
     proxy: {
       '/mcp': {

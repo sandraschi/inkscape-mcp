@@ -400,7 +400,7 @@ async def main_async():
         # No --mode arg — respect whatever MCP_TRANSPORT is already set to.
         # Fall back to http only if nothing is set at all.
         if not os.environ.get("MCP_TRANSPORT"):
-            os.environ["MCP_TRANSPORT"] = "http"
+            os.environ["MCP_TRANSPORT"] = "stdio"
         os.environ.setdefault("MCP_PORT", str(args.port))
 
     try:

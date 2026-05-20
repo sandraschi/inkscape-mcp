@@ -168,3 +168,4 @@ logs/
 # Configuration overrides
 config.local.yaml
 config.local.yml
+_dashboard/

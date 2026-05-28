@@ -1,6 +1,7 @@
 import {
   Bot,
   Camera,
+  GitPullRequest,
   ImageIcon,
   ScanEye,
   Server,
@@ -17,7 +18,7 @@ import {
   type PreviewRecord,
 } from "@/api/mcp";
 
-type TabId = "runtime" | "vision" | "validation" | "gallery" | "analysis";
+type TabId = "runtime" | "vision" | "validation" | "gallery" | "analysis" | "fleet";
 
 function ResultBox({ text }: { text: string | null }) {
   if (!text) return null;
@@ -40,12 +41,17 @@ export function AgentTools() {
   const [dpi, setDpi] = useState("192");
   const [dpiList, setDpiList] = useState("96,192,384");
 
+  const [projectPath, setProjectPath] = useState("D:/Unity/MyProject");
+  const [stagingDir, setStagingDir] = useState("D:/Temp/fleet_pipeline/inkscape_staging");
+  const [skipGimp, setSkipGimp] = useState(false);
+
   const tabs: { id: TabId; label: string; icon: typeof Bot }[] = [
     { id: "runtime", label: "Runtime", icon: Server },
     { id: "vision", label: "Vision", icon: ScanEye },
     { id: "validation", label: "Validation", icon: ShieldCheck },
     { id: "gallery", label: "Gallery", icon: ImageIcon },
     { id: "analysis", label: "Analysis", icon: Search },
+    { id: "fleet", label: "Fleet", icon: GitPullRequest },
   ];
 
   useEffect(() => {
@@ -95,7 +101,7 @@ export function AgentTools() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">Agent Tools</h2>
           <p className="text-sm text-slate-400 mt-1">
-            Phase 1–2: execution mode, vision exports, SVG validation, preview gallery.
+            Phase 1–3: execution mode, vision exports, SVG validation, fleet handoff.
           </p>
         </div>
         <button
@@ -361,6 +367,99 @@ export function AgentTools() {
                   {label}
                 </button>
               ))}
+            </div>
+          </>
+        )}
+
+        {tab === "fleet" && (
+          <>
+            <h3 className="font-semibold text-white">Fleet handoff</h3>
+            <p className="text-sm text-slate-400">
+              inkscape SVG → PNG export → gimp-mcp QA (:10773) → unity3d-mcp sprite (:10831)
+            </p>
+            <label className="block text-sm text-slate-300">
+              Unity project path
+              <input
+                className="mt-1 w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-md text-sm text-white"
+                value={projectPath}
+                onChange={(e) => setProjectPath(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Staging directory
+              <input
+                className="mt-1 w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-md text-sm text-white"
+                value={stagingDir}
+                onChange={(e) => setStagingDir(e.target.value)}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={skipGimp}
+                onChange={(e) => setSkipGimp(e.target.checked)}
+              />
+              Skip gimp validation (offline test)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm"
+                onClick={() =>
+                  run("inkscape_fleet", {
+                    operation: "run_pipeline",
+                    svg_path: inputPath,
+                    project_path: projectPath,
+                    staging_dir: stagingDir,
+                    dpi: Number(dpi) || 192,
+                    skip_gimp: skipGimp,
+                  })
+                }
+              >
+                Run full pipeline
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
+                onClick={() =>
+                  run("inkscape_fleet", {
+                    operation: "push_gimp_raster",
+                    svg_path: inputPath,
+                    dpi: Number(dpi) || 192,
+                    staging_dir: stagingDir,
+                  })
+                }
+              >
+                Push to GIMP
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
+                onClick={() =>
+                  run("inkscape_fleet", {
+                    operation: "stage_blender_svg",
+                    svg_path: inputPath,
+                  })
+                }
+              >
+                Stage for Blender
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
+                onClick={() =>
+                  run("inkscape_fleet", {
+                    operation: "list_staging",
+                    staging_dir: stagingDir,
+                  })
+                }
+              >
+                List staging
+              </button>
             </div>
           </>
         )}

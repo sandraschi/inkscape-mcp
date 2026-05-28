@@ -23,6 +23,7 @@ from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
 from .mcp_tool_types import InkscapeAnalysisOperation
 from .mcp_tool_types import InkscapeFileOperation
+from .mcp_tool_types import InkscapeFleetOperation
 from .mcp_tool_types import InkscapeRenderOperation
 from .mcp_tool_types import InkscapeSystemOperation
 from .mcp_tool_types import InkscapeValidationOperation
@@ -30,6 +31,7 @@ from .mcp_tool_types import InkscapeVectorOperation
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
 from .tools import inkscape_file as inkscape_file_tool
+from .tools import inkscape_fleet as inkscape_fleet_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_system as inkscape_system_tool
 from .tools import inkscape_validation as inkscape_validation_tool
@@ -386,6 +388,58 @@ class InkscapeMCPServer:
             annotations=ToolAnnotations(
                 readOnlyHint=False,
                 destructiveHint=False,
+                idempotentHint=False,
+                openWorldHint=True,
+            ),
+        )
+        async def inkscape_fleet(
+            operation: InkscapeFleetOperation,
+            svg_path: str = "",
+            png_path: str = "",
+            project_path: str = "",
+            output_dir: str = "",
+            staging_dir: str = "",
+            dpi: int = 192,
+            gimp_url: str = "",
+            blender_url: str = "",
+            unity_url: str = "",
+            import_to_blender: bool = False,
+            skip_validate: bool = False,
+            skip_gimp: bool = False,
+            skip_blender_stage: bool = True,
+            skip_unity: bool = False,
+            target_platform: str = "unity",
+        ) -> dict[str, Any]:
+            """INKSCAPE_FLEET — Cross-repo handoff (gimp QA, blender SVG, unity sprites).
+
+            Operations: push_gimp_raster, stage_blender_svg, push_unity_sprite,
+            build_layer_atlas, run_pipeline, list_staging.
+            """
+            return await inkscape_fleet_tool(
+                operation=operation,
+                svg_path=svg_path,
+                png_path=png_path,
+                project_path=project_path,
+                output_dir=output_dir,
+                staging_dir=staging_dir,
+                dpi=dpi,
+                gimp_url=gimp_url,
+                blender_url=blender_url,
+                unity_url=unity_url,
+                import_to_blender=import_to_blender,
+                skip_validate=skip_validate,
+                skip_gimp=skip_gimp,
+                skip_blender_stage=skip_blender_stage,
+                skip_unity=skip_unity,
+                target_platform=target_platform,
+                cli_wrapper=self.cli_wrapper,
+                config=self.config,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
                 idempotentHint=True,
                 openWorldHint=False,
             ),
@@ -439,6 +493,7 @@ class InkscapeMCPServer:
             "inkscape_analysis": inkscape_analysis,
             "inkscape_render": inkscape_render,
             "inkscape_validation": inkscape_validation,
+            "inkscape_fleet": inkscape_fleet,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
         }

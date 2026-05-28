@@ -77,3 +77,12 @@ InkscapeValidationOperation = Literal[
     "check_size_limits",
     "audit_web_svg",
 ]
+
+InkscapeFleetOperation = Literal[
+    "push_gimp_raster",
+    "stage_blender_svg",
+    "push_unity_sprite",
+    "build_layer_atlas",
+    "run_pipeline",
+    "list_staging",
+]

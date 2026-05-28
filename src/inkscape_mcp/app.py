@@ -89,6 +89,7 @@ def _help_payload() -> dict[str, Any]:
             "inkscape_vector — trace, boolean, simplify, preview, QR, …",
             "inkscape_render — export_preview, export_multi_dpi, get_document_summary",
             "inkscape_validation — validate_svg, check_viewbox, audit_web_svg, …",
+            "inkscape_fleet — push_gimp_raster, stage_blender_svg, push_unity_sprite, run_pipeline",
             "inkscape_analysis — statistics, validate, dimensions",
             "inkscape_system — status, execution_mode, help, config, diagnostics",
             "list_local_models — optional Ollama/LM Studio discovery",

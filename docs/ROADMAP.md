@@ -43,14 +43,14 @@ cd D:\Dev\repos\inkscape-mcp\web_sota
 
 ## Phase 3 — Fleet handoff (2.3.0)
 
-**Status: planned**
+**Status: complete (v2.3.0)**
 
 | Item | Tool / module |
 |------|----------------|
-| SVG → GIMP raster handoff | HTTP to gimp-mcp `:10773` |
-| Blender curve/SVG import staging | fleet HTTP + filesystem drop |
-| Unity UI sprite atlas push | unity3d-mcp REST + layer export |
-| Fleet pipeline script | `scripts/fleet_pipeline.py` (inkscape → gimp → unity) |
+| SVG → GIMP raster handoff | `inkscape_fleet` → `push_gimp_raster` + HTTP :10773 |
+| Blender curve/SVG import staging | `inkscape_fleet` → `stage_blender_svg` |
+| Unity UI sprite atlas push | `inkscape_fleet` → `push_unity_sprite`, `build_layer_atlas` |
+| Fleet pipeline script | `scripts/fleet_pipeline.py`, `scripts/run-fleet-pipeline.ps1` |
 
 ## Phase 4 — Telemetry, Docker, monitoring (2.4.0)
 

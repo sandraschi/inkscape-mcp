@@ -7,15 +7,15 @@ Mirrors the blender-mcp / gimp-mcp / unity3d-mcp Agent Lab phases, adapted for I
 
 ## Phase 1 — Agent vision and runtime guidance (2.1.0)
 
-**Status: planned**
+**Status: complete (v2.1.0)**
 
 | Item | Tool / module |
 |------|----------------|
 | Unified preview export for agent loops | `inkscape_render` → `export_preview`, `export_multi_dpi` |
 | Document summary for vision context | `inkscape_render` → `get_document_summary` |
 | Hands-In vs Hands-Off guidance | `inkscape_system` → `execution_mode` |
-| Inkscape detection + CLI health | extend `inkscape_system` → `status`, `diagnostics` |
-| Phase 1 tests | `tests/test_phase1_tools.py` |
+| Inkscape detection + CLI health | `inkscape_system` → `status`, `diagnostics` |
+| Phase 1 tests | `tests/unit/test_phase1_tools.py` |
 
 ### Agent workflow
 

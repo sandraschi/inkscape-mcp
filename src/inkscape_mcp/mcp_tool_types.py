@@ -59,6 +59,13 @@ InkscapeSystemOperation = Literal[
     "diagnostics",
     "version",
     "config",
+    "execution_mode",
     "list_extensions",
     "execute_extension",
+]
+
+InkscapeRenderOperation = Literal[
+    "export_preview",
+    "export_multi_dpi",
+    "get_document_summary",
 ]

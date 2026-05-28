@@ -218,10 +218,15 @@ Errors:
         - Run diagnostics operation to identify connection issues
 """
 
+import logging
 import time
 from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel
+
+from ..utils.execution_mode import describe_execution_mode
+
+logger = logging.getLogger(__name__)
 
 
 class SystemResult(BaseModel):
@@ -237,7 +242,14 @@ class SystemResult(BaseModel):
 
 async def inkscape_system(
     operation: Literal[
-        "status", "help", "diagnostics", "version", "config", "list_extensions", "execute_extension"
+        "status",
+        "help",
+        "diagnostics",
+        "version",
+        "config",
+        "execution_mode",
+        "list_extensions",
+        "execute_extension",
     ],
     extension_id: Optional[str] = None,
     extension_params: Optional[Dict[str, Any]] = None,
@@ -256,14 +268,14 @@ async def inkscape_system(
             inkscape_version = "unknown"
 
             try:
-                if config and config.inkscape_executable:
+                if config and config.inkscape_executable and cli_wrapper:
                     result = await cli_wrapper._execute_command(
                         [str(config.inkscape_executable), "--version"], config.process_timeout
                     )
                     inkscape_available = True
                     inkscape_version = result.strip().split("\n")[0] if result else "unknown"
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Inkscape version probe failed: %s", exc)
 
             return SystemResult(
                 success=True,
@@ -272,8 +284,9 @@ async def inkscape_system(
                 data={
                     "server": {
                         "name": "Inkscape MCP Server",
-                        "version": "1.1.0",
+                        "version": "2.1.0",
                         "status": "running",
+                        "agent_lab_phase": 1,
                     },
                     "inkscape": {
                         "available": inkscape_available,
@@ -284,9 +297,20 @@ async def inkscape_system(
                         "file": "available",
                         "vector": "available",
                         "analysis": "available",
+                        "render": "available",
                         "system": "available",
                     },
                 },
+                execution_time_ms=(time.time() - start_time) * 1000,
+            ).model_dump()
+
+        elif operation == "execution_mode":
+            mode_data = await describe_execution_mode(cli_wrapper=cli_wrapper, config=config)
+            return SystemResult(
+                success=True,
+                operation="execution_mode",
+                message="Execution mode guidance for agents",
+                data=mode_data,
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 
@@ -297,9 +321,9 @@ async def inkscape_system(
                 operation="version",
                 message="Retrieved version information",
                 data={
-                    "server": "Inkscape MCP Server v1.2.0-beta",
-                    "protocol": "FastMCP 2.14.1+",
-                    "architecture": "Portmanteau Tools",
+                    "server": "Inkscape MCP Server v2.1.0",
+                    "protocol": "FastMCP 3.2+",
+                    "architecture": "Portmanteau Tools + Agent Lab Phase 1",
                     "inkscape_required": "1.0+ (1.2+ recommended for Actions API)",
                 },
                 execution_time_ms=(time.time() - start_time) * 1000,
@@ -370,16 +394,16 @@ async def inkscape_system(
                 "tools": [
                     "generate_svg: AI-powered SVG generation from natural language descriptions",
                     "inkscape_file: Basic file operations (load, save, convert, info, validate, list_formats)",
-                    "inkscape_vector: Advanced vector operations (23 operations including trace, boolean, optimize, render)",
+                    "inkscape_vector: Advanced vector operations (trace, boolean, optimize, render_preview, etc.)",
+                    "inkscape_render: Agent vision exports (export_preview, export_multi_dpi, get_document_summary)",
                     "inkscape_analysis: Document analysis (quality, statistics, validate, objects, dimensions, structure)",
-                    "inkscape_system: System operations (status, help, diagnostics, version, config)",
+                    "inkscape_system: System operations (status, execution_mode, help, diagnostics, version, config)",
                 ],
                 "getting_started": [
                     "Ensure Inkscape 1.0+ is installed",
-                    "Use generate_svg for AI-powered SVG creation from natural language",
-                    "Use inkscape_file for basic operations",
-                    "Use inkscape_vector for advanced vector editing",
-                    "Use inkscape_analysis to understand your SVGs",
+                    "inkscape_system operation=execution_mode for Hands-In vs batch guidance",
+                    "inkscape_render operation=export_preview for agent vision loops",
+                    "Use inkscape_analysis operation=objects before ID-based vector edits",
                 ],
             }
 

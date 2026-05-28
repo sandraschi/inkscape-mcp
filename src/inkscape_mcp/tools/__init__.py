@@ -17,6 +17,7 @@ from typing import Any
 from .file_operations import inkscape_file
 from .vector_operations import inkscape_vector
 from .analysis import inkscape_analysis
+from .render_tools import inkscape_render
 from .system import inkscape_system
 from .heraldry import register_heraldry_tools
 from .llm_discovery import list_local_models
@@ -25,6 +26,7 @@ __all__ = [
     "inkscape_file",
     "inkscape_vector",
     "inkscape_analysis",
+    "inkscape_render",
     "inkscape_system",
     "register_heraldry_tools",
     "list_local_models",
@@ -81,10 +83,23 @@ PORTMANTEAU_TOOLS = [
         ],
     },
     {
+        "name": "inkscape_render",
+        "function": inkscape_render,
+        "category": "agent_vision",
+        "operations": ["export_preview", "export_multi_dpi", "get_document_summary"],
+    },
+    {
         "name": "inkscape_system",
         "function": inkscape_system,
         "category": "system",
-        "operations": ["status", "help", "diagnostics", "version", "config"],
+        "operations": [
+            "status",
+            "execution_mode",
+            "help",
+            "diagnostics",
+            "version",
+            "config",
+        ],
     },
 ]
 

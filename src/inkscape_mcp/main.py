@@ -23,12 +23,14 @@ from .logging_config import setup_logging
 from .mcp_tool_types import (
     InkscapeAnalysisOperation,
     InkscapeFileOperation,
+    InkscapeRenderOperation,
     InkscapeSystemOperation,
     InkscapeVectorOperation,
 )
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
 from .tools import inkscape_file as inkscape_file_tool
+from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_system as inkscape_system_tool
 from .tools import inkscape_vector as inkscape_vector_tool
 from .tools import list_local_models as list_local_models_tool
@@ -303,12 +305,59 @@ class InkscapeMCPServer:
                 openWorldHint=False,
             ),
         )
+        async def inkscape_render(
+            operation: InkscapeRenderOperation,
+            input_path: str = "",
+            output_path: str = "",
+            dpi: int = 96,
+            dpi_list: str = "",
+        ) -> dict[str, Any]:
+            """INKSCAPE_RENDER — Agent vision exports and document summaries (Phase 1).
+
+            PORTMANTEAU RATIONALE: Vision-loop exports are grouped separately from vector editing.
+
+            Operations:
+            - export_preview: PNG preview at dpi (default 96) for agent vision loops.
+            - export_multi_dpi: Batch PNG exports (default 96,192,384 or dpi_list CSV).
+            - get_document_summary: Statistics + validation snapshot before mutating paths.
+
+            Args:
+                operation: Render subcommand (Literal).
+                input_path: Source SVG for all operations.
+                output_path: Destination PNG; auto-generated under temp_directory when empty.
+                dpi: Target DPI for export_preview.
+                dpi_list: Comma-separated DPI values for export_multi_dpi.
+
+            Returns:
+                Dict with success, message, data, execution_time_ms, error.
+
+            Errors:
+                Missing input_path, Inkscape CLI unavailable, invalid dpi_list — see message.
+            """
+            return await inkscape_render_tool(
+                operation=operation,
+                input_path=input_path,
+                output_path=output_path,
+                dpi=dpi,
+                dpi_list=dpi_list,
+                cli_wrapper=self.cli_wrapper,
+                config=self.config,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
+        )
         async def inkscape_system(operation: InkscapeSystemOperation) -> dict[str, Any]:
             """INKSCAPE_SYSTEM — Server/Inkscape status, help, diagnostics, version, extensions.
 
             PORTMANTEAU RATIONALE: Operational and introspection calls stay in one discoverable tool.
 
-            Operations: status, help, diagnostics, version, config, list_extensions, execute_extension.
+            Operations: status, execution_mode, help, diagnostics, version, config, list_extensions, execute_extension.
 
             Args:
                 operation: System subcommand (Literal). Extension execution may require extra
@@ -350,6 +399,7 @@ class InkscapeMCPServer:
             "inkscape_file": inkscape_file,
             "inkscape_vector": inkscape_vector,
             "inkscape_analysis": inkscape_analysis,
+            "inkscape_render": inkscape_render,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
         }

@@ -30,8 +30,8 @@ See [ROADMAP.md](ROADMAP.md).
 |-----|--------------|-------|
 | Unified agent vision export (PNG/PDF preview for loops) | `inkscape_render` portmanteau + `render_preview` consolidation | 1 (done) |
 | Hands-In vs Hands-Off agent guidance | `inkscape_system` → `execution_mode` | 1 (done) |
-| Webapp Agent Lab page (mirror blender/gimp/unity) | `/agent-tools` tabs | 2 |
-| SVG QA validation presets | `inkscape_validation` portmanteau | 2 |
+| Webapp Agent Lab page (mirror blender/gimp/unity) | `/agent-tools` tabs | 2 (done) |
+| SVG QA validation presets | `inkscape_validation` portmanteau | 2 (done) |
 | Fleet handoff (SVG → gimp raster, blender curves, unity sprites) | `inkscape_fleet` + pipeline script | 3 |
 | Prometheus / Docker / smoke test | telemetry + GHCR image | 4 |
 | Robotics fab art (DXF, laser dot, Gazebo schematics) | `inkscape_fab_art` + robotics HTTP bridge | 5 |

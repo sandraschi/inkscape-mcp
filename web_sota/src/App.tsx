@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/app-layout';
+import { AgentTools } from '@/pages/agent-tools';
 import { Dashboard } from '@/pages/dashboard';
 import { Actions } from '@/pages/actions';
 import { Logs } from '@/pages/logs';
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/status" element={<Status />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/agent-tools" element={<AgentTools />} />
           <Route path="/svg-studio" element={<SvgStudio />} />
           <Route path="/actions" element={<Actions />} />
           <Route path="/logs" element={<Logs />} />

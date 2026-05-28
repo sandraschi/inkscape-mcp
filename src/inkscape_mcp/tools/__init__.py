@@ -14,19 +14,21 @@ TOOLS:
 
 from typing import Any
 
-from .file_operations import inkscape_file
-from .vector_operations import inkscape_vector
 from .analysis import inkscape_analysis
-from .render_tools import inkscape_render
-from .system import inkscape_system
+from .file_operations import inkscape_file
 from .heraldry import register_heraldry_tools
 from .llm_discovery import list_local_models
+from .render_tools import inkscape_render
+from .system import inkscape_system
+from .validation_tools import inkscape_validation
+from .vector_operations import inkscape_vector
 
 __all__ = [
     "inkscape_file",
     "inkscape_vector",
     "inkscape_analysis",
     "inkscape_render",
+    "inkscape_validation",
     "inkscape_system",
     "register_heraldry_tools",
     "list_local_models",
@@ -87,6 +89,18 @@ PORTMANTEAU_TOOLS = [
         "function": inkscape_render,
         "category": "agent_vision",
         "operations": ["export_preview", "export_multi_dpi", "get_document_summary"],
+    },
+    {
+        "name": "inkscape_validation",
+        "function": inkscape_validation,
+        "category": "validation",
+        "operations": [
+            "validate_svg",
+            "check_viewbox",
+            "check_stroke_fill",
+            "check_size_limits",
+            "audit_web_svg",
+        ],
     },
     {
         "name": "inkscape_system",

@@ -69,3 +69,11 @@ InkscapeRenderOperation = Literal[
     "export_multi_dpi",
     "get_document_summary",
 ]
+
+InkscapeValidationOperation = Literal[
+    "validate_svg",
+    "check_viewbox",
+    "check_stroke_fill",
+    "check_size_limits",
+    "audit_web_svg",
+]

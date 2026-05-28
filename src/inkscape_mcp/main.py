@@ -17,21 +17,22 @@ from typing import Any
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from .config import InkscapeConfig, load_config
+from .config import InkscapeConfig
+from .config import load_config
 from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
-from .mcp_tool_types import (
-    InkscapeAnalysisOperation,
-    InkscapeFileOperation,
-    InkscapeRenderOperation,
-    InkscapeSystemOperation,
-    InkscapeVectorOperation,
-)
+from .mcp_tool_types import InkscapeAnalysisOperation
+from .mcp_tool_types import InkscapeFileOperation
+from .mcp_tool_types import InkscapeRenderOperation
+from .mcp_tool_types import InkscapeSystemOperation
+from .mcp_tool_types import InkscapeValidationOperation
+from .mcp_tool_types import InkscapeVectorOperation
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
 from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_system as inkscape_system_tool
+from .tools import inkscape_validation as inkscape_validation_tool
 from .tools import inkscape_vector as inkscape_vector_tool
 from .tools import list_local_models as list_local_models_tool
 from .tools.heraldry import register_heraldry_tools
@@ -346,6 +347,43 @@ class InkscapeMCPServer:
 
         @self.mcp.tool(
             annotations=ToolAnnotations(
+                readOnlyHint=True,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
+        )
+        async def inkscape_validation(
+            operation: InkscapeValidationOperation,
+            input_path: str = "",
+            max_file_size_mb: int = 10,
+            max_dimension: float = 16384,
+        ) -> dict[str, Any]:
+            """INKSCAPE_VALIDATION — SVG QA checks for Agent Lab and web export pipelines.
+
+            Operations: validate_svg, check_viewbox, check_stroke_fill, check_size_limits,
+            audit_web_svg.
+
+            Args:
+                operation: Validation mode (Literal).
+                input_path: SVG file to validate.
+                max_file_size_mb: Size cap for check_size_limits and audit_web_svg.
+                max_dimension: Maximum declared width/height in px units.
+
+            Returns:
+                Dict with success, message, data metrics, issues[], execution_time_ms, error.
+            """
+            return await inkscape_validation_tool(
+                operation=operation,
+                input_path=input_path,
+                max_file_size_mb=max_file_size_mb,
+                max_dimension=max_dimension,
+                cli_wrapper=self.cli_wrapper,
+                config=self.config,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
                 readOnlyHint=False,
                 destructiveHint=False,
                 idempotentHint=True,
@@ -400,6 +438,7 @@ class InkscapeMCPServer:
             "inkscape_vector": inkscape_vector,
             "inkscape_analysis": inkscape_analysis,
             "inkscape_render": inkscape_render,
+            "inkscape_validation": inkscape_validation,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
         }

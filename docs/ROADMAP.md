@@ -32,14 +32,14 @@ cd D:\Dev\repos\inkscape-mcp\web_sota
 
 ## Phase 2 — Webapp Agent Lab and validation (2.2.0)
 
-**Status: planned**
+**Status: complete (v2.2.0)**
 
 | Item | Tool / module |
 |------|----------------|
 | Webapp `/agent-tools` page | mirror blender-mcp / gimp-mcp tabbed UI |
-| `POST /api/v1/tool` proxy | web_sota backend |
+| `POST /api/v1/tool` proxy | `app.py` REST bridge |
 | SVG QA validation portmanteau | `inkscape_validation` (viewBox, stroke/fill, size limits) |
-| Export preview history | web_sota gallery tab |
+| Export preview history | web_sota gallery tab (localStorage) |
 
 ## Phase 3 — Fleet handoff (2.3.0)
 

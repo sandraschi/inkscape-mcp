@@ -17,6 +17,7 @@ Environment (via .env or system):
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
@@ -86,13 +87,15 @@ def _help_payload() -> dict[str, Any]:
         "tools": [
             "inkscape_file — load, convert, info, validate, list_formats",
             "inkscape_vector — trace, boolean, simplify, preview, QR, …",
+            "inkscape_render — export_preview, export_multi_dpi, get_document_summary",
+            "inkscape_validation — validate_svg, check_viewbox, audit_web_svg, …",
             "inkscape_analysis — statistics, validate, dimensions",
-            "inkscape_system — status, version, help, config, diagnostics, extensions",
+            "inkscape_system — status, execution_mode, help, config, diagnostics",
             "list_local_models — optional Ollama/LM Studio discovery",
         ],
         "http_ports": {
-            "vite_dev_ui": 10846,
-            "mcp_http_listener": int(os.environ.get("MCP_PORT", "10847")),
+            "vite_dev_ui": 10899,
+            "mcp_http_listener": int(os.environ.get("MCP_PORT", "10900")),
         },
         "env": {
             "OLLAMA_BASE_URL": "Optional; for /api/generate-svg and health check",
@@ -399,7 +402,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     if config and hasattr(config, "inkscape_executable"):
         inkscape_exe = config.inkscape_executable
 
-    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.0.0")
+    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.2.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -473,7 +476,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.0.0b0",
+            "version": "2.2.0",
             "providers": {
                 "ollama": {
                     "available": ollama_ok,
@@ -545,6 +548,70 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 {"success": False, "error": str(e), "error_type": "internal"},
                 status_code=500,
             )
+
+    @app.post("/v1/tool")
+    async def api_v1_tool(request: Request) -> JSONResponse:
+        """Bridge endpoint for webapp Agent Tools to call MCP tools."""
+        try:
+            payload = await request.json()
+        except Exception as exc:
+            return JSONResponse(
+                {"success": False, "error": f"Invalid request: {exc}", "data": None},
+                status_code=400,
+            )
+
+        if not isinstance(payload, dict):
+            return JSONResponse(
+                {"success": False, "error": "Request body must be a JSON object", "data": None},
+                status_code=400,
+            )
+
+        tool_name = payload.get("tool")
+        params = payload.get("params") or {}
+        if not tool_name:
+            return JSONResponse(
+                {"success": False, "error": "Missing tool name", "data": None},
+                status_code=400,
+            )
+        if not isinstance(params, dict):
+            return JSONResponse(
+                {"success": False, "error": "params must be an object", "data": None},
+                status_code=400,
+            )
+
+        try:
+            result = await mcp.call_tool(str(tool_name), params)
+        except Exception as exc:
+            logger.exception("Tool %s failed: %s", tool_name, exc)
+            return JSONResponse(
+                {"success": False, "error": str(exc), "data": None},
+                status_code=500,
+            )
+
+        mcp_result = result.to_mcp_result()
+        is_error = False
+        content_list: list[Any] = []
+        if isinstance(mcp_result, tuple) and len(mcp_result) >= 2:
+            content_list = mcp_result[0]
+            is_error = mcp_result[1]
+        else:
+            content_list = getattr(result, "content", [])
+
+        data: Any = None
+        if content_list:
+            text = getattr(content_list[0], "text", str(content_list[0]))
+            try:
+                data = json.loads(text)
+            except Exception:
+                data = {"output": text}
+
+        return JSONResponse(
+            {
+                "success": not is_error and data is not None,
+                "data": data,
+                "error": None if not is_error else "Tool returned error",
+            }
+        )
 
     # ── /api/capabilities ────────────────────────────────────────────────────
     @app.get("/api/capabilities")

@@ -48,7 +48,7 @@ Following the blender-mcp / gimp-mcp / unity3d-mcp playbook:
 | Phase | Focus |
 |-------|--------|
 | **1** (2.1.0) | Agent vision exports, runtime guidance | **done** |
-| **2** (2.2.0) | Webapp `/agent-tools`, SVG validation |
+| **2** (2.2.0) | Webapp `/agent-tools`, SVG validation | **done** |
 | **3** (2.3.0) | Fleet handoff (gimp, blender, unity) |
 | **4** (2.4.0) | Telemetry, Docker, smoke tests |
 | **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) |

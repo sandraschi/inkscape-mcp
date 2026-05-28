@@ -12,6 +12,7 @@ import {
     Wand2,
     Server,
     CircleHelp,
+    FlaskConical,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { href: '/', label: 'Overview', icon: LayoutDashboard },
         { href: '/status', label: 'Status', icon: Server },
         { href: '/help', label: 'Help', icon: CircleHelp },
+        { href: '/agent-tools', label: 'Agent Lab', icon: FlaskConical },
         { href: '/svg-studio', label: 'SVG Studio', icon: Wand2 },
         { href: '/actions', label: 'Vector Actions', icon: Zap },
         { href: '/logs', label: 'Logs', icon: ScrollText },

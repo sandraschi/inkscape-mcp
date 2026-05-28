@@ -20,6 +20,8 @@ You need **Python 3.12+**, **[uv](https://docs.astral.sh/uv/)**, and **Inkscape*
 | [docs/USAGE.md](docs/USAGE.md) | How to use the tools from an agent |
 | [docs/AI_SAMPLING.md](docs/AI_SAMPLING.md) | Agentic tools, `ctx.sample()`, Ollama env |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, transports, modules |
+| [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md) | Ecosystem comparison and differentiation |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Agent Lab phased improvement plan |
 | [llms.txt](llms.txt) / [llms-full.txt](llms-full.txt) | LLM index + full tool/env/run manifest (fleet) |
 
 More: [Docs index](docs/README.md)  [API](docs/API.md)  [Features](docs/FEATURES.md)  [Troubleshooting](docs/TROUBLESHOOTING.md)  [Changelog](CHANGELOG.md)
@@ -38,6 +40,20 @@ just
 ```
 
 This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
+
+## Agent Lab (planned)
+
+Following the blender-mcp / gimp-mcp / unity3d-mcp playbook:
+
+| Phase | Focus |
+|-------|--------|
+| **1** (2.1.0) | Agent vision exports, runtime guidance |
+| **2** (2.2.0) | Webapp `/agent-tools`, SVG validation |
+| **3** (2.3.0) | Fleet handoff (gimp, blender, unity) |
+| **4** (2.4.0) | Telemetry, Docker, smoke tests |
+| **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) |
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md).
 
 ### Manual Setup
 

@@ -11,6 +11,8 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Code layout and transports |
 | [API.md](API.md) | Tool parameters |
 | [FEATURES.md](FEATURES.md) | Capability overview |
+| [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) | Ecosystem comparison |
+| [ROADMAP.md](ROADMAP.md) | Agent Lab phased plan |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common failures |
 
 Repository entry point: [../README.md](../README.md).

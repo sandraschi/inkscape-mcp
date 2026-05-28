@@ -636,7 +636,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         }
 
     try:
-        mcp._additional_http_routes.append(Mount("/api", app=app))
+        mcp._additional_http_routes.append(Mount("", app=app))
         logger.info(
             "REST API bridge mounted at /api  [Ollama: %s/%s]",
             _ollama_base(),

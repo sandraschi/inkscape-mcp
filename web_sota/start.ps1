@@ -30,7 +30,7 @@ if (-not (Test-Path "node_modules")) { npm install }
 Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor Cyan
 
 # Use TRIPLE backtick to ensure $env:PYTHONPATH reaches the REAL shell
-$backendCmd = "`$env:PYTHONPATH = '$PSScriptRoot;$PSScriptRoot\src'; `$env:MCP_PORT = '$BackendPort'; `$env:MCP_TRANSPORT = 'http'; Set-Location '$ProjectRoot'; uv run python -m inkscape_mcp.main --mode http --port $BackendPort"
+$backendCmd = "`$env:PYTHONPATH = '$PSScriptRoot;$PSScriptRoot\src'; `$env:MCP_PORT = '$BackendPort'; `$env:MCP_TRANSPORT = 'http'; Set-Location '$ProjectRoot'; uv run python -m inkscape_mcp.main"
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
 

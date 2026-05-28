@@ -225,6 +225,7 @@ from typing import Any, Dict, Literal, Optional
 from pydantic import BaseModel
 
 from ..utils.execution_mode import describe_execution_mode
+from ..utils.telemetry import set_execution_mode
 
 logger = logging.getLogger(__name__)
 
@@ -284,9 +285,9 @@ async def inkscape_system(
                 data={
                     "server": {
                         "name": "Inkscape MCP Server",
-                        "version": "2.1.0",
+                        "version": "2.4.0",
                         "status": "running",
-                        "agent_lab_phase": 1,
+                        "agent_lab_phase": 4,
                     },
                     "inkscape": {
                         "available": inkscape_available,
@@ -298,6 +299,8 @@ async def inkscape_system(
                         "vector": "available",
                         "analysis": "available",
                         "render": "available",
+                        "validation": "available",
+                        "fleet": "available",
                         "system": "available",
                     },
                 },
@@ -306,6 +309,7 @@ async def inkscape_system(
 
         elif operation == "execution_mode":
             mode_data = await describe_execution_mode(cli_wrapper=cli_wrapper, config=config)
+            set_execution_mode(mode_data.get("mode") == "hands_in")
             return SystemResult(
                 success=True,
                 operation="execution_mode",

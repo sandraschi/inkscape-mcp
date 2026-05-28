@@ -167,6 +167,20 @@ class InkscapeMCPServer:
                 except Exception as e:
                     logger.warning(f"Failed to register Prefab UI: {e}")
 
+            from .utils.telemetry import (
+                init_metrics,
+                install_tool_call_wrapper,
+                metrics_enabled,
+                register_metrics_routes,
+                start_metrics_server,
+            )
+
+            init_metrics()
+            install_tool_call_wrapper(self.mcp)
+            register_metrics_routes(self.mcp)
+            if metrics_enabled():
+                start_metrics_server()
+
             return True
 
         except Exception as e:
@@ -527,6 +541,10 @@ async def main_async():
     # Re-setup logging with arg level
     log_level = getattr(logging, args.log_level.upper())
     logging.basicConfig(level=log_level, force=True)
+
+    from .utils.structured_logging import configure_json_logging_if_enabled
+
+    configure_json_logging_if_enabled()
 
     # Bridge this CLI to transport env.
     # If MCP_TRANSPORT is already set externally (e.g. Claude Desktop config env),

@@ -1,118 +1,106 @@
-version: '3.8'
+# inkscape-mcp Docker + optional monitoring stack.
+#
+# MCP only:
+#   docker compose up inkscape-mcp
+#
+# MCP + Prometheus/Grafana/Loki:
+#   docker compose --profile monitoring up -d
+#
+# Note: Inkscape GUI (Hands-In) runs on the HOST, not in this container.
 
 services:
-  # Main Inkscape MCP Server
   inkscape-mcp:
     build:
       context: .
       target: production
-      args:
-        VERSION: ${VERSION:-1.2.0}
-    container_name: inkscape-mcp-server
+    image: ghcr.io/sandraschi/inkscape-mcp:latest
+    container_name: inkscape-mcp
     ports:
-      - "8000:8000"
-    volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - "10900:10900"
+      - "9074:9074"
     environment:
-      - INKSCAPE_MCP_CONFIG_PATH=/app/config.yaml
-      - INKSCAPE_MCP_LOG_LEVEL=INFO
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "10900"
+      MCP_TRANSPORT: http
+      INKSCAPE_MCP_METRICS_ENABLED: "true"
+      PROMETHEUS_PORT: "9074"
+      INKSCAPE_MCP_LOG_FORMAT: json
+      INKSCAPE_MCP_LOG_LEVEL: INFO
+    volumes:
+      - inkscape-mcp-logs:/app/logs
+    labels:
+      promtail.job: inkscape-mcp
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import inkscape_mcp; print('OK')"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:10900/api/health', timeout=5)\""]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    networks:
-      - inkscape-network
+      start_period: 15s
 
-  # Development service with hot reload
-  inkscape-mcp-dev:
-    build:
-      context: .
-      target: development
-    container_name: inkscape-mcp-dev
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:v3.11.3
+    container_name: inkscape-mcp-prometheus
     ports:
-      - "8001:8000"
+      - "9092:9090"
     volumes:
-      - .:/app
-      - ./config.dev.yaml:/app/config.yaml:ro
-    environment:
-      - INKSCAPE_MCP_CONFIG_PATH=/app/config.yaml
-      - INKSCAPE_MCP_LOG_LEVEL=DEBUG
-      - PYTHONPATH=/app/src
-    command: python -m uvicorn inkscape_mcp.main:app --host 0.0.0.0 --port 8000 --reload
-    profiles:
-      - dev
-    networks:
-      - inkscape-network
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    restart: unless-stopped
 
-  # Testing service
-  inkscape-mcp-test:
-    build:
-      context: .
-      target: development
-    container_name: inkscape-mcp-test
-    volumes:
-      - .:/app
-    environment:
-      - PYTHONPATH=/app/src
-    command: pytest tests/ -v --tb=short --cov=src/inkscape_mcp
-    profiles:
-      - test
-    networks:
-      - inkscape-network
-
-  # Redis for caching (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: inkscape-mcp-redis
+  loki:
+    profiles: ["monitoring"]
+    image: grafana/loki:3.7.1
+    container_name: inkscape-mcp-loki
     ports:
-      - "6379:6379"
+      - "3102:3100"
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    profiles:
-      - cache
-    networks:
-      - inkscape-network
+      - ./monitoring/loki/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
 
-  # PostgreSQL for advanced storage (optional)
-  postgres:
-    image: postgres:15-alpine
-    container_name: inkscape-mcp-postgres
-    environment:
-      POSTGRES_DB: inkscape_mcp
-      POSTGRES_USER: inkscape
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+  promtail:
+    profiles: ["monitoring"]
+    image: grafana/promtail:3.7.1
+    container_name: inkscape-mcp-promtail
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - inkscape-mcp-logs:/app/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:13.0.1
+    container_name: inkscape-mcp-grafana
     ports:
-      - "5432:5432"
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    profiles:
-      - db
-    networks:
-      - inkscape-network
-
-networks:
-  inkscape-network:
-    driver: bridge
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
 
 volumes:
-  redis_data:
-  postgres_data:
+  inkscape-mcp-logs:
+  prometheus-data:
+  loki-data:
+  grafana-data:
 
-# Development override
-x-dev-overrides: &dev-overrides
-  environment:
-    - INKSCAPE_MCP_LOG_LEVEL=DEBUG
-    - INKSCAPE_MCP_DEBUG=true
-
-# Production override
-x-prod-overrides: &prod-overrides
-  environment:
-    - INKSCAPE_MCP_LOG_LEVEL=INFO
-    - INKSCAPE_MCP_DEBUG=false
-  restart: unless-stopped
+networks:
+  default:
+    name: inkscape-mcp-net

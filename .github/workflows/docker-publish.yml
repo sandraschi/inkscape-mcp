@@ -1,0 +1,40 @@
+name: Publish Docker image
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "src/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ghcr.io/sandraschi/inkscape-mcp:latest
+            ghcr.io/sandraschi/inkscape-mcp:${{ github.sha }}
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VERSION=${{ github.sha }}
+            VCS_REF=${{ github.sha }}

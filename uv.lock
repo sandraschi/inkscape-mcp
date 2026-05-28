@@ -978,7 +978,7 @@ wheels = [
 
 [[package]]
 name = "inkscape-mcp"
-version = "2.0.0b0"
+version = "2.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1036,6 +1036,9 @@ http = [
     { name = "httpx" },
     { name = "uvicorn", extra = ["standard"] },
 ]
+monitoring = [
+    { name = "prometheus-client" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1082,6 +1085,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.0.0,<12.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.3.0,<4.0.0" },
     { name = "prefab-ui", specifier = ">=0.14.0" },
+    { name = "prometheus-client", marker = "extra == 'monitoring'", specifier = ">=0.20.0,<1.0.0" },
     { name = "psutil", specifier = ">=5.9.0,<7.0.0" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0,<9.0.0" },
@@ -1101,7 +1105,7 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.5.0,<5.0.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'http'", specifier = ">=0.22.0,<1.0.0" },
 ]
-provides-extras = ["http", "dev", "docs"]
+provides-extras = ["http", "monitoring", "dev", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2270,6 +2274,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9b/03/1da07f7e48506b3f88ec2fd33fa2b73586af3c63520f9ff7aa7c440d06dc/prefab_ui-0.18.2.tar.gz", hash = "sha256:de7416ed8e24b3a3880e9a7571f8a3ba693b1d0bedd0638cfa01c27a7e45cceb", size = 4031553, upload-time = "2026-04-05T00:49:45.296Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/ac/d87f2e851683f9f9be30e9513f9f3422d0925c0f821d3a9f0abd8cf5eac9/prefab_ui-0.18.2-py3-none-any.whl", hash = "sha256:1be6c386fafd12f595faeddccc74601c7f50a5b3079acf437b51a36d74f37f1a", size = 1840872, upload-time = "2026-04-05T00:49:46.736Z" },
+]
+
+[[package]]
+name = "prometheus-client"
+version = "0.25.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/fb/d9aa83ffe43ce1f19e557c0971d04b90561b0cfd50762aafb01968285553/prometheus_client-0.25.0.tar.gz", hash = "sha256:5e373b75c31afb3c86f1a52fa1ad470c9aace18082d39ec0d2f918d11cc9ba28", size = 86035, upload-time = "2026-04-09T19:53:42.359Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/9b/d4b1e644385499c8346fa9b622a3f030dce14cd6ef8a1871c221a17a67e7/prometheus_client-0.25.0-py3-none-any.whl", hash = "sha256:d5aec89e349a6ec230805d0df882f3807f74fd6c1a2fa86864e3c2279059fed1", size = 64154, upload-time = "2026-04-09T19:53:41.324Z" },
 ]
 
 [[package]]

@@ -1,94 +1,58 @@
-# Multi-stage build for Inkscape MCP Server
-FROM python:3.12-slim as base
+# inkscape-mcp HTTP MCP server (Inkscape CLI batch in container).
+#
+# Build:
+#   docker build --target production -t ghcr.io/sandraschi/inkscape-mcp:local .
+#
+# Run:
+#   docker run --rm -p 10900:10900 -p 9074:9074 ghcr.io/sandraschi/inkscape-mcp:local
+#
+# Hands-In (GUI watch) requires Inkscape GUI on the HOST; container is Hands-Off batch.
 
-# Metadata
-LABEL maintainer="Sandra Schipal <sandra@sandraschi.dev>"
-LABEL description="FastMCP server for professional vector graphics using Inkscape"
-LABEL version="1.2.0"
+FROM python:3.12-slim AS base
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    # Inkscape dependencies
-    inkscape \
-    # Image processing libraries
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libtiff5-dev \
-    libfreetype6-dev \
-    liblcms2-dev \
-    libwebp-dev \
-    libharfbuzz-dev \
-    libfribidi-dev \
-    # System utilities
-    curl \
-    git \
-    # Clean up
-    && apt-get clean \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl inkscape \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd -r inkscape && useradd -r -g inkscape inkscape
+ENV MCP_HOST=0.0.0.0
+ENV MCP_PORT=10900
+ENV MCP_TRANSPORT=http
+ENV PROMETHEUS_PORT=9074
+ENV INKSCAPE_MCP_METRICS_ENABLED=true
+ENV INKSCAPE_MCP_LOG_FORMAT=json
+ENV INKSCAPE_MCP_LOG_LEVEL=INFO
 
-# Set work directory
 WORKDIR /app
 
-# Copy and install Python dependencies
-COPY pyproject.toml ./
-RUN pip install --upgrade pip \
-    && pip install -e .
+FROM base AS production
 
-# Copy source code
+COPY pyproject.toml README.md ./
 COPY src/ ./src/
 
-# Change ownership to non-root user
-RUN chown -R inkscape:inkscape /app
-USER inkscape
+RUN pip install --no-cache-dir -e ".[monitoring,http]"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import inkscape_mcp; print('Health check passed')" || exit 1
+RUN useradd --create-home --shell /bin/bash mcp \
+    && mkdir -p /app/logs \
+    && chown -R mcp:mcp /app
 
-# Default command
-CMD ["inkscape-mcp", "--help"]
+USER mcp
 
-# --- Development stage ---
-FROM base as development
+EXPOSE 10900 9074
 
-# Switch back to root for development
-USER root
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10900/api/health', timeout=5)"
 
-# Install development dependencies
-RUN pip install -e ".[dev]"
+CMD ["python", "-m", "inkscape_mcp.main", "--mode", "http", "--host", "0.0.0.0", "--port", "10900"]
 
-# Install development tools
-RUN apt-get update && apt-get install -y \
-    vim \
-    htop \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ARG BUILD_DATE
+ARG VERSION
+ARG VCS_REF
 
-# Switch back to non-root user
-USER inkscape
-
-# Development command
-CMD ["sleep", "infinity"]
-
-# --- Production stage ---
-FROM base as production
-
-# Add version info
-ARG VERSION=1.2.0
-ENV INKSCAPE_MCP_VERSION=${VERSION}
-
-# Expose port if HTTP server is used
-EXPOSE 8000
-
-# Production command with proper signal handling
-CMD ["python", "-m", "inkscape_mcp.main"]
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.title="Inkscape MCP" \
+      org.opencontainers.image.description="Agentic Inkscape MCP server (batch CLI + fleet HTTP)" \
+      org.opencontainers.image.vendor="FlowEngineer sandraschi" \
+      org.opencontainers.image.source="https://github.com/sandraschi/inkscape-mcp" \
+      org.opencontainers.image.licenses="MIT"

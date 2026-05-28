@@ -54,14 +54,26 @@ cd D:\Dev\repos\inkscape-mcp\web_sota
 
 ## Phase 4 — Telemetry, Docker, monitoring (2.4.0)
 
-**Status: planned**
+**Status: complete (v2.4.0)**
 
 | Item | Tool / module |
 |------|----------------|
-| Prometheus `/metrics` | optional monitoring extra |
-| JSON structured logs | Loki-friendly |
-| Docker + GHCR image | MCP server container |
+| Prometheus `/metrics` + `/api/metrics` | `utils/telemetry.py`, optional `[monitoring]` extra |
+| JSON structured logs | `utils/structured_logging.py`, `INKSCAPE_MCP_LOG_FORMAT=json` |
+| Docker + GHCR image | `Dockerfile`, `docker-compose.yml`, `.github/workflows/docker-publish.yml` |
+| Grafana/Loki/Promtail stack | `monitoring/` (profile `monitoring`) |
 | Smoke test script | `scripts/smoke_test.py` |
+| Phase 4 tests | `tests/unit/test_phase4_tools.py` |
+
+### Docker quick start
+
+```powershell
+cd D:\Dev\repos\inkscape-mcp
+docker compose up inkscape-mcp
+
+# With monitoring (Prometheus :9092, Grafana :3002, Loki :3102):
+docker compose --profile monitoring up -d
+```
 
 ## Phase 5 — Robotics and fab art (2.5.0)
 

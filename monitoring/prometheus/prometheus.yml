@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: inkscape-mcp
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["inkscape-mcp:9074"]
+        labels:
+          service: inkscape-mcp
+
+  - job_name: inkscape-mcp-http
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["inkscape-mcp:10900"]
+        labels:
+          service: inkscape-mcp

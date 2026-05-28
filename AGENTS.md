@@ -16,3 +16,5 @@ MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.2.0+)
 - `README.md` — full documentation
 - `pyproject.toml` — build config and entry points
 - `CLAUDE.md` — Claude Code context (if present)
+
+Install docs: follow mcp-central-docs/standards/AGENT_INSTALL_REFERENCE.md

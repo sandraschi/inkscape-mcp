@@ -76,6 +76,18 @@ InkscapeValidationOperation = Literal[
     "check_stroke_fill",
     "check_size_limits",
     "audit_web_svg",
+    "audit_svg_pack",
+]
+
+InkscapeSimArtOperation = Literal[
+    "list_presets",
+    "svg_pack_batch",
+    "build_icon_sheet",
+    "audit_svg_pack",
+    "ai_svg_refine_loop",
+    "push_gimp_texture_sheet",
+    "stage_resonite_ui",
+    "run_sim_pipeline",
 ]
 
 InkscapeFleetOperation = Literal[

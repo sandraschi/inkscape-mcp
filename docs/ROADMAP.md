@@ -95,6 +95,20 @@ $Env:PYTHONPATH = "src"
 uv run python scripts/fleet_e2e_smoke.py --offline --strict
 ```
 
+## Phase 6 — UI vector packs and SVG refine loop (2.6.0)
+
+**Status: complete (v2.6.0)**
+
+| Item | Tool / module |
+|------|----------------|
+| SVG icon pack batch | `inkscape_sim_art` → `svg_pack_batch` + icon templates |
+| Icon sheet layout (margin/bleed) | `inkscape_sim_art` → `build_icon_sheet` + manifest JSON |
+| SVG pack audit | `inkscape_validation` → `audit_svg_pack` |
+| AI SVG refine loop | `inkscape_sim_art` → `ai_svg_refine_loop` + Ollama/OpenAI handoff |
+| Resonite UI staging | `inkscape_sim_art` → `stage_resonite_ui` |
+| Fleet E2E smoke in CI | extended `scripts/fleet_e2e_smoke.py --offline --strict` |
+| Phase 6 tests | `tests/unit/test_phase6_tools.py` |
+
 ## After Agent Lab
 
 | Repo | Rationale |

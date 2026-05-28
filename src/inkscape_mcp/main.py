@@ -26,6 +26,7 @@ from .mcp_tool_types import InkscapeFileOperation
 from .mcp_tool_types import InkscapeFabArtOperation
 from .mcp_tool_types import InkscapeFleetOperation
 from .mcp_tool_types import InkscapeRenderOperation
+from .mcp_tool_types import InkscapeSimArtOperation
 from .mcp_tool_types import InkscapeSystemOperation
 from .mcp_tool_types import InkscapeValidationOperation
 from .mcp_tool_types import InkscapeVectorOperation
@@ -35,6 +36,7 @@ from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fab_art as inkscape_fab_art_tool
 from .tools import inkscape_fleet as inkscape_fleet_tool
 from .tools import inkscape_render as inkscape_render_tool
+from .tools import inkscape_sim_art as inkscape_sim_art_tool
 from .tools import inkscape_system as inkscape_system_tool
 from .tools import inkscape_validation as inkscape_validation_tool
 from .tools import inkscape_vector as inkscape_vector_tool
@@ -500,6 +502,56 @@ class InkscapeMCPServer:
             annotations=ToolAnnotations(
                 readOnlyHint=False,
                 destructiveHint=False,
+                idempotentHint=False,
+                openWorldHint=True,
+            ),
+        )
+        async def inkscape_sim_art(
+            operation: InkscapeSimArtOperation,
+            input_dir: str = "",
+            output_dir: str = "",
+            output_path: str = "",
+            template_id: str = "ui_icon_128",
+            layout: str = "2x2",
+            cell_size: int = 128,
+            margin_px: int = 0,
+            bleed_px: int = 0,
+            staging_dir: str = "",
+            gimp_url: str = "",
+            target_platform: str = "unity",
+            validate: bool = True,
+            goal: str = "",
+            dpi: int = 192,
+        ) -> dict[str, Any]:
+            """INKSCAPE_SIM_ART — UI icon packs, vector sheets, Resonite/VRChat staging.
+
+            Operations: list_presets, svg_pack_batch, build_icon_sheet, audit_svg_pack,
+            ai_svg_refine_loop, push_gimp_texture_sheet, stage_resonite_ui, run_sim_pipeline.
+            """
+            return await inkscape_sim_art_tool(
+                operation=operation,
+                input_dir=input_dir,
+                output_dir=output_dir,
+                output_path=output_path,
+                template_id=template_id,
+                layout=layout,
+                cell_size=cell_size,
+                margin_px=margin_px,
+                bleed_px=bleed_px,
+                staging_dir=staging_dir,
+                gimp_url=gimp_url,
+                target_platform=target_platform,
+                validate=validate,
+                goal=goal,
+                dpi=dpi,
+                cli_wrapper=self.cli_wrapper,
+                config=self.config,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
                 idempotentHint=True,
                 openWorldHint=False,
             ),
@@ -555,6 +607,7 @@ class InkscapeMCPServer:
             "inkscape_validation": inkscape_validation,
             "inkscape_fleet": inkscape_fleet,
             "inkscape_fab_art": inkscape_fab_art,
+            "inkscape_sim_art": inkscape_sim_art,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
         }

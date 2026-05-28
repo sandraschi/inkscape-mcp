@@ -28,6 +28,7 @@ async def main() -> int:
         "inkscape_validation",
         "inkscape_fleet",
         "inkscape_fab_art",
+        "inkscape_sim_art",
         "inkscape_system",
     }
     missing = required - names

@@ -90,6 +90,8 @@ def _help_payload() -> dict[str, Any]:
             "inkscape_render — export_preview, export_multi_dpi, get_document_summary",
             "inkscape_validation — validate_svg, check_viewbox, audit_web_svg, …",
             "inkscape_fleet — push_gimp_raster, stage_blender_svg, push_unity_sprite, run_pipeline",
+            "inkscape_fab_art — DXF/laser fab paths, Gazebo schematics, robotics staging",
+            "inkscape_sim_art — SVG icon packs, icon sheets, Resonite UI staging",
             "inkscape_analysis — statistics, validate, dimensions",
             "inkscape_system — status, execution_mode, help, config, diagnostics",
             "list_local_models — optional Ollama/LM Studio discovery",
@@ -403,7 +405,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     if config and hasattr(config, "inkscape_executable"):
         inkscape_exe = config.inkscape_executable
 
-    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.5.0")
+    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.6.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -477,7 +479,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.5.0",
+            "version": "2.6.0",
             "providers": {
                 "ollama": {
                     "available": ollama_ok,

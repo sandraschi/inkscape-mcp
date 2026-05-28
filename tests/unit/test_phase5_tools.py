@@ -129,4 +129,4 @@ class TestFleetE2eOffline:
         report = await run_offline_smoke(work_dir=tmp_path / "e2e")
         assert report["success"] is True
         assert report["mode"] == "offline"
-        assert len(report["steps"]) >= 5
+        assert len(report["steps"]) >= 10

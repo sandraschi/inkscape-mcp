@@ -149,7 +149,7 @@ jobs:
           --strict-markers \
           --disable-warnings
 
-    - name: Fleet E2E offline smoke (Phase 5)
+    - name: Fleet E2E offline smoke (Phase 6)
       if: matrix.coverage
       env:
         PYTHONPATH: src

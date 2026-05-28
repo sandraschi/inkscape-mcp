@@ -285,9 +285,9 @@ async def inkscape_system(
                 data={
                     "server": {
                         "name": "Inkscape MCP Server",
-                        "version": "2.5.0",
+                        "version": "2.6.0",
                         "status": "running",
-                        "agent_lab_phase": 5,
+                        "agent_lab_phase": 6,
                     },
                     "inkscape": {
                         "available": inkscape_available,
@@ -302,6 +302,7 @@ async def inkscape_system(
                         "validation": "available",
                         "fleet": "available",
                         "fab_art": "available",
+                        "sim_art": "available",
                         "system": "available",
                     },
                 },

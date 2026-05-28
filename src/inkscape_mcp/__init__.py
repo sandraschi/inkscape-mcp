@@ -20,7 +20,7 @@ Author: Sandra Schipal
 License: MIT
 """
 
-__version__ = "2.5.0"
+__version__ = "2.6.0"
 __author__ = "Sandra Schipal"
 __email__ = "sandra@sandraschi.dev"
 

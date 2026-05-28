@@ -20,6 +20,7 @@ ValidationOperation = Literal[
     "check_stroke_fill",
     "check_size_limits",
     "audit_web_svg",
+    "audit_svg_pack",
 ]
 
 SVG_NS = {"svg": "http://www.w3.org/2000/svg"}
@@ -101,10 +102,43 @@ async def inkscape_validation(
         check_stroke_fill - ensure drawable elements have stroke or fill
         check_size_limits - file size and declared dimension caps
         audit_web_svg - web-oriented bundle (viewBox + size + paint)
+        audit_svg_pack - directory audit for fleet UI icon packs
     """
     del cli_wrapper, config  # reserved for future Inkscape CLI cross-check
     start = time.time()
     path = Path(input_path)
+
+    if operation == "audit_svg_pack":
+        if not path.is_dir():
+            return ValidationResult(
+                success=False,
+                operation=operation,
+                message=f"Input directory not found: {input_path}",
+                error="FileNotFoundError",
+            ).model_dump()
+        try:
+            from ..utils.svg_pack_audit import audit_svg_pack_directory
+
+            audit = await audit_svg_pack_directory(path)
+            passed = bool(audit.get("passed"))
+            return ValidationResult(
+                success=passed,
+                operation=operation,
+                message="SVG pack audit passed" if passed else "SVG pack audit failed",
+                data=audit,
+                issues=list(audit.get("issues") or []),
+                execution_time_ms=(time.time() - start) * 1000,
+                error=None if passed else "ValidationError",
+            ).model_dump()
+        except Exception as exc:
+            logger.exception("audit_svg_pack failed for %s", input_path)
+            return ValidationResult(
+                success=False,
+                operation=operation,
+                message=str(exc),
+                error=str(exc),
+                execution_time_ms=(time.time() - start) * 1000,
+            ).model_dump()
 
     if not path.is_file():
         return ValidationResult(

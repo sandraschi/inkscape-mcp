@@ -155,4 +155,4 @@ class TestExecutionMode:
 
         assert result["success"] is True
         assert result["data"]["tools"]["render"] == "available"
-        assert result["data"]["server"]["agent_lab_phase"] == 5
+        assert result["data"]["server"]["agent_lab_phase"] == 6

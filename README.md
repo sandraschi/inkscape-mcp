@@ -52,6 +52,7 @@ Following the blender-mcp / gimp-mcp / unity3d-mcp playbook:
 | **3** (2.3.0) | Fleet handoff (gimp, blender, unity) | **done** |
 | **4** (2.4.0) | Telemetry, Docker, smoke tests | **done** |
 | **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) | **done** |
+| **6** (2.6.0) | UI icon packs, icon sheets, SVG refine loop | **done** |
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md).
 

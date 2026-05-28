@@ -21,6 +21,7 @@ from .llm_discovery import list_local_models
 from .fab_art_tools import inkscape_fab_art
 from .fleet_tools import inkscape_fleet
 from .render_tools import inkscape_render
+from .sim_art_tools import inkscape_sim_art
 from .system import inkscape_system
 from .validation_tools import inkscape_validation
 from .vector_operations import inkscape_vector
@@ -33,6 +34,7 @@ __all__ = [
     "inkscape_validation",
     "inkscape_fleet",
     "inkscape_fab_art",
+    "inkscape_sim_art",
     "inkscape_system",
     "register_heraldry_tools",
     "list_local_models",
@@ -104,6 +106,22 @@ PORTMANTEAU_TOOLS = [
             "check_stroke_fill",
             "check_size_limits",
             "audit_web_svg",
+            "audit_svg_pack",
+        ],
+    },
+    {
+        "name": "inkscape_sim_art",
+        "function": inkscape_sim_art,
+        "category": "sim_art",
+        "operations": [
+            "list_presets",
+            "svg_pack_batch",
+            "build_icon_sheet",
+            "audit_svg_pack",
+            "ai_svg_refine_loop",
+            "push_gimp_texture_sheet",
+            "stage_resonite_ui",
+            "run_sim_pipeline",
         ],
     },
     {

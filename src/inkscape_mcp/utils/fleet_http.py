@@ -14,6 +14,7 @@ DEFAULT_BLENDER_URL = "http://127.0.0.1:10849"
 DEFAULT_UNITY_URL = "http://127.0.0.1:10831"
 DEFAULT_GIMP_URL = "http://127.0.0.1:10773"
 DEFAULT_INKSCAPE_URL = "http://127.0.0.1:10900"
+DEFAULT_ROBOTICS_URL = "http://127.0.0.1:10821"
 
 
 async def check_http_health(base_url: str, *, health_path: str = "/api/health") -> bool:

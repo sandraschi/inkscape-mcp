@@ -23,6 +23,7 @@ from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
 from .mcp_tool_types import InkscapeAnalysisOperation
 from .mcp_tool_types import InkscapeFileOperation
+from .mcp_tool_types import InkscapeFabArtOperation
 from .mcp_tool_types import InkscapeFleetOperation
 from .mcp_tool_types import InkscapeRenderOperation
 from .mcp_tool_types import InkscapeSystemOperation
@@ -31,6 +32,7 @@ from .mcp_tool_types import InkscapeVectorOperation
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
 from .tools import inkscape_file as inkscape_file_tool
+from .tools import inkscape_fab_art as inkscape_fab_art_tool
 from .tools import inkscape_fleet as inkscape_fleet_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_system as inkscape_system_tool
@@ -454,6 +456,50 @@ class InkscapeMCPServer:
             annotations=ToolAnnotations(
                 readOnlyHint=False,
                 destructiveHint=False,
+                idempotentHint=False,
+                openWorldHint=True,
+            ),
+        )
+        async def inkscape_fab_art(
+            operation: InkscapeFabArtOperation,
+            input_dir: str = "",
+            output_dir: str = "",
+            svg_path: str = "",
+            png_path: str = "",
+            preset_id: str = "gazebo_model_doc_192",
+            laser_preset_id: str = "fab_calibration_grid",
+            staging_dir: str = "",
+            robotics_url: str = "",
+            gimp_url: str = "",
+            dpi: int = 0,
+            push_gimp: bool = False,
+        ) -> dict[str, Any]:
+            """INKSCAPE_FAB_ART — DXF/laser fab paths, Gazebo schematics, robotics staging.
+
+            Operations: list_presets, batch_dxf_export, batch_laser_dots, gazebo_schematic,
+            stage_for_robotics, run_fab_pipeline.
+            """
+            return await inkscape_fab_art_tool(
+                operation=operation,
+                input_dir=input_dir,
+                output_dir=output_dir,
+                svg_path=svg_path,
+                png_path=png_path,
+                preset_id=preset_id,
+                laser_preset_id=laser_preset_id,
+                staging_dir=staging_dir,
+                robotics_url=robotics_url,
+                gimp_url=gimp_url,
+                dpi=dpi,
+                push_gimp=push_gimp,
+                cli_wrapper=self.cli_wrapper,
+                config=self.config,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
                 idempotentHint=True,
                 openWorldHint=False,
             ),
@@ -508,6 +554,7 @@ class InkscapeMCPServer:
             "inkscape_render": inkscape_render,
             "inkscape_validation": inkscape_validation,
             "inkscape_fleet": inkscape_fleet,
+            "inkscape_fab_art": inkscape_fab_art,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
         }

@@ -403,7 +403,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     if config and hasattr(config, "inkscape_executable"):
         inkscape_exe = config.inkscape_executable
 
-    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.4.0")
+    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.5.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -477,7 +477,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.4.0",
+            "version": "2.5.0",
             "providers": {
                 "ollama": {
                     "available": ollama_ok,

@@ -34,7 +34,7 @@ See [ROADMAP.md](ROADMAP.md).
 | SVG QA validation presets | `inkscape_validation` portmanteau | 2 (done) |
 | Fleet handoff (SVG → gimp raster, blender curves, unity sprites) | `inkscape_fleet` + pipeline script | 3 (done) |
 | Prometheus / Docker / smoke test | telemetry + GHCR image | 4 (done) |
-| Robotics fab art (DXF, laser dot, Gazebo schematics) | `inkscape_fab_art` + robotics HTTP bridge | 5 |
+| Robotics fab art (DXF, laser dot, Gazebo schematics) | `inkscape_fab_art` + robotics HTTP bridge | 5 (done) |
 
 ## What we deliberately skip
 

@@ -398,8 +398,18 @@ async def inkscape_vector(
             )
 
         elif operation == "generate_laser_dot":
+            preset_id = kwargs.get("preset_id", "")
+            dot_x = kwargs.get("x", 300)
+            dot_y = kwargs.get("y", 200)
+            if preset_id:
+                from ..utils.fab_art_presets import resolve_laser_preset
+
+                preset = resolve_laser_preset(str(preset_id))
+                if preset and preset.get("dots"):
+                    dot_x = preset["dots"][0]["x"]
+                    dot_y = preset["dots"][0]["y"]
             return await _generate_laser_dot(
-                output_path, kwargs.get("x", 300), kwargs.get("y", 200), cli_wrapper, config
+                output_path, dot_x, dot_y, cli_wrapper, config, preset_id=str(preset_id or "")
             )
 
         elif operation == "measure_object":
@@ -428,6 +438,9 @@ async def inkscape_vector(
             return await _render_preview(
                 input_path, output_path, kwargs.get("dpi", 96), cli_wrapper, config
             )
+
+        elif operation == "export_dxf":
+            return await _export_dxf(input_path, output_path, cli_wrapper, config)
 
         elif operation == "apply_boolean":
             return await _apply_boolean(
@@ -544,7 +557,7 @@ async def _generate_barcode_qr(
 
 
 async def _generate_laser_dot(
-    output_path: str, x: float, y: float, cli_wrapper: Any, config: Any
+    output_path: str, x: float, y: float, cli_wrapper: Any, config: Any, preset_id: str = ""
 ) -> Dict[str, Any]:
     """Generate animated laser pointer dot."""
     try:
@@ -588,6 +601,7 @@ async def _generate_laser_dot(
             data={
                 "output_path": output_path,
                 "position": {"x": x, "y": y},
+                "preset_id": preset_id or None,
                 "description": "Animated green laser pointer dot",
             },
             execution_time_ms=(time.time() - time.time()) * 1000,
@@ -815,6 +829,44 @@ async def _path_clean(
             data={},
             execution_time_ms=0,
             error=str(e),
+        ).model_dump()
+
+
+async def _export_dxf(
+    input_path: str, output_path: str, cli_wrapper: Any, config: Any
+) -> Dict[str, Any]:
+    """Export SVG paths to DXF for CAD/laser workflows."""
+    try:
+        actions = [
+            f"export-filename:{output_path}",
+            "export-type:DXF",
+            "export-do",
+        ]
+        await cli_wrapper._execute_actions(
+            input_path=input_path,
+            actions=actions,
+            output_path=output_path,
+            timeout=config.process_timeout,
+        )
+        return VectorOperationResult(
+            success=True,
+            operation="export_dxf",
+            message=f"DXF exported successfully to {output_path}",
+            data={
+                "input_path": input_path,
+                "output_path": output_path,
+                "format": "dxf",
+            },
+            execution_time_ms=(time.time() - time.time()) * 1000,
+        ).model_dump()
+    except Exception as exc:
+        return VectorOperationResult(
+            success=False,
+            operation="export_dxf",
+            message=f"DXF export failed: {exc}",
+            data={},
+            execution_time_ms=0,
+            error=str(exc),
         ).model_dump()
 
 

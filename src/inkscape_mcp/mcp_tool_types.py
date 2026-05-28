@@ -86,3 +86,12 @@ InkscapeFleetOperation = Literal[
     "run_pipeline",
     "list_staging",
 ]
+
+InkscapeFabArtOperation = Literal[
+    "list_presets",
+    "batch_dxf_export",
+    "batch_laser_dots",
+    "gazebo_schematic",
+    "stage_for_robotics",
+    "run_fab_pipeline",
+]

@@ -51,7 +51,7 @@ Following the blender-mcp / gimp-mcp / unity3d-mcp playbook:
 | **2** (2.2.0) | Webapp `/agent-tools`, SVG validation | **done** |
 | **3** (2.3.0) | Fleet handoff (gimp, blender, unity) | **done** |
 | **4** (2.4.0) | Telemetry, Docker, smoke tests | **done** |
-| **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) |
+| **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) | **done** |
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md).
 

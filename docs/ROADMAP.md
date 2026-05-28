@@ -77,14 +77,23 @@ docker compose --profile monitoring up -d
 
 ## Phase 5 — Robotics and fab art (2.5.0)
 
-**Status: planned**
+**Status: complete (v2.5.0)**
 
 | Item | Tool / module |
 |------|----------------|
-| DXF / laser path batch | extend `inkscape_vector` + `generate_laser_dot` presets |
-| Gazebo schematic overlays | SVG → PNG handoff for model docs |
-| Robotics HTTP bridge | `robotics_fab_art` in robotics-mcp calling inkscape over HTTP |
-| Fleet E2E smoke | `scripts/fleet_e2e_smoke.py` (inkscape → gimp → robotics probe) |
+| DXF / laser path batch | `inkscape_fab_art` → `batch_dxf_export`, `batch_laser_dots` + `export_dxf` |
+| Gazebo schematic overlays | `inkscape_fab_art` → `gazebo_schematic` (SVG → PNG + staging) |
+| Robotics HTTP bridge | `robotics_fab_art` in robotics-mcp → inkscape HTTP :10900 |
+| Fleet E2E smoke | `scripts/fleet_e2e_smoke.py --offline --strict` |
+| Phase 5 tests | `tests/unit/test_phase5_tools.py` |
+
+### CI offline smoke
+
+```powershell
+cd D:\Dev\repos\inkscape-mcp
+$Env:PYTHONPATH = "src"
+uv run python scripts/fleet_e2e_smoke.py --offline --strict
+```
 
 ## After Agent Lab
 

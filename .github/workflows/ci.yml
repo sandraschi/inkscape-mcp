@@ -149,6 +149,12 @@ jobs:
           --strict-markers \
           --disable-warnings
 
+    - name: Fleet E2E offline smoke (Phase 5)
+      if: matrix.coverage
+      env:
+        PYTHONPATH: src
+      run: python scripts/fleet_e2e_smoke.py --offline --strict
+
     - name: Run tests (no coverage)
       if: ${{ !matrix.coverage }}
       run: |

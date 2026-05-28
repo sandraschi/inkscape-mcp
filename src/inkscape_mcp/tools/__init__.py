@@ -18,6 +18,7 @@ from .analysis import inkscape_analysis
 from .file_operations import inkscape_file
 from .heraldry import register_heraldry_tools
 from .llm_discovery import list_local_models
+from .fab_art_tools import inkscape_fab_art
 from .fleet_tools import inkscape_fleet
 from .render_tools import inkscape_render
 from .system import inkscape_system
@@ -31,6 +32,7 @@ __all__ = [
     "inkscape_render",
     "inkscape_validation",
     "inkscape_fleet",
+    "inkscape_fab_art",
     "inkscape_system",
     "register_heraldry_tools",
     "list_local_models",

@@ -1,4 +1,4 @@
-"""Logging backend for the webapp dashboard."""
+"""Full FastAPI backend for the web dashboard — health, logs, settings."""
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
@@ -12,11 +12,17 @@ async def lifespan(app: FastAPI):
     log_dir = Path(__file__).resolve().parent.parent.parent / "logs"
     log_dir.mkdir(exist_ok=True)
     activity_log.start_file_watch(log_dir / "server.log")
-    activity_log.info("server", "Logging backend started")
+    activity_log.info("server", "Backend started")
     yield
-    activity_log.info("server", "Logging backend stopped")
+    activity_log.info("server", "Backend stopped")
 
-app = FastAPI(title="inkscape-mcp-logging", lifespan=lifespan)
+app = FastAPI(title="inkscape-mcp-backend", version="0.1.0", lifespan=lifespan,
+              docs_url="/docs", redoc_url="/redoc")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(logging_router)
+
+@app.get("/health")
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "service": "inkscape-mcp-backend"}
 

@@ -15,7 +15,7 @@ export default defineConfig({
     strictPort: true,
     host: "127.0.0.1",
     proxy: {
-      '/api/logs': {
+      '/api': {
         target: 'http://127.0.0.1:11062',
         changeOrigin: true,
       },
@@ -23,10 +23,6 @@ export default defineConfig({
         target: 'http://127.0.0.1:11028',
         changeOrigin: true,
         ws: true,
-      },
-      '/api': {
-        target: 'http://127.0.0.1:11028',
-        changeOrigin: true,
       },
     }
   }

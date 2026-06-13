@@ -11,17 +11,21 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ['goliath'],
-    port: 10899,
+    port: 11029,
     strictPort: true,
     host: "127.0.0.1",
     proxy: {
+      '/api/logs': {
+        target: 'http://127.0.0.1:11062',
+        changeOrigin: true,
+      },
       '/mcp': {
-        target: 'http://127.0.0.1:10900',
+        target: 'http://127.0.0.1:11028',
         changeOrigin: true,
         ws: true,
       },
       '/api': {
-        target: 'http://127.0.0.1:10900',
+        target: 'http://127.0.0.1:11028',
         changeOrigin: true,
       },
     }

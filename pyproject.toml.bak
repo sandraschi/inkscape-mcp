@@ -1,0 +1,203 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "inkscape-mcp"
+version = "2.0.0b0"
+description = "MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.2.0+)"
+readme = "README.md"
+authors = [
+    {name = "Sandra Schipal", email = "sandra@sandraschi.dev"},
+    {name = "FastMCP Community", email = "fastmcp@example.com"}
+]
+requires-python = ">=3.12"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    # Core FastMCP dependencies
+    "fastmcp>=3.2.0",
+    "prefab-ui>=0.14.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "typing-extensions>=4.5.0,<5.0.0",
+    # Image processing
+    "pillow>=10.0.0,<12.0.0",
+    "numpy>=1.24.0,<3.0.0",
+    # Process management and system utilities
+    "psutil>=5.9.0,<7.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    # File handling and validation
+    "python-magic>=0.4.27,<1.0.0; platform_system!='Windows'",
+    "python-magic-bin>=0.4.14,<1.0.0; platform_system=='Windows'",
+    "filetype>=1.2.0,<2.0.0",
+    # Configuration and utilities
+    "pyyaml>=6.0.0,<7.0.0",
+    "python-dateutil>=2.8.2,<3.0.0",
+    "click>=8.1.3,<9.0.0",
+    "loguru>=0.7.0",
+    # Async utilities
+    "anyio>=4.5.0,<5.0.0",
+    "httpx>=0.27.0,<1.0.0",
+    # Inkscape extension API — required for plugins/ scripts
+    "inkex>=1.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sandraschi/inkscape-mcp"
+Documentation = "https://github.com/sandraschi/inkscape-mcp#readme"
+Repository = "https://github.com/sandraschi/inkscape-mcp"
+Issues = "https://github.com/sandraschi/inkscape-mcp/issues"
+Changelog = "https://github.com/sandraschi/inkscape-mcp/blob/main/CHANGELOG.md"
+
+[project.scripts]
+"inkscape-mcp" = "inkscape_mcp.main:main"
+
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+    "hatchling>=1.21.0",
+    "build>=1.2.0",
+    "twine>=5.0.0",
+    "bandit>=1.7.0",
+    "safety>=3.0.0",
+]
+
+# PyPI Publishing Configuration
+[tool.hatch.build.targets.wheel]
+packages = ["src/inkscape_mcp"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "src/inkscape_mcp/__init__.py"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+
+
+[project.optional-dependencies]
+# HTTP server support
+http = [
+    "fastapi>=0.95.0,<1.0.0",
+    "uvicorn[standard]>=0.22.0,<1.0.0",
+    "httpx>=0.24.0,<1.0.0"
+]
+
+dev = [
+    # Testing
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pytest-asyncio>=0.23.0,<1.0.0",
+    "pytest-mock>=3.11.0,<4.0.0",
+    "pytest-xdist>=3.3.1,<4.0.0",
+    "pytest-html>=4.0.0,<5.0.0",
+    "pytest-timeout>=2.1.0,<3.0.0",
+    
+    # Code quality
+    "black>=23.7.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "mypy>=1.4.0,<2.0.0",
+    "ruff>=0.0.280,<1.0.0",
+    "pre-commit>=3.3.0,<4.0.0",
+    
+    # Documentation
+    "mkdocs>=1.4.3,<2.0.0",
+    "mkdocs-material>=9.1.15,<10.0.0",
+    "mkdocstrings[python]>=0.22.0,<1.0.0",
+    "mkdocs-autorefs>=0.4.1,<1.0.0",
+    "mkdocs-jupyter>=0.24.1,<1.0.0",
+    "mkdocs-minify-plugin>=0.6.4,<1.0.0",
+    "mkdocs-redirects>=1.1.2,<2.0.0",
+    
+    # Type stubs
+    "types-requests>=2.28.0,<3.0.0",
+]
+
+docs = [
+    "mkdocs>=1.4.3,<2.0.0",
+    "mkdocs-material>=9.1.15,<10.0.0",
+    "mkdocstrings[python]>=0.22.0,<1.0.0",
+    "mkdocs-autorefs>=0.4.1,<1.0.0",
+    "mkdocs-jupyter>=0.24.1,<1.0.0"
+]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+
+
+# Advanced analysis dependencies
+analysis = [
+    "scipy>=1.10.0,<2.0.0",  # For image quality metrics
+]
+
+all = [
+    "inkscape-mcp[http,analysis]"
+]
+
+# MCP Server Configuration
+[tool.fastmcp]
+name = "inkscape-mcp"
+display_name = "Inkscape MCP Server"
+version = "2.0.0b0"
+description = "Inkscape MCP server (FastMCP 3.2.0+), portmanteau tools"
+entry_point = "inkscape_mcp.main:main"
+architecture = "portmanteau"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+ignore = ["S101", "B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

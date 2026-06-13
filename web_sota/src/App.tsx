@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { AgentTools } from '@/pages/agent-tools';
 import { Dashboard } from '@/pages/dashboard';
 import { Actions } from '@/pages/actions';
-import { Logs } from '@/pages/logs';
+import Logs from '@/pages/logs';
 import { Chat } from '@/pages/chat';
 import { Settings } from '@/pages/settings';
 import { SvgStudio } from '@/pages/svg-studio';

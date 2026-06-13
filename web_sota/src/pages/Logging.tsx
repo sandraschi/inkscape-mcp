@@ -69,6 +69,7 @@ export default function Logging() {
     fetchLogs();
   }, [fetchLogs]);
 
+  // Tail polling
   useEffect(() => {
     if (!tail) return;
     const iv = setInterval(() => {
@@ -81,6 +82,7 @@ export default function Logging() {
     return () => clearInterval(iv);
   }, [tail, fetchLogs]);
 
+  // Auto-scroll
   useEffect(() => {
     if (tail && !userScrolled && endRef.current) {
       endRef.current.scrollIntoView({ behavior: "smooth" });
@@ -126,6 +128,7 @@ export default function Logging() {
 
   return (
     <div className="space-y-4">
+      {/* Controls bar */}
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-bold text-slate-200 mr-2">Logs</h2>
 
@@ -168,6 +171,7 @@ export default function Logging() {
         <span className="text-xs text-slate-500 ml-auto">{total} entries</span>
       </div>
 
+      {/* Log stream */}
       <div ref={containerRef} onScroll={handleScroll}
         className="h-[65vh] overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-xs leading-relaxed">
         {entries.length === 0 && !loading && (
@@ -186,6 +190,7 @@ export default function Logging() {
         <div ref={endRef} />
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between text-xs text-slate-500">
         <button className="px-3 py-1 rounded border border-slate-700 hover:bg-slate-800 disabled:opacity-30"
           disabled={offset <= 0} onClick={() => setOffset(Math.max(0, offset - limit))}>Prev</button>
@@ -194,6 +199,7 @@ export default function Logging() {
           disabled={offset + limit >= total} onClick={() => setOffset(offset + limit)}>Next</button>
       </div>
 
+      {/* Clear confirmation */}
       {showClear && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowClear(false)}>
           <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm" onClick={(e) => e.stopPropagation()}>

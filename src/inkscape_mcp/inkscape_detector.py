@@ -10,8 +10,10 @@ import os
 import platform
 import re
 import subprocess
-import winreg
 from pathlib import Path
+
+if platform.system() == "Windows":
+    import winreg
 from typing import List, Optional
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,12 @@ class InkscapeDetector:
             Optional[str]: Path to Inkscape executable if found, None otherwise
         """
         self.logger.info(f"Detecting Inkscape installation on {self.system}")
+
+        # Honor explicit override first
+        env_path = os.environ.get("INKSCAPE_PATH", "").strip()
+        if env_path and self._validate_executable(env_path):
+            self.logger.info(f"Using INKSCAPE_PATH from environment: {env_path}")
+            return env_path
 
         if self.system == "windows":
             return self._detect_windows()
@@ -146,23 +154,23 @@ class InkscapeDetector:
 
     def _detect_linux(self) -> Optional[str]:
         """
-        Detect GIMP on Linux.
+        Detect Inkscape on Linux.
 
         Returns:
-            Optional[str]: Path to GIMP executable
+            Optional[str]: Path to Inkscape executable
         """
         # Try PATH first (most common)
-        path_executable = self._check_path_environment(["gimp", "gimp-3.0", "gimp-2.10"])
+        path_executable = self._check_path_environment(["inkscape"])
         if path_executable:
             return path_executable
 
         # Try common installation paths
         common_paths = [
-            "/usr/bin/gimp",
-            "/usr/local/bin/gimp",
-            "/snap/bin/gimp",
-            "/flatpak/app/org.gimp.GIMP/current/active/export/bin/gimp",
-            "~/.local/bin/gimp",
+            "/usr/bin/inkscape",
+            "/usr/local/bin/inkscape",
+            "/snap/bin/inkscape",
+            "/flatpak/app/org.inkscape.Inkscape/current/active/export/bin/inkscape",
+            "~/.local/bin/inkscape",
         ]
 
         for path in common_paths:
@@ -218,9 +226,9 @@ class InkscapeDetector:
             if not path_obj.exists() or not os.access(path, os.X_OK):
                 return False
 
-            # Quick validation by checking if it's likely a GIMP executable
+            # Quick validation by checking if it's likely an Inkscape executable
             path_str = str(path_obj).lower()
-            if "gimp" not in path_str:
+            if "inkscape" not in path_str:
                 return False
 
             return True

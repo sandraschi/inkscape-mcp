@@ -39,7 +39,10 @@ def init_metrics() -> None:
         pass
 
     try:
-        from prometheus_client import Counter, Gauge, Histogram, Info
+        from prometheus_client import Counter
+        from prometheus_client import Gauge
+        from prometheus_client import Histogram
+        from prometheus_client import Info
     except ImportError:
         logger.warning(
             "prometheus_client not installed; metrics disabled. "

@@ -331,7 +331,9 @@ Errors:
 """
 
 import time
-from typing import Any, Dict, List, Literal, Optional
+from pathlib import Path
+from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -342,7 +344,7 @@ class VectorOperationResult(BaseModel):
     success: bool
     operation: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     execution_time_ms: float
     error: str = ""
 
@@ -378,13 +380,13 @@ async def inkscape_vector(
     input_path: str = "",
     output_path: str = "",
     object_id: str = "",
-    object_ids: Optional[List[str]] = None,
+    object_ids: list[str] | None = None,
     select_all: bool = False,
     operation_type: str = "",
     cli_wrapper: Any = None,
     config: Any = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Inkscape vector operations portmanteau tool."""
     start_time = time.time()
 
@@ -482,7 +484,7 @@ async def inkscape_vector(
 
 async def _trace_image(
     input_path: str, output_path: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Trace bitmap image to vector paths using potrace."""
     try:
         actions = [
@@ -520,8 +522,8 @@ async def _trace_image(
 
 
 async def _generate_barcode_qr(
-    barcode_data: str, output_path: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+    barcode_data: str, output_path: str, _cli_wrapper: Any, _config: Any
+) -> dict[str, Any]:
     """Generate QR code or barcode."""
     try:
         # Create basic SVG with QR-like pattern (placeholder implementation)
@@ -534,7 +536,7 @@ async def _generate_barcode_qr(
 </svg>"""
         svg_content = svg_template.format(barcode_data=barcode_data)
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with Path(output_path).open("w", encoding="utf-8") as f:
             f.write(svg_content)
 
         return VectorOperationResult(
@@ -557,8 +559,8 @@ async def _generate_barcode_qr(
 
 
 async def _generate_laser_dot(
-    output_path: str, x: float, y: float, cli_wrapper: Any, config: Any, preset_id: str = ""
-) -> Dict[str, Any]:
+    output_path: str, x: float, y: float, _cli_wrapper1: Any, _config1: Any, preset_id: str = ""
+) -> dict[str, Any]:
     """Generate animated laser pointer dot."""
     try:
         svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -591,7 +593,7 @@ async def _generate_laser_dot(
   </circle>
 </svg>'''
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with Path(output_path).open("w", encoding="utf-8") as f:
             f.write(svg_content)
 
         return VectorOperationResult(
@@ -620,7 +622,7 @@ async def _generate_laser_dot(
 
 async def _measure_object(
     input_path: str, object_id: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Measure object dimensions."""
     try:
         # Use Inkscape's query functions
@@ -672,7 +674,7 @@ async def _measure_object(
         ).model_dump()
 
 
-async def _query_document(input_path: str, cli_wrapper: Any, config: Any) -> Dict[str, Any]:
+async def _query_document(input_path: str, cli_wrapper: Any, config: Any) -> dict[str, Any]:
     """Query document information."""
     try:
         width_result = await cli_wrapper._execute_command(
@@ -713,8 +715,8 @@ async def _query_document(input_path: str, cli_wrapper: Any, config: Any) -> Dic
 
 
 async def _count_nodes(
-    input_path: str, object_id: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+    _input_path: str, object_id: str, _cli_wrapper2: Any, _config2: Any
+) -> dict[str, Any]:
     """Count nodes in a path."""
     try:
         # This is a simplified implementation - real implementation would need to parse SVG
@@ -750,7 +752,7 @@ async def _path_simplify(
     threshold: float,
     cli_wrapper: Any,
     config: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Simplify path by reducing nodes."""
     try:
         actions = [
@@ -793,7 +795,7 @@ async def _path_simplify(
 
 async def _path_clean(
     input_path: str, output_path: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Clean SVG by removing unnecessary elements."""
     try:
         actions = [
@@ -834,7 +836,7 @@ async def _path_clean(
 
 async def _export_dxf(
     input_path: str, output_path: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Export SVG paths to DXF for CAD/laser workflows."""
     try:
         actions = [
@@ -872,7 +874,7 @@ async def _export_dxf(
 
 async def _render_preview(
     input_path: str, output_path: str, dpi: int, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Render PNG preview of SVG."""
     try:
         actions = [f"export-filename:{output_path}", f"export-dpi:{dpi}", "export-do"]
@@ -912,11 +914,11 @@ async def _apply_boolean(
     boolean_type: str,
     input_path: str,
     output_path: str,
-    object_ids: Optional[List[str]] = None,
+    object_ids: list[str] | None = None,
     select_all: bool = False,
     cli_wrapper: Any = None,
     config: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Apply boolean operations with proper action chaining - FIXED STATEFUL LOGIC."""
     try:
         # CRITICAL: Build proper action chain - Select → Modify → Persist
@@ -992,7 +994,7 @@ async def _apply_boolean(
 
 async def _object_raise(
     input_path: str, output_path: str, object_id: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Raise object in Z-order (move up)."""
     try:
         actions = (
@@ -1031,7 +1033,7 @@ async def _object_raise(
 
 async def _object_lower(
     input_path: str, output_path: str, object_id: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Lower object in Z-order (move down)."""
     try:
         actions = (
@@ -1069,8 +1071,8 @@ async def _object_lower(
 
 
 async def _set_document_units(
-    input_path: str, output_path: str, units: str, cli_wrapper: Any, config: Any
-) -> Dict[str, Any]:
+    _input_path1: str, output_path: str, units: str, _cli_wrapper3: Any, _config3: Any
+) -> dict[str, Any]:
     """Set document units (px, mm, in, etc.) to normalize workspace."""
     try:
         # This would typically use document properties or preferences
@@ -1080,7 +1082,7 @@ async def _set_document_units(
             operation="set_document_units",
             message=f"Document units normalization requested for {units}",
             data={
-                "input_path": input_path,
+                "input_path": _input_path1,
                 "output_path": output_path,
                 "requested_units": units,
                 "note": "Units normalization ensures consistent coordinate systems",

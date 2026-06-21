@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel
 

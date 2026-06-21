@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, RefreshCw } from "lucide-react";
+import API_BASE from "@/lib/api";
 
 export function Status() {
     const [data, setData] = useState<unknown>(null);
@@ -12,7 +13,7 @@ export function Status() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/health");
+            const res = await fetch(API_BASE + "/api/health");
             if (!res.ok) {
                 setError(`HTTP ${res.status}`);
                 setData(null);

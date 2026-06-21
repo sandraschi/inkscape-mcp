@@ -1,3 +1,4 @@
+import API_BASE from "@/lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type LogEntry = {
@@ -47,7 +48,7 @@ export default function Logging() {
     if (search) params.set("search", search);
     if (opts.after_id) params.set("after_id", opts.after_id);
     try {
-      const r = await fetch(`/api/logs?${params}`);
+      const r = await fetch(`${API_BASE}/api/logs?${params}`);
       const d = await r.json();
       if (opts.tail && opts.after_id) {
         setEntries((prev) => [...prev, ...d.entries].slice(-200));
@@ -108,7 +109,7 @@ export default function Logging() {
     if (level) params.set("level", level);
     if (kind) params.set("kind", kind);
     if (search) params.set("search", search);
-    const r = await fetch(`/api/logs/export?${params}`);
+    const r = await fetch(`${API_BASE}/api/logs/export?${params}`);
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -117,7 +118,7 @@ export default function Logging() {
   };
 
   const handleClear = async () => {
-    await fetch("/api/logs", { method: "DELETE" });
+    await fetch(API_BASE + "/api/logs", { method: "DELETE" });
     setShowClear(false);
     setEntries([]);
     setTotal(0);

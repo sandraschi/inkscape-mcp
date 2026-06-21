@@ -1,37 +1,30 @@
-from __future__ import annotations
-
 """
 Layer Management Tools for GIMP MCP Server.
 
 Provides comprehensive layer operations including creation, manipulation,
 blending modes, effects, and organization following FastMCP 2.10 standards.
 """
+from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
-
 logger = logging.getLogger(__name__)
 
 # Type aliases
-FilePath: TypeAlias = str
-LayerName: TypeAlias = str
-LayerID: TypeAlias = str
-LayerResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type LayerName = str
+type LayerID = str
+type LayerResult = dict[str, Any]
 
 
-class LayerType(str, Enum):
+class LayerType(StrEnum):
     """Supported layer types in GIMP."""
 
     NORMAL = "normal"
@@ -44,7 +37,7 @@ class LayerType(str, Enum):
     LAYER_EFFECT = "effect"
 
 
-class BlendMode(str, Enum):
+class BlendMode(StrEnum):
     """Supported layer blending modes in GIMP."""
 
     NORMAL = "normal"
@@ -115,7 +108,7 @@ class LayerManagementTools(BaseToolCategory):
             layer_type: str = "normal",
             opacity: float = 100.0,
             blend_mode: str = "normal",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Create a new layer in an image.
 
@@ -207,8 +200,8 @@ class LayerManagementTools(BaseToolCategory):
 
         @app.tool()
         async def duplicate_layer(
-            input_path: str, output_path: str, layer_index: int = 0, new_name: Optional[str] = None
-        ) -> Dict[str, Any]:
+            input_path: str, output_path: str, layer_index: int = 0, new_name: str | None = None
+        ) -> dict[str, Any]:
             """
             Duplicate an existing layer in an image.
 
@@ -284,7 +277,7 @@ class LayerManagementTools(BaseToolCategory):
         @app.tool()
         async def delete_layer(
             input_path: str, output_path: str, layer_index: int = 0
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Delete a layer from an image.
 
@@ -349,7 +342,7 @@ class LayerManagementTools(BaseToolCategory):
         @app.tool()
         async def reorder_layer(
             input_path: str, output_path: str, layer_index: int, new_position: int
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Reorder a layer to a new position in the layer stack.
 
@@ -438,11 +431,11 @@ class LayerManagementTools(BaseToolCategory):
             input_path: str,
             output_path: str,
             layer_index: int = 0,
-            opacity: Optional[float] = None,
-            blend_mode: Optional[str] = None,
-            visible: Optional[bool] = None,
-            locked: Optional[bool] = None,
-        ) -> Dict[str, Any]:
+            opacity: float | None = None,
+            blend_mode: str | None = None,
+            visible: bool | None = None,
+            locked: bool | None = None,
+        ) -> dict[str, Any]:
             """
             Set properties of a specific layer.
 
@@ -570,9 +563,9 @@ class LayerManagementTools(BaseToolCategory):
         async def merge_layers(
             input_path: str,
             output_path: str,
-            layer_indices: List[int],
+            layer_indices: list[int],
             merge_mode: str = "merge_down",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Merge multiple layers into a single layer.
 
@@ -667,8 +660,8 @@ class LayerManagementTools(BaseToolCategory):
 
         @app.tool()
         async def get_layer_info(
-            input_path: str, layer_index: Optional[int] = None
-        ) -> Dict[str, Any]:
+            input_path: str, layer_index: int | None = None
+        ) -> dict[str, Any]:
             """
             Get detailed information about layers in an image.
 

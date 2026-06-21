@@ -220,7 +220,8 @@ Errors:
 
 import logging
 import time
-from typing import Any, Dict, Literal, Optional
+from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -236,7 +237,7 @@ class SystemResult(BaseModel):
     success: bool
     operation: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     execution_time_ms: float
     error: str = ""
 
@@ -252,13 +253,13 @@ async def inkscape_system(
         "list_extensions",
         "execute_extension",
     ],
-    extension_id: Optional[str] = None,
-    extension_params: Optional[Dict[str, Any]] = None,
-    input_file: Optional[str] = None,
-    output_file: Optional[str] = None,
+    extension_id: str | None = None,
+    _extension_params: dict[str, Any] | None = None,
+    _input_file: str | None = None,
+    _output_file: str | None = None,
     cli_wrapper: Any = None,
     config: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Inkscape system operations portmanteau tool."""
     start_time = time.time()
 

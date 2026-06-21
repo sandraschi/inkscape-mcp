@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any
+from typing import TypedDict
 
 
 class SvgIconTemplate(TypedDict):

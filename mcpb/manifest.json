@@ -1,0 +1,42 @@
+{
+  "manifest_version": "0.2",
+  "name": "inkscape-mcp",
+  "version": "2.6.0",
+  "description": "MCP server for Inkscape-backed SVG and vector graphics operations. File I/O, analysis, vector editing, rendering, fabrication art, simulation art, heraldry generation, and cross-repo fleet handoff.",
+  "author": { "name": "sandraschi" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/inkscape_mcp/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run","--directory","${PWD}","python","-m","inkscape_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    {"name": "inkscape_system", "description": "System, diagnostics, help, extensions"},
+    {"name": "inkscape_file", "description": "File load, save, convert, info, validate"},
+    {"name": "inkscape_vector", "description": "Vector ops: trace, boolean, path, export, measure"},
+    {"name": "inkscape_analysis", "description": "Quality, statistics, validation, structure"},
+    {"name": "inkscape_render", "description": "Preview export, multi-DPI, summary"},
+    {"name": "inkscape_fab_art", "description": "Laser DXF, gazebo, robotics staging"},
+    {"name": "inkscape_sim_art", "description": "Icon packs, sprite sheets, Resonite UI"},
+    {"name": "inkscape_fleet", "description": "Cross-repo GIMP, Blender, Unity handoff"},
+    {"name": "inkscape_fleet_help", "description": "Help for fleet operations"},
+    {"name": "inkscape_validation", "description": "SVG QA, web audit, size checks"},
+    {"name": "generate_heraldry", "description": "Preset heraldic SVG generation"},
+    {"name": "list_local_models", "description": "Discover Ollama and LM Studio"},
+    {"name": "agentic_inkscape_workflow", "description": "Autonomous multi-step workflow"},
+    {"name": "intelligent_vector_processing", "description": "Batch SVG processing with planning"},
+    {"name": "conversational_inkscape_assistant", "description": "Natural language help"},
+    {"name": "generate_svg", "description": "Generate SVG from description via LLM"}
+  ],
+  "prompts": {
+    "system": "assets/prompts/system.md",
+    "user": "assets/prompts/user.md",
+    "examples": "assets/prompts/examples.json"
+  }
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Send, MessageSquare } from "lucide-react";
+import API_BASE from "@/lib/api";
 
 interface Msg {
     role: "user" | "assistant";
@@ -25,7 +26,7 @@ export function Chat() {
         setMessages((m) => [...m, { role: "user", text }]);
         setLoading(true);
         try {
-            const res = await fetch("/api/chat", {
+            const res = await fetch(API_BASE + "/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: text }),

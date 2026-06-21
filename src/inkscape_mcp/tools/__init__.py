@@ -15,11 +15,11 @@ TOOLS:
 from typing import Any
 
 from .analysis import inkscape_analysis
+from .fab_art_tools import inkscape_fab_art
 from .file_operations import inkscape_file
+from .fleet_tools import inkscape_fleet
 from .heraldry import register_heraldry_tools
 from .llm_discovery import list_local_models
-from .fab_art_tools import inkscape_fab_art
-from .fleet_tools import inkscape_fleet
 from .render_tools import inkscape_render
 from .sim_art_tools import inkscape_sim_art
 from .system import inkscape_system

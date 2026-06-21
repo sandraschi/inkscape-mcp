@@ -1,35 +1,31 @@
-from __future__ import annotations
-
 """
 File Operation Tools for GIMP MCP Server.
 
 This module provides core file handling operations for the GIMP MCP server,
 including loading, saving, format conversion, and metadata extraction.
 """
+from __future__ import annotations
 
 import logging
-import os
-import sys
 from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Dict, Optional, Any
+from enum import Enum
+from enum import auto
+from pathlib import Path
+from typing import Any
 
 from fastmcp import FastMCP
+
 from ..config import InkscapeConfig
 
 logger = logging.getLogger(__name__)
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
 
 __all__ = ["FileOperationTools", "FileOperationResult"]
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-ImageMetadata: TypeAlias = Dict[str, Any]
-ImageData: TypeAlias = Any  # Placeholder for actual image data type
+type FilePath = str
+type ImageMetadata = dict[str, Any]
+type ImageData = Any  # Placeholder for actual image data type
 
 
 class FileOperationStatus(Enum):
@@ -53,10 +49,10 @@ class FileOperationResult:
 
     status: FileOperationStatus
     message: str
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the result to a dictionary."""
         return {
             "success": self.status == FileOperationStatus.SUCCESS,
@@ -69,7 +65,7 @@ class FileOperationResult:
 class FileOperationTools:
     """Tools for file operations in GIMP MCP Server."""
 
-    def __init__(self, cli_wrapper: InkscapeCliWrapper, config: InkscapeConfig):
+    def __init__(self, cli_wrapper: Any, config: InkscapeConfig):
         """Initialize file operation tools.
 
         Args:
@@ -79,7 +75,7 @@ class FileOperationTools:
         self.cli_wrapper = cli_wrapper
         self.config = config
 
-    def _error_response(self, message: str, details: Optional[str] = None) -> Dict[str, Any]:
+    def _error_response(self, message: str, details: str | None = None) -> dict[str, Any]:
         """Create a standardized error response.
 
         Args:
@@ -103,7 +99,7 @@ class FileOperationTools:
 
         # Register a simple test tool
         @mcp.tool()
-        async def test_tool(self, name: str = "World") -> Dict[str, str]:
+        async def test_tool(_self, name: str = "World") -> dict[str, str]:
             """A simple test tool to verify tool registration
 
             Args:
@@ -117,8 +113,8 @@ class FileOperationTools:
         # Register load_image tool
         @mcp.tool()
         async def load_image(
-            self, file_path: str, load_metadata: bool = True, max_dimension: int = 0
-        ) -> Dict[str, Any]:
+            self, file_path: str, load_metadata: bool = True, _max_dimension: int = 0
+        ) -> dict[str, Any]:
             """Load an image file and return comprehensive metadata and image handle.
 
             This tool loads an image file from the specified path, validates it against
@@ -135,16 +131,16 @@ class FileOperationTools:
             """
             try:
                 # Basic validation
-                if not os.path.exists(file_path):
+                if not Path(file_path).exists():
                     return self._error_response(
                         "File not found", f"The file {file_path} does not exist"
                     )
 
                 # Get file info
-                file_path = os.path.abspath(file_path)
-                file_name = os.path.basename(file_path)
-                file_size = os.path.getsize(file_path)
-                last_modified = os.path.getmtime(file_path)
+                file_path = str(Path(file_path).resolve())
+                file_name = Path(file_path).name
+                file_size = Path(file_path).stat().st_size
+                last_modified = Path(file_path).stat().st_mtime
 
                 # Create response
                 response = {
@@ -233,11 +229,11 @@ class FileOperationTools:
             self,
             input_path: str,
             output_path: str,
-            format: Optional[str] = None,
-            quality: int = 90,
+            format: str | None = None,
+            _quality: int = 90,
             overwrite: bool = False,
-            preserve_metadata: bool = True,
-        ) -> Dict[str, Any]:
+            _preserve_metadata: bool = True,
+        ) -> dict[str, Any]:
             """Save an image to the specified location with the given format and options.
 
             This method handles saving images with format conversion, quality adjustment,
@@ -256,22 +252,22 @@ class FileOperationTools:
             """
             try:
                 # Validate input paths
-                if not os.path.isfile(input_path):
+                if not Path(input_path).is_file():
                     return self._error_response("Input file does not exist")
 
                 # Resolve output path
-                output_path = os.path.abspath(output_path)
-                output_dir = os.path.dirname(output_path)
+                output_path = str(Path(output_path).resolve())
+                output_dir = str(Path(output_path).parent)
 
                 # Create output directory if it doesn't exist
-                if output_dir and not os.path.exists(output_dir):
+                if output_dir and not Path(output_dir).exists():
                     try:
-                        os.makedirs(output_dir, exist_ok=True)
+                        Path(output_dir).mkdir(parents=True, exist_ok=True)
                     except OSError as e:
                         return self._error_response(f"Failed to create output directory: {e}")
 
                 # Check if output file exists and handle overwrite
-                if os.path.exists(output_path) and not overwrite:
+                if Path(output_path).exists() and not overwrite:
                     return self._error_response(
                         f"Output file already exists: {output_path}",
                         "Set overwrite=True to replace existing files",
@@ -279,7 +275,7 @@ class FileOperationTools:
 
                 # Determine output format
                 if not format:
-                    _, ext = os.path.splitext(output_path)
+                    _, ext = Path(output_path).suffix
                     format = ext.lstrip(".").lower()
                     if not format:
                         return self._error_response(
@@ -326,11 +322,11 @@ class FileOperationTools:
                 await self.cli_wrapper.execute_script(script)
 
                 # Verify the file was saved
-                if not os.path.exists(output_path):
+                if not Path(output_path).exists():
                     return self._error_response("Failed to save image: Output file was not created")
 
                 # Get file info
-                file_size = os.path.getsize(output_path)
+                file_size = Path(output_path).stat().st_size
 
                 return {
                     "status": "success",

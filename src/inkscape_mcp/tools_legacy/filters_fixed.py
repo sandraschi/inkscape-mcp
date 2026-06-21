@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Fixed Filter Tools for GIMP MCP Server.
 
@@ -8,18 +6,16 @@ FIXES APPLIED:
 - Fixed blur implementation with proper CLI wrapper integration
 - Added GUI opening for filter preview
 """
+from __future__ import annotations
 
 import logging
-import sys
-from typing import Any, Dict
+from typing import Any
 
 from fastmcp import FastMCP
+
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    pass
-else:
-    pass
+pass
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +34,7 @@ class FilterTools(BaseToolCategory):
         angle: float = 0.0,
         center_x: float = 0.5,
         center_y: float = 0.5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Implementation of blur filter application."""
         try:
             # Validate inputs
@@ -124,7 +120,7 @@ class FilterTools(BaseToolCategory):
             angle: float = 0.0,
             center_x: float = 0.5,
             center_y: float = 0.5,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply blur effect to an image with various methods.
 

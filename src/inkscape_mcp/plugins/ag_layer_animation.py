@@ -52,7 +52,7 @@ class AGLayerAnimation(inkex.EffectExtension):
         num_frames = len(layers)
 
         # Calculate timing for each frame
-        frame_duration = duration / num_frames if num_frames > 1 else duration
+        duration / num_frames if num_frames > 1 else duration
 
         for i, layer in enumerate(layers):
             layer_id = layer.get("id", f"layer_{i}")

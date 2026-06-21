@@ -8,15 +8,16 @@ and metadata extraction.
 
 import logging
 from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Dict, Optional, Any, TypeAlias
+from enum import Enum
+from enum import auto
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-ImageMetadata: TypeAlias = Dict[str, Any]
-ImageData: TypeAlias = Any  # Placeholder for actual image data type
+type FilePath = str
+type ImageMetadata = dict[str, Any]
+type ImageData = Any  # Placeholder for actual image data type
 
 
 class FileOperationStatus(Enum):
@@ -40,10 +41,10 @@ class FileOperationResult:
 
     status: FileOperationStatus
     message: str
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the result to a dictionary."""
         return {
             "success": self.status == FileOperationStatus.SUCCESS,
@@ -54,13 +55,13 @@ class FileOperationResult:
 
     @classmethod
     def create_success_response(
-        cls, data: Optional[Dict[str, Any]] = None, message: str = ""
-    ) -> Dict[str, Any]:
+        cls, data: dict[str, Any] | None = None, message: str = ""
+    ) -> dict[str, Any]:
         """Create a standardized success response."""
         return {"status": "success", "data": data or {}, "message": message}
 
     @classmethod
-    def create_error_response(cls, message: str, details: Optional[str] = None) -> Dict[str, Any]:
+    def create_error_response(cls, message: str, details: str | None = None) -> dict[str, Any]:
         """Create a standardized error response."""
         response = {"status": "error", "error": message}
         if details:
@@ -85,7 +86,7 @@ class FileOperationBase:
         self.cli_wrapper = cli_wrapper
         self.config = config
 
-    def _error_response(self, message: str, details: Optional[str] = None) -> Dict[str, Any]:
+    def _error_response(self, message: str, details: str | None = None) -> dict[str, Any]:
         """Create a standardized error response.
 
         Args:

@@ -1,17 +1,15 @@
-from __future__ import annotations
-
 """
 Filter and Effects Tools for GIMP MCP Server.
 
 Provides image filtering operations including blur, sharpen,
 noise reduction, and artistic effects.
 """
+from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Dict, Optional
+from enum import StrEnum
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -26,26 +24,22 @@ except ImportError:
     npt = None  # type: ignore
     HAS_NUMPY = False
 
-from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
+from .base import BaseToolCategory
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
-FilePath: TypeAlias = str
-Kernel: TypeAlias = Any  # numpy.ndarray | List[List[float]]
-FilterResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type Kernel = Any  # numpy.ndarray | List[List[float]]
+type FilterResult = dict[str, Any]
 
 # Constants for filters
 DEFAULT_KERNEL_SIZE = 3
 MAX_KERNEL_SIZE = 15
 
 
-class BlurMethod(str, Enum):
+class BlurMethod(StrEnum):
     """Available blur methods."""
 
     GAUSSIAN = "gaussian"
@@ -57,7 +51,7 @@ class BlurMethod(str, Enum):
     SELECTIVE_GAUSSIAN = "selective_gaussian"
 
 
-class EdgeDetectMethod(str, Enum):
+class EdgeDetectMethod(StrEnum):
     """Available edge detection methods."""
 
     SOBEL = "sobel"
@@ -101,7 +95,7 @@ class FilterTools(BaseToolCategory):
             angle: float = 0.0,
             center_x: float = 0.5,
             center_y: float = 0.5,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply blur effect to an image with various methods.
 
@@ -258,7 +252,7 @@ class FilterTools(BaseToolCategory):
             radius: float = 1.0,
             amount: float = 0.5,
             threshold: float = 0.0,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply sharpening to an image.
 
@@ -362,7 +356,7 @@ class FilterTools(BaseToolCategory):
             amount: float = 1.0,
             threshold: float = 0.2,
             invert: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Detect edges in an image.
 
@@ -484,8 +478,8 @@ class FilterTools(BaseToolCategory):
             method: str = "add",
             amount: float = 0.1,
             monochromatic: bool = True,
-            seed: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            seed: int | None = None,
+        ) -> dict[str, Any]:
             """
             Add or reduce noise in an image.
 
@@ -625,7 +619,7 @@ class FilterTools(BaseToolCategory):
             size: int = 3,
             exponent: float = 1.0,
             intensity: float = 0.5,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply artistic effects to an image.
 

@@ -191,7 +191,8 @@ Errors:
 
 import time
 from pathlib import Path
-from typing import Any, Dict, Literal
+from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -202,7 +203,7 @@ class AnalysisResult(BaseModel):
     success: bool
     operation: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     execution_time_ms: float
     error: str = ""
 
@@ -212,7 +213,7 @@ async def inkscape_analysis(
     input_path: str,
     cli_wrapper: Any = None,
     config: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Inkscape document analysis portmanteau tool."""
     start_time = time.time()
 

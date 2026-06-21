@@ -1,33 +1,29 @@
-from __future__ import annotations
-
 """
 Help Tools for GIMP MCP Server.
 
 Provides documentation and help information about the GIMP MCP tools
 at different technical levels for users, developers, and AI systems.
 """
+from __future__ import annotations
 
 import logging
-import sys
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, TypedDict
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Any
+from typing import Literal
+from typing import TypedDict
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
-
 logger = logging.getLogger(__name__)
 
 # Type aliases
 HelpLevel = Literal["basic", "intermediate", "advanced"]
-ToolName: TypeAlias = str
-CategoryName: TypeAlias = str
-HelpContent: TypeAlias = Dict[HelpLevel, str]
+type ToolName = str
+type CategoryName = str
+type HelpContent = dict[HelpLevel, str]
 
 
 class HelpSection(TypedDict):
@@ -36,8 +32,8 @@ class HelpSection(TypedDict):
     basic: str
     intermediate: str
     advanced: str
-    examples: List[Dict[str, str]]
-    parameters: Dict[str, Dict[str, Any]]
+    examples: list[dict[str, str]]
+    parameters: dict[str, dict[str, Any]]
 
 
 @dataclass
@@ -48,10 +44,10 @@ class ToolDocumentation:
     description: str
     category: str
     help_levels: HelpContent
-    examples: List[Dict[str, str]] = field(default_factory=list)
-    parameters: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    examples: list[dict[str, str]] = field(default_factory=list)
+    parameters: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "name": self.name,
@@ -85,7 +81,7 @@ class HelpTools(BaseToolCategory):
         self.tool_categories = tool_categories
         self._help_data = self._initialize_help_data()
 
-    def _initialize_help_data(self) -> Dict[str, Dict[str, Any]]:
+    def _initialize_help_data(self) -> dict[str, dict[str, Any]]:
         """Initialize comprehensive help documentation structure."""
         return {
             "overview": {
@@ -431,7 +427,7 @@ class HelpTools(BaseToolCategory):
         instance = self
 
         @app.tool()
-        async def get_help_overview(level: str = "beginner") -> Dict[str, Any]:
+        async def get_help_overview(level: str = "beginner") -> dict[str, Any]:
             """
             Get an overview of GIMP MCP Server capabilities at different skill levels.
 
@@ -464,7 +460,7 @@ class HelpTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get help overview")
 
         @app.tool()
-        async def get_category_help(category: str, include_tools: bool = True) -> Dict[str, Any]:
+        async def get_category_help(category: str, include_tools: bool = True) -> dict[str, Any]:
             """
             Get detailed help for a specific tool category.
 
@@ -502,7 +498,7 @@ class HelpTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get category help")
 
         @app.tool()
-        async def get_tool_help(tool_name: str, category: Optional[str] = None) -> Dict[str, Any]:
+        async def get_tool_help(tool_name: str, category: str | None = None) -> dict[str, Any]:
             """
             Get detailed help for a specific tool.
 
@@ -550,7 +546,7 @@ class HelpTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get tool help")
 
         @app.tool()
-        async def list_all_tools() -> Dict[str, Any]:
+        async def list_all_tools() -> dict[str, Any]:
             """
             List all available tools organized by category.
 
@@ -584,8 +580,8 @@ class HelpTools(BaseToolCategory):
 
         @app.tool()
         async def get_usage_examples(
-            level: str = "beginner", category: Optional[str] = None
-        ) -> Dict[str, Any]:
+            level: str = "beginner", category: str | None = None
+        ) -> dict[str, Any]:
             """
             Get usage examples for different skill levels.
 
@@ -630,7 +626,7 @@ class HelpTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get usage examples")
 
         @app.tool()
-        async def get_troubleshooting_help() -> Dict[str, Any]:
+        async def get_troubleshooting_help() -> dict[str, Any]:
             """
             Get troubleshooting information and best practices.
 

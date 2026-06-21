@@ -1,44 +1,40 @@
-from __future__ import annotations
-
 """
 Performance Optimization Tools for GIMP MCP Server.
 
 Provides performance optimization, caching, and monitoring capabilities
 following FastMCP 2.10 standards.
 """
+from __future__ import annotations
 
 import asyncio
 import hashlib
 import logging
 import os
-import sys
 import time
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
+from dataclasses import field
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any
+from typing import ParamSpec
+from typing import TypeVar
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias, ParamSpec
-else:
-    from typing_extensions import TypeAlias, ParamSpec
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
 T = TypeVar("T")
 P = ParamSpec("P")
-FilePath: TypeAlias = str
-CacheKey: TypeAlias = str
-OperationID: TypeAlias = str
-PerformanceMetric: TypeAlias = Dict[str, Union[float, int, str]]
+type FilePath = str
+type CacheKey = str
+type OperationID = str
+type PerformanceMetric = dict[str, float | int | str]
 
 
-class CacheStrategy(str, Enum):
+class CacheStrategy(StrEnum):
     """Available caching strategies."""
 
     LRU = "lru"  # Least Recently Used
@@ -50,7 +46,7 @@ class CacheStrategy(str, Enum):
     HYBRID = "hybrid"  # Memory + Disk
 
 
-class PerformanceMetricType(str, Enum):
+class PerformanceMetricType(StrEnum):
     """Types of performance metrics that can be collected."""
 
     EXECUTION_TIME = "execution_time"
@@ -69,8 +65,8 @@ class CacheConfig:
     enabled: bool = True
     strategy: CacheStrategy = CacheStrategy.LRU
     max_size: int = 1000
-    ttl: Optional[int] = 3600  # Time to live in seconds
-    disk_path: Optional[Path] = None
+    ttl: int | None = 3600  # Time to live in seconds
+    disk_path: Path | None = None
     compress: bool = True
     pickle_protocol: int = 4
 
@@ -86,7 +82,7 @@ class PerformanceConfig:
     """Configuration for performance monitoring."""
 
     enabled: bool = True
-    metrics: List[PerformanceMetricType] = field(
+    metrics: list[PerformanceMetricType] = field(
         default_factory=lambda: [
             PerformanceMetricType.EXECUTION_TIME,
             PerformanceMetricType.MEMORY_USAGE,
@@ -134,8 +130,8 @@ class PerformanceTools(BaseToolCategory):
             output_path: str,
             optimization_level: str = "balanced",
             enable_caching: bool = True,
-            memory_limit_mb: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            memory_limit_mb: int | None = None,
+        ) -> dict[str, Any]:
             """
             Optimize image processing with performance enhancements.
 
@@ -211,8 +207,8 @@ class PerformanceTools(BaseToolCategory):
                 self._performance_metrics[operation_key] = {
                     "processing_time": processing_time,
                     "memory_delta": memory_delta,
-                    "input_size": os.path.getsize(input_path),
-                    "output_size": os.path.getsize(output_path),
+                    "input_size": Path(input_path).stat().st_size,
+                    "output_size": Path(output_path).stat().st_size,
                     "timestamp": time.time(),
                 }
 
@@ -225,8 +221,8 @@ class PerformanceTools(BaseToolCategory):
                         "performance_metrics": {
                             "processing_time_seconds": processing_time,
                             "memory_delta_mb": memory_delta,
-                            "input_size_bytes": os.path.getsize(input_path),
-                            "output_size_bytes": os.path.getsize(output_path),
+                            "input_size_bytes": Path(input_path).stat().st_size,
+                            "output_size_bytes": Path(output_path).stat().st_size,
                         },
                         "cached": False,
                         "cache_key": cache_key,
@@ -239,8 +235,8 @@ class PerformanceTools(BaseToolCategory):
 
         @app.tool()
         async def clear_cache(
-            cache_type: str = "all", older_than_hours: Optional[int] = None
-        ) -> Dict[str, Any]:
+            cache_type: str = "all", _older_than_hours: int | None = None
+        ) -> dict[str, Any]:
             """
             Clear performance cache to free up memory and disk space.
 
@@ -307,8 +303,8 @@ class PerformanceTools(BaseToolCategory):
 
         @app.tool()
         async def get_performance_metrics(
-            operation_type: Optional[str] = None, time_range_hours: Optional[int] = None
-        ) -> Dict[str, Any]:
+            operation_type: str | None = None, time_range_hours: int | None = None
+        ) -> dict[str, Any]:
             """
             Get performance metrics and statistics.
 
@@ -390,10 +386,10 @@ class PerformanceTools(BaseToolCategory):
         async def optimize_batch_processing(
             input_directory: str,
             output_directory: str,
-            optimization_settings: Dict[str, Any],
+            optimization_settings: dict[str, Any],
             enable_parallel: bool = True,
-            max_workers: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            max_workers: int | None = None,
+        ) -> dict[str, Any]:
             """
             Optimize batch processing with performance enhancements.
 
@@ -409,11 +405,11 @@ class PerformanceTools(BaseToolCategory):
             """
             try:
                 # Validate inputs
-                if not os.path.isdir(input_directory):
+                if not Path(input_directory).is_dir():
                     return self.create_error_response(f"Invalid input directory: {input_directory}")
 
-                if not os.path.isdir(output_directory):
-                    os.makedirs(output_directory, exist_ok=True)
+                if not Path(output_directory).is_dir():
+                    Path(output_directory).mkdir(parents=True, exist_ok=True)
 
                 # Set default optimization settings
                 default_settings = {
@@ -515,7 +511,7 @@ class PerformanceTools(BaseToolCategory):
                 return self.create_error_response(f"Batch processing optimization failed: {str(e)}")
 
         @app.tool()
-        async def get_system_performance_info() -> Dict[str, Any]:
+        async def get_system_performance_info() -> dict[str, Any]:
             """
             Get system performance information and resource usage.
 
@@ -585,10 +581,10 @@ class PerformanceTools(BaseToolCategory):
 
     def _generate_cache_key(self, input_path: str, optimization_level: str) -> str:
         """Generate a cache key for the given input and optimization level."""
-        file_hash = hashlib.md5(open(input_path, "rb").read()).hexdigest()
+        file_hash = hashlib.md5(Path(input_path).read_bytes()).hexdigest()
         return f"{file_hash}_{optimization_level}"
 
-    def _get_cached_result(self, cache_key: str) -> Optional[str]:
+    def _get_cached_result(self, cache_key: str) -> str | None:
         """Get cached result if available."""
         return self._cache.get(cache_key)
 
@@ -616,7 +612,7 @@ class PerformanceTools(BaseToolCategory):
         input_path: str,
         output_path: str,
         optimization_level: str,
-        memory_limit_mb: Optional[int],
+        memory_limit_mb: int | None,
     ) -> str:
         """Create GIMP script with optimization settings."""
 
@@ -653,7 +649,7 @@ class PerformanceTools(BaseToolCategory):
         return script
 
     async def _process_single_file_optimized(
-        self, file_path: Path, output_directory: str, settings: Dict[str, Any]
+        self, file_path: Path, output_directory: str, settings: dict[str, Any]
     ) -> None:
         """Process a single file with optimization settings."""
         output_path = Path(output_directory) / f"optimized_{file_path.name}"

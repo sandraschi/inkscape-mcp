@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Activity, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import API_BASE from "@/lib/api";
 
 interface HealthPayload {
     status?: string;
@@ -21,7 +22,7 @@ export function Dashboard() {
     const load = async () => {
         setErr(null);
         try {
-            const res = await fetch("/api/health");
+            const res = await fetch(API_BASE + "/api/health");
             if (!res.ok) {
                 setErr(`HTTP ${res.status}`);
                 setH(null);

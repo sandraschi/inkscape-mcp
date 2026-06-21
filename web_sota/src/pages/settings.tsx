@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Server, Info } from "lucide-react";
+import API_BASE from "@/lib/api";
 
 interface HealthPayload {
     status?: string;
@@ -18,14 +19,23 @@ interface HealthPayload {
     };
 }
 
+interface LlmProvider {
+    id: string;
+    label: string;
+    base_url: string;
+    models: string[];
+    needs_key: boolean;
+}
+
 export function Settings() {
     const [health, setHealth] = useState<HealthPayload | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [llmProviders, setLlmProviders] = useState<LlmProvider[]>([]);
 
     const load = async () => {
         setError(null);
         try {
-            const res = await fetch("/api/health");
+            const res = await fetch(API_BASE + "/api/health");
             if (!res.ok) {
                 setError(`HTTP ${res.status}`);
                 setHealth(null);
@@ -38,8 +48,21 @@ export function Settings() {
         }
     };
 
+    const loadProviders = async () => {
+        try {
+            const res = await fetch(API_BASE + "/api/llm/providers");
+            if (res.ok) {
+                const d = await res.json();
+                setLlmProviders(d.providers || []);
+            }
+        } catch {
+            // ignore
+        }
+    };
+
     useEffect(() => {
         void load();
+        void loadProviders();
     }, []);
 
     const ink = health?.providers?.inkscape;
@@ -124,6 +147,37 @@ export function Settings() {
                             <span className="text-slate-500">none (Ollama not running or not installed)</span>
                         )}
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-slate-800 bg-slate-950/50">
+                <CardHeader>
+                    <CardTitle className="text-white">LLM Providers</CardTitle>
+                    <CardDescription className="text-slate-400">
+                        Dynamically discovered from <code className="text-slate-300">/api/llm/providers</code>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm text-slate-300">
+                    {llmProviders.length === 0 && <p className="text-slate-500">No providers discovered. Start Ollama or LM Studio.</p>}
+                    {llmProviders.map((p) => (
+                        <div key={p.id} className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-slate-200">{p.label}</span>
+                                <span className={p.models.length ? "text-emerald-400 text-xs" : "text-slate-600 text-xs"}>
+                                    {p.models.length ? `${p.models.length} model${p.models.length > 1 ? "s" : ""}` : "unreachable"}
+                                </span>
+                            </div>
+                            <code className="block text-xs text-slate-500">{p.base_url}</code>
+                            {p.models.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {p.models.slice(0, 10).map((m) => (
+                                        <span key={m} className="text-xs bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">{m}</span>
+                                    ))}
+                                    {p.models.length > 10 && <span className="text-xs text-slate-600">+{p.models.length - 10} more</span>}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </CardContent>
             </Card>
 

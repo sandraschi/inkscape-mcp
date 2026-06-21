@@ -159,7 +159,8 @@ Errors:
 
 import time
 from pathlib import Path
-from typing import Any, Dict, Literal
+from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -170,7 +171,7 @@ class FileOperationResult(BaseModel):
     success: bool
     operation: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     execution_time_ms: float
     error: str = ""
 
@@ -180,10 +181,10 @@ async def inkscape_file(
     input_path: str,
     output_path: str = "",
     format: str = "",
-    validate_structure: bool = True,
+    _validate_structure: bool = True,
     cli_wrapper: Any = None,
     config: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Inkscape file operations portmanteau tool."""
     start_time = time.time()
 

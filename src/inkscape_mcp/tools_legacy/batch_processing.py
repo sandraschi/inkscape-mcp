@@ -12,29 +12,27 @@ import glob
 import logging
 import os
 import shutil
-import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
+from enum import auto
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Any
+from typing import TypeVar
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
-
 logger = logging.getLogger(__name__)
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-FilePattern: TypeAlias = str
-BatchResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type FilePattern = str
+type BatchResult = dict[str, Any]
 BatchProcessor = Callable[[FilePath], BatchResult]
 T = TypeVar("T")
 
@@ -54,10 +52,10 @@ class BatchItem:
     """Represents an item in a batch process."""
 
     input_path: FilePath
-    output_path: Optional[FilePath] = None
+    output_path: FilePath | None = None
     status: BatchStatus = BatchStatus.PENDING
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
 
 
 # Constants for batch processing
@@ -90,7 +88,7 @@ class BatchProcessingTools(BaseToolCategory):
         self._supported_formats = {"jpg", "jpeg", "png", "tif", "tiff", "bmp", "gif", "webp", "xcf"}
         self._executor = ThreadPoolExecutor(max_workers=config.max_concurrent_processes)
 
-    def _get_supported_files(self, directory: str, pattern: str = "*") -> List[str]:
+    def _get_supported_files(self, directory: str, pattern: str = "*") -> list[str]:
         """
         Get list of supported image files matching pattern.
 
@@ -125,7 +123,7 @@ class BatchProcessingTools(BaseToolCategory):
             f for f in files if Path(f).suffix.lower().lstrip(".") in self._supported_formats
         ]
 
-        return sorted(list(set(filtered_files)))
+        return sorted(set(filtered_files))
 
     def _ensure_output_dir(self, path: str) -> None:
         """
@@ -149,12 +147,12 @@ class BatchProcessingTools(BaseToolCategory):
 
     async def _process_batch_operation(
         self,
-        input_files: List[str],
+        input_files: list[str],
         output_dir: str,
         operation_name: str,
-        operation_func: Callable[[str, str, Dict[str, Any]], bool],
+        operation_func: Callable[[str, str, dict[str, Any]], bool],
         **operation_kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process a batch operation on multiple files with progress tracking.
 
@@ -234,9 +232,9 @@ class BatchProcessingTools(BaseToolCategory):
         self,
         input_file: str,
         output_file: str,
-        operation_func: Callable[[str, str, Dict[str, Any]], bool],
-        operation_kwargs: Dict[str, Any],
-    ) -> Tuple[bool, str]:
+        operation_func: Callable[[str, str, dict[str, Any]], bool],
+        operation_kwargs: dict[str, Any],
+    ) -> tuple[bool, str]:
         """
         Process a single file with error handling and atomic write.
 
@@ -288,7 +286,7 @@ class BatchProcessingTools(BaseToolCategory):
         height: int,
         maintain_aspect_ratio: bool = True,
         pattern: str = "*",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         input_files = self._get_supported_files(input_dir, pattern)
         if not input_files:
             return self.create_error_response("No supported image files found")
@@ -316,7 +314,7 @@ class BatchProcessingTools(BaseToolCategory):
         output_format: str,
         quality: int = 90,
         pattern: str = "*",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         input_files = self._get_supported_files(input_dir, pattern)
         if not input_files:
             return self.create_error_response("No supported image files found")
@@ -357,7 +355,7 @@ class BatchProcessingTools(BaseToolCategory):
             maintain_aspect_ratio: bool = True,
             output_format: str = "jpg",
             quality: int = 90,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Batch resize multiple images to specified dimensions."""
             return await self.batch_resize(
                 input_directory=input_directory,
@@ -376,7 +374,7 @@ class BatchProcessingTools(BaseToolCategory):
             output_directory: str,
             output_format: str = "jpg",
             quality: int = 90,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Batch convert multiple images to a different format."""
             return await self.batch_convert(
                 input_directory=input_directory,

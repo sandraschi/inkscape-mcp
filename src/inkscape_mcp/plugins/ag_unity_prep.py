@@ -6,7 +6,8 @@ and optimizing for game engine performance.
 """
 
 import inkex
-from inkex import Group, PathElement
+from inkex import Group
+from inkex import PathElement
 
 
 class AGUnityPrep(inkex.EffectExtension):

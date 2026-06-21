@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import shutil
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -17,6 +16,7 @@ from pydantic import Field
 from ..utils.ai_svg_handoff import build_ai_svg_handoff
 from ..utils.fleet_handoff import push_raster_to_gimp
 from ..utils.fleet_staging import stage_file
+from ..utils.svg_pack_audit import audit_svg_pack_directory
 from ..utils.svg_pack_presets import ATLAS_LAYOUTS
 from ..utils.svg_pack_presets import DEFAULT_SIM_STAGING
 from ..utils.svg_pack_presets import detect_svg_icons
@@ -24,7 +24,6 @@ from ..utils.svg_pack_presets import list_svg_pack_presets
 from ..utils.svg_pack_presets import resolve_icon_template
 from ..utils.svg_pack_presets import validate_svg_pack_layout
 from .render_tools import inkscape_render
-from ..utils.svg_pack_audit import audit_svg_pack_directory
 
 logger = logging.getLogger(__name__)
 

@@ -6,43 +6,19 @@ all Inkscape vector graphics tools via the Model Context Protocol.
 """
 
 import logging
-import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastmcp import FastMCP
 
 from .cli_wrapper import InkscapeCliWrapper
 from .config import InkscapeConfig
-# from .plugins import PluginManager
-
-# Import all tool categories from legacy tools
-# from .tools_legacy.file_operations_tools import FileOperationTools
-# from .tools_legacy.transforms import TransformTools
-# from .tools_legacy.color_adjustments import ColorAdjustmentTools
-# from .tools_legacy.filters import FilterTools
-# from .tools_legacy.batch_processing import BatchProcessingTools
-# from .tools_legacy.help_tools import HelpTools
-# from .tools_legacy.layer_management import LayerManagementTools
-# from .tools_legacy.image_analysis import ImageAnalysisTools
-# from .tools_legacy.performance_tools import # PerformanceTools
 
 logger = logging.getLogger(__name__)
 
 # Module-level app for ASGI compatibility
 app = None
 
-# Core plugin classes that should always be loaded
-CORE_PLUGINS = [
-    #    # ,
-    # ,
-    # ,
-    # ,
-    # ,
-    # ,
-    # ,
-    # ,
-    # PerformanceTools           # New: Performance optimization tools
-]
+CORE_PLUGINS: list = []
 
 
 class InkscapeMcpServer:
@@ -52,7 +28,7 @@ class InkscapeMcpServer:
     Handles tool registration, Inkscape CLI integration, and lifecycle management.
     """
 
-    def __init__(self, config: Optional[InkscapeConfig] = None):
+    def __init__(self, config: InkscapeConfig | None = None):
         """
         Initialize Inkscape MCP Server.
 
@@ -83,7 +59,7 @@ class InkscapeMcpServer:
 
         register_all_tools(self.mcp, self.inkscape, self.config)
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """
         Check the health of the server and Inkscape connection.
 

@@ -5,14 +5,14 @@ This module provides an extension architecture for Inkscape MCP functionality.
 Extensions are Python scripts that use the inkex library to manipulate SVG documents.
 """
 
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-import xml.etree.ElementTree as ET
 import logging
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
-from ..config import InkscapeConfig
 from ..cli_wrapper import InkscapeCliWrapper
+from ..config import InkscapeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,8 @@ class ExtensionParameter:
     name: str
     type: str
     default: Any = None
-    min_val: Optional[float] = None
-    max_val: Optional[float] = None
+    min_val: float | None = None
+    max_val: float | None = None
     description: str = ""
     required: bool = False
 
@@ -39,7 +39,7 @@ class InkscapeExtension:
     description: str
     python_file: Path
     inx_file: Path
-    parameters: List[ExtensionParameter]
+    parameters: list[ExtensionParameter]
     category: str = "general"
 
 
@@ -55,10 +55,10 @@ class ExtensionManager:
         """
         self.cli_wrapper = cli_wrapper
         self.config = config
-        self.extensions: Dict[str, InkscapeExtension] = {}
+        self.extensions: dict[str, InkscapeExtension] = {}
         self.logger = logging.getLogger(__name__)
 
-    def discover_extensions(self, extension_dirs: Optional[List[str]] = None) -> None:
+    def discover_extensions(self, extension_dirs: list[str] | None = None) -> None:
         """Discover and load extensions from specified directories.
 
         Args:
@@ -120,7 +120,7 @@ class ExtensionManager:
             except Exception as e:
                 self.logger.error(f"Error parsing extension {inx_file}: {e}")
 
-    def _parse_inx_file(self, inx_file: Path) -> Optional[InkscapeExtension]:
+    def _parse_inx_file(self, inx_file: Path) -> InkscapeExtension | None:
         """Parse an .inx file to extract extension metadata.
 
         Args:
@@ -202,10 +202,10 @@ class ExtensionManager:
     async def execute_extension(
         self,
         extension_id: str,
-        input_file: Optional[str] = None,
-        output_file: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        input_file: str | None = None,
+        output_file: str | None = None,
+        parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Execute an Inkscape extension.
 
         Args:
@@ -262,7 +262,7 @@ class ExtensionManager:
             self.logger.error(f"Error executing extension {extension_id}: {e}")
             return {"success": False, "error": str(e), "extension_id": extension_id}
 
-    def list_extensions(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_extensions(self, category: str | None = None) -> list[dict[str, Any]]:
         """List all available extensions.
 
         Args:
@@ -296,7 +296,7 @@ class ExtensionManager:
             for ext in extensions
         ]
 
-    def get_extension(self, extension_id: str) -> Optional[InkscapeExtension]:
+    def get_extension(self, extension_id: str) -> InkscapeExtension | None:
         """Get extension by ID.
 
         Args:

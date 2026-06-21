@@ -1,35 +1,28 @@
-from __future__ import annotations
-
 """
 Brightness and Contrast adjustment tool for GIMP MCP Server.
 
 Provides a simple interface to adjust image brightness and contrast.
 """
+from __future__ import annotations
 
 import logging
-import os
-import sys
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Dict
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
-
 logger = logging.getLogger(__name__)
 
 # Type aliases
-FilePath: TypeAlias = str
-ImageData: TypeAlias = Any  # numpy.ndarray | PIL.Image.Image | GIMP image
+type FilePath = str
+type ImageData = Any  # numpy.ndarray | PIL.Image.Image | GIMP image
 
 
-class ColorPreservationMode(str, Enum):
+class ColorPreservationMode(StrEnum):
     """Modes for color preservation during brightness/contrast adjustments."""
 
     NONE = "none"
@@ -176,7 +169,7 @@ class BrightnessContrastTools(BaseToolCategory):
             brightness: float = 0.0,
             contrast: float = 0.0,
             preserve_colors: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image brightness and contrast with optional color preservation.
 
@@ -205,7 +198,7 @@ class BrightnessContrastTools(BaseToolCategory):
             """
             try:
                 # Input validation
-                if not os.path.isfile(input_path):
+                if not Path(input_path).is_file():
                     return {
                         "success": False,
                         "error": f"Input file not found: {input_path}",
@@ -216,7 +209,7 @@ class BrightnessContrastTools(BaseToolCategory):
                     }
 
                 # Ensure output directory exists
-                os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                Path(str(Path(str(Path(output_path).parent).resolve()))).mkdir(parents=True, exist_ok=True)
 
                 # Normalize values for GIMP
                 brightness_norm = brightness / 100.0  # Convert to -1.0 to 1.0 range
@@ -268,7 +261,7 @@ class BrightnessContrastTools(BaseToolCategory):
                     raise Exception("GIMP processing failed")
 
                 # Get file info for the output
-                output_size = os.path.getsize(output_path) if os.path.exists(output_path) else 0
+                output_size = Path(output_path).stat().st_size if Path(output_path).exists() else 0
 
                 return {
                     "success": True,
@@ -288,13 +281,13 @@ class BrightnessContrastTools(BaseToolCategory):
                     "output_path": output_path,
                     "preserve_colors": preserve_colors,
                 }
-            output_size = os.path.getsize(output_path) if os.path.exists(output_path) else 0
+            output_size = Path(output_path).stat().st_size if Path(output_path).exists() else 0
 
             return {
                 "success": True,
                 "brightness": brightness,
                 "contrast": contrast,
-                "output_path": os.path.abspath(output_path),
+                "output_path": str(Path(output_path).resolve()),
                 "output_size": output_size,
                 "preserve_colors": preserve_colors,
             }

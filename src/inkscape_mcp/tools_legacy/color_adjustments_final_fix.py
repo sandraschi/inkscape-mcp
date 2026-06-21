@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 PROPERLY Fixed Color Adjustment Tools for GIMP MCP Server.
 
@@ -7,19 +5,16 @@ CRITICAL FIX: The @app.tool() decorated functions must NOT include 'self' parame
 but they need to access the class instance methods. This is done by capturing 'self'
 in the closure and calling the actual implementation methods.
 """
+from __future__ import annotations
 
 import logging
-import sys
-from typing import Any, Dict
+from typing import Any
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    pass
-else:
-    pass
+pass
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +29,7 @@ class ColorAdjustmentTools(BaseToolCategory):
         brightness: float = 0.0,
         contrast: float = 0.0,
         preserve_colors: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Implementation of brightness/contrast adjustment."""
         try:
             # Validate inputs
@@ -93,7 +88,7 @@ class ColorAdjustmentTools(BaseToolCategory):
             brightness: float = 0.0,
             contrast: float = 0.0,
             preserve_colors: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image brightness and contrast with optional color preservation.
 

@@ -1,33 +1,26 @@
-from __future__ import annotations
-
 """
 Transform Tools for GIMP MCP Server.
 
 Provides geometric transformation operations including resize, crop, rotate,
 and other spatial manipulations.
 """
+from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastmcp import FastMCP
 
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
-
 logger = logging.getLogger(__name__)
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-ImageData: TypeAlias = Any
-TransformResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type ImageData = Any
+type TransformResult = dict[str, Any]
 
 # Constants for transformations
 DEFAULT_INTERPOLATION = "lanczos"
@@ -38,8 +31,8 @@ SUPPORTED_INTERPOLATION = {"none", "linear", "cubic", "lanczos", "nohalo", "loha
 class TransformConfig:
     """Configuration for image transformations."""
 
-    width: Optional[int] = None
-    height: Optional[int] = None
+    width: int | None = None
+    height: int | None = None
     x: int = 0
     y: int = 0
     angle: float = 0.0
@@ -64,7 +57,7 @@ class TransformTools(BaseToolCategory):
             height: int,
             maintain_aspect: bool = True,
             interpolation: str = "auto",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             try:
                 # Validate inputs
                 if not self.validate_file_path(input_path, must_exist=True):
@@ -148,7 +141,7 @@ class TransformTools(BaseToolCategory):
         @app.tool()
         async def crop_image(
             self, input_path: str, output_path: str, x: int, y: int, width: int, height: int
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             try:
                 # Validate inputs
                 if not self.validate_file_path(input_path, must_exist=True):
@@ -232,7 +225,7 @@ class TransformTools(BaseToolCategory):
         @app.tool()
         async def rotate_image(
             self, input_path: str, output_path: str, degrees: float, fill_color: str = "transparent"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             try:
                 # Validate inputs
                 if not self.validate_file_path(input_path, must_exist=True):
@@ -322,7 +315,7 @@ class TransformTools(BaseToolCategory):
             direction: str,
             preserve_metadata: bool = True,
             overwrite: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Flip or mirror an image along the specified axis.
 

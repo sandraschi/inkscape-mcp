@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Fixed Transform Tools for GIMP MCP Server.
 
@@ -9,19 +7,17 @@ FIXES APPLIED:
 - Proper error handling for CLI wrapper operations
 - Added GUI opening functionality for before/after comparison
 """
+from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from fastmcp import FastMCP
+
 from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    pass
-else:
-    pass
+pass
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +33,7 @@ class TransformTools(BaseToolCategory):
         height: int,
         maintain_aspect: bool = True,
         interpolation: str = "auto",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Implementation of image resize operation."""
         try:
             # Validate inputs
@@ -109,12 +105,11 @@ class TransformTools(BaseToolCategory):
             return self.create_error_response(f"Resize operation failed: {str(e)}")
 
     async def _open_gimp_gui_impl(
-        self, file_paths: List[str], comparison_mode: bool = False
-    ) -> Dict[str, Any]:
+        self, file_paths: list[str], comparison_mode: bool = False
+    ) -> dict[str, Any]:
         """Open GIMP GUI with specified files."""
         try:
             import subprocess
-            import os
 
             if not file_paths:
                 return self.create_error_response("No file paths provided")
@@ -135,7 +130,7 @@ class TransformTools(BaseToolCategory):
             logger.info(f"Opening GIMP GUI with files: {file_paths}")
             process = subprocess.Popen(
                 cmd_args,
-                cwd=os.path.expanduser("~"),
+                cwd=Path("~").expanduser(),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
@@ -166,7 +161,7 @@ class TransformTools(BaseToolCategory):
             height: int,
             maintain_aspect: bool = True,
             interpolation: str = "auto",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Resize an image to specified dimensions.
 
@@ -187,8 +182,8 @@ class TransformTools(BaseToolCategory):
 
         @app.tool()
         async def open_gimp_gui(
-            file_paths: List[str], comparison_mode: bool = False
-        ) -> Dict[str, Any]:
+            file_paths: list[str], comparison_mode: bool = False
+        ) -> dict[str, Any]:
             """
             Open GIMP GUI with specified image files.
 
@@ -204,7 +199,7 @@ class TransformTools(BaseToolCategory):
             return await self._open_gimp_gui_impl(file_paths, comparison_mode)
 
         @app.tool()
-        async def compare_images_in_gimp(original_path: str, processed_path: str) -> Dict[str, Any]:
+        async def compare_images_in_gimp(original_path: str, processed_path: str) -> dict[str, Any]:
             """
             Open both original and processed images in GIMP for visual comparison.
 

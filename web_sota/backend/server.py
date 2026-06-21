@@ -29,21 +29,53 @@ async def health():
 @app.get("/api/llm/providers")
 async def llm_providers():
     import httpx
-    result = {}
-    for name, url in [("ollama", "http://127.0.0.1:11434/api/tags"), ("lm_studio", "http://127.0.0.1:1234/v1/models")]:
-        try:
-            r = httpx.get(url, timeout=3)
-            if r.status_code == 200:
-                data = r.json()
-                if name == "ollama":
-                    result[name] = [{"name": m["name"]} for m in data.get("models", [])]
-                else:
-                    result[name] = [{"name": m["id"]} for m in data.get("data", [])]
-            else:
-                result[name] = []
-        except Exception:
-            result[name] = []
-    if not any(result.values()):
-        result["ollama"] = [{"name": "llama3.2:3b"}]
-    return result
+    providers = []
+
+    # Probe Ollama
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get("http://127.0.0.1:11434/api/tags")
+            if resp.status_code == 200:
+                data = resp.json()
+                models = [m["name"] for m in data.get("models", [])]
+                providers.append({
+                    "id": "ollama",
+                    "label": "Ollama",
+                    "base_url": "http://127.0.0.1:11434/v1",
+                    "models": models,
+                    "needs_key": False,
+                })
+    except Exception:
+        providers.append({
+            "id": "ollama",
+            "label": "Ollama",
+            "base_url": "http://127.0.0.1:11434/v1",
+            "models": [],
+            "needs_key": False,
+        })
+
+    # Probe LM Studio
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get("http://127.0.0.1:1234/v1/models")
+            if resp.status_code == 200:
+                data = resp.json()
+                models = [m["id"] for m in data.get("data", [])]
+                providers.append({
+                    "id": "lmstudio",
+                    "label": "LM Studio",
+                    "base_url": "http://127.0.0.1:1234/v1",
+                    "models": models,
+                    "needs_key": False,
+                })
+    except Exception:
+        providers.append({
+            "id": "lmstudio",
+            "label": "LM Studio",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "models": [],
+            "needs_key": False,
+        })
+
+    return {"providers": providers}
 

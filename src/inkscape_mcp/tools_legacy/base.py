@@ -7,10 +7,14 @@ ensuring consistent behavior and interface across all tool categories.
 """
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TypeVar, Callable, Union
+from abc import ABC
+from abc import abstractmethod
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
+from typing import Any
+from typing import Optional
+from typing import TypeVar
 
 from fastmcp import FastMCP
 
@@ -24,11 +28,11 @@ T = TypeVar("T", bound=Callable[..., Any])
 
 
 def tool(
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "",
-    parameters: Optional[Dict[str, Dict[str, Any]]] = None,
-    returns: Optional[Dict[str, Any]] = None,
-    examples: Optional[List[Dict[str, str]]] = None,
+    parameters: dict[str, dict[str, Any]] | None = None,
+    returns: dict[str, Any] | None = None,
+    examples: list[dict[str, str]] | None = None,
 ) -> Callable[[T], T]:
     """
     Decorator for GIMP MCP tool methods.
@@ -192,8 +196,8 @@ class BaseToolCategory(ABC):
             return False
 
     def create_error_response(
-        self, error_msg: str, details: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+        self, error_msg: str, details: dict | None = None
+    ) -> dict[str, Any]:
         """
         Create standardized error response.
 
@@ -215,8 +219,8 @@ class BaseToolCategory(ABC):
         self,
         data: Any = None,
         message: str = "Operation completed successfully",
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Create comprehensive success response with optional metadata.
 
@@ -243,10 +247,10 @@ class BaseToolCategory(ABC):
     def create_error_response(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        details: dict[str, Any] | None = None,
         recoverable: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create comprehensive error response with detailed diagnostic information.
 
@@ -281,7 +285,7 @@ class BaseToolCategory(ABC):
 
         return response
 
-    def validate_file_path(self, file_path: Union[str, Path], operation: str = "access") -> Path:
+    def validate_file_path(self, file_path: str | Path, operation: str = "access") -> Path:
         """
         Validate and normalize file paths with comprehensive security checks.
 
@@ -331,8 +335,8 @@ class BaseToolCategory(ABC):
             raise
 
     def handle_operation_error(
-        self, operation: str, error: Exception, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, operation: str, error: Exception, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Handle operation errors with appropriate logging and response generation.
 

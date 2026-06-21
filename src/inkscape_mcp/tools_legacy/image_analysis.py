@@ -1,17 +1,17 @@
-from __future__ import annotations
-
 """
 Image Analysis Tools for GIMP MCP Server.
 
 Provides advanced image analysis capabilities including quality assessment,
 content analysis, and metadata extraction following FastMCP 2.10 standards.
 """
+from __future__ import annotations
 
 import logging
-import sys
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Dict, List, Optional, TypedDict
+from dataclasses import dataclass
+from dataclasses import field
+from enum import StrEnum
+from typing import Any
+from typing import TypedDict
 
 from fastmcp import FastMCP
 
@@ -26,22 +26,18 @@ except ImportError:
     npt = None  # type: ignore
     HAS_NUMPY = False
 
-from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
+from .base import BaseToolCategory
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
-FilePath: TypeAlias = str
-ImageData: TypeAlias = Any  # numpy.ndarray | PIL.Image.Image | GIMP image
-AnalysisResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type ImageData = Any  # numpy.ndarray | PIL.Image.Image | GIMP image
+type AnalysisResult = dict[str, Any]
 
 
-class AnalysisType(str, Enum):
+class AnalysisType(StrEnum):
     """Types of image analysis that can be performed."""
 
     BASIC = "basic"
@@ -61,14 +57,14 @@ class ImageQualityMetrics(TypedDict, total=False):
     noise_level: float
     contrast: float
     brightness: float
-    color_balance: Dict[str, float]
+    color_balance: dict[str, float]
     dynamic_range: float
     compression_artifacts: float
-    blur_detection: Dict[str, float]
-    exposure: Dict[str, float]
-    snr: Optional[float]  # Signal-to-Noise Ratio
-    psnr: Optional[float]  # Peak Signal-to-Noise Ratio
-    ssim: Optional[float]  # Structural Similarity Index
+    blur_detection: dict[str, float]
+    exposure: dict[str, float]
+    snr: float | None  # Signal-to-Noise Ratio
+    psnr: float | None  # Peak Signal-to-Noise Ratio
+    ssim: float | None  # Structural Similarity Index
 
 
 @dataclass
@@ -76,7 +72,7 @@ class ImageAnalysisConfig:
     """Configuration for image analysis operations."""
 
     analysis_type: AnalysisType = AnalysisType.COMPREHENSIVE
-    include_metrics: List[str] = field(default_factory=lambda: ["all"])
+    include_metrics: list[str] = field(default_factory=lambda: ["all"])
     export_visualization: bool = False
     output_format: str = "json"
     max_dimension: int = 4000
@@ -96,7 +92,7 @@ class ImageAnalysisTools(BaseToolCategory):
         @app.tool()
         async def analyze_image_quality(
             input_path: str, analysis_type: str = "comprehensive"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Analyze image quality and provide detailed assessment.
 
@@ -183,7 +179,7 @@ class ImageAnalysisTools(BaseToolCategory):
         @app.tool()
         async def extract_image_statistics(
             input_path: str, include_histogram: bool = True, include_color_info: bool = True
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Extract comprehensive image statistics and metadata.
 
@@ -268,8 +264,8 @@ class ImageAnalysisTools(BaseToolCategory):
 
         @app.tool()
         async def detect_image_issues(
-            input_path: str, check_types: List[str] = ["all"]
-        ) -> Dict[str, Any]:
+            input_path: str, check_types: list[str] = None
+        ) -> dict[str, Any]:
             """
             Detect common image issues and quality problems.
 
@@ -280,6 +276,8 @@ class ImageAnalysisTools(BaseToolCategory):
             Returns:
                 Dict containing detected issues and recommendations
             """
+            if check_types is None:
+                check_types = ["all"]
             try:
                 # Validate inputs
                 if not self.validate_file_path(input_path, must_exist=True):
@@ -363,7 +361,7 @@ class ImageAnalysisTools(BaseToolCategory):
         @app.tool()
         async def compare_images(
             image1_path: str, image2_path: str, comparison_type: str = "visual"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Compare two images and provide analysis.
 
@@ -461,7 +459,7 @@ class ImageAnalysisTools(BaseToolCategory):
         @app.tool()
         async def generate_image_report(
             input_path: str, report_format: str = "detailed"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Generate a comprehensive image analysis report.
 
@@ -545,7 +543,7 @@ class ImageAnalysisTools(BaseToolCategory):
                 self.logger.error(f"Image report generation failed: {str(e)}", exc_info=True)
                 return self.create_error_response(f"Image report generation failed: {str(e)}")
 
-    def _parse_quality_analysis(self, output: str) -> Dict[str, Any]:
+    def _parse_quality_analysis(self, output: str) -> dict[str, Any]:
         """Parse quality analysis output into structured data."""
         try:
             lines = output.strip().split("\n")
@@ -561,7 +559,7 @@ class ImageAnalysisTools(BaseToolCategory):
             self.logger.warning(f"Failed to parse quality analysis output: {e}")
             return {"raw_output": output}
 
-    def _parse_statistics_output(self, output: str) -> Dict[str, Any]:
+    def _parse_statistics_output(self, output: str) -> dict[str, Any]:
         """Parse statistics output into structured data."""
         try:
             lines = output.strip().split("\n")
@@ -577,7 +575,7 @@ class ImageAnalysisTools(BaseToolCategory):
             self.logger.warning(f"Failed to parse statistics output: {e}")
             return {"raw_output": output}
 
-    def _parse_issues_output(self, output: str) -> Dict[str, Any]:
+    def _parse_issues_output(self, output: str) -> dict[str, Any]:
         """Parse issues output into structured data."""
         try:
             lines = output.strip().split("\n")
@@ -592,7 +590,7 @@ class ImageAnalysisTools(BaseToolCategory):
             self.logger.warning(f"Failed to parse issues output: {e}")
             return {"raw_output": output}
 
-    def _parse_comparison_output(self, output: str) -> Dict[str, Any]:
+    def _parse_comparison_output(self, output: str) -> dict[str, Any]:
         """Parse comparison output into structured data."""
         try:
             lines = output.strip().split("\n")
@@ -608,7 +606,7 @@ class ImageAnalysisTools(BaseToolCategory):
             self.logger.warning(f"Failed to parse comparison output: {e}")
             return {"raw_output": output}
 
-    def _parse_report_output(self, output: str) -> Dict[str, Any]:
+    def _parse_report_output(self, output: str) -> dict[str, Any]:
         """Parse report output into structured data."""
         try:
             lines = output.strip().split("\n")

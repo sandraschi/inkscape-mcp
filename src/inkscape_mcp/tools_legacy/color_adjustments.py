@@ -1,16 +1,14 @@
-from __future__ import annotations
-
 """
 Color Adjustment Tools for GIMP MCP Server.
 
 Provides color manipulation operations including brightness, contrast,
 hue, saturation, and advanced color grading.
 """
+from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -25,21 +23,17 @@ except ImportError:
     npt = None  # type: ignore
     HAS_NUMPY = False
 
-from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
+from .base import BaseToolCategory
 
 logger = logging.getLogger(__name__)
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-ColorValue: TypeAlias = Union[float, int]
-ColorRGB: TypeAlias = Tuple[float, float, float]
-ColorRGBA: TypeAlias = Tuple[float, float, float, float]
-Color = Union[ColorRGB, ColorRGBA]
+type FilePath = str
+type ColorValue = float | int
+type ColorRGB = tuple[float, float, float]
+type ColorRGBA = tuple[float, float, float, float]
+type Color = ColorRGB | ColorRGBA
 
 # Constants for color operations
 DEFAULT_GAMMA = 2.2
@@ -77,7 +71,7 @@ class ColorAdjustmentTools(BaseToolCategory):
             brightness: float = 0.0,
             contrast: float = 0.0,
             preserve_colors: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image brightness and contrast with optional color preservation.
 
@@ -150,8 +144,8 @@ class ColorAdjustmentTools(BaseToolCategory):
             saturation: float = 0.0,
             lightness: float = 0.0,
             overlap: float = 0.0,
-            colorize: bool = False,
-        ) -> Dict[str, Any]:
+            _colorize: bool = False,
+        ) -> dict[str, Any]:
             """
             Adjust hue, saturation, and lightness of an image.
 
@@ -228,12 +222,12 @@ class ColorAdjustmentTools(BaseToolCategory):
             self,
             input_path: str,
             output_path: str,
-            cyan_red: Tuple[float, float, float] = (0, 0, 0),
-            magenta_green: Tuple[float, float, float] = (0, 0, 0),
-            yellow_blue: Tuple[float, float, float] = (0, 0, 0),
+            cyan_red: tuple[float, float, float] = (0, 0, 0),
+            magenta_green: tuple[float, float, float] = (0, 0, 0),
+            yellow_blue: tuple[float, float, float] = (0, 0, 0),
             preserve_luminosity: bool = True,
             range_type: str = "midtones",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust color balance of an image.
 
@@ -327,7 +321,7 @@ class ColorAdjustmentTools(BaseToolCategory):
             gamma: float = 1.0,
             out_min: float = 0.0,
             out_max: float = 1.0,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image levels (tonal range and gamma).
 
@@ -424,9 +418,9 @@ class ColorAdjustmentTools(BaseToolCategory):
             input_path: str,
             output_path: str,
             channel: str = "value",
-            control_points: Optional[List[Tuple[float, float]]] = None,
+            control_points: list[tuple[float, float]] | None = None,
             curve_type: str = "smooth",
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image using curves.
 
@@ -515,7 +509,7 @@ class ColorAdjustmentTools(BaseToolCategory):
         @app.tool()
         async def adjust_threshold(
             self, input_path: str, output_path: str, threshold: float = 0.5, channel: str = "value"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply threshold adjustment to an image.
 
@@ -589,7 +583,7 @@ class ColorAdjustmentTools(BaseToolCategory):
         @app.tool()
         async def adjust_posterize(
             self, input_path: str, output_path: str, levels: int = 2, dither: bool = True
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Apply posterize effect to an image.
 
@@ -641,7 +635,7 @@ class ColorAdjustmentTools(BaseToolCategory):
         @app.tool()
         async def desaturate(
             self, input_path: str, output_path: str, mode: str = "luminosity"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Desaturate an image (convert to grayscale).
 

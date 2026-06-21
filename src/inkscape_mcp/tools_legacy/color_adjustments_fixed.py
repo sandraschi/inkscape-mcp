@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Fixed Color Adjustment Tools for GIMP MCP Server.
 
@@ -10,10 +8,10 @@ FIXES APPLIED:
 - Removed 'self' parameter from @app.tool() decorated functions
 - Fixed parameter binding to use class instance methods
 """
+from __future__ import annotations
 
 import logging
-import sys
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -28,20 +26,16 @@ except ImportError:
     npt = None  # type: ignore
     HAS_NUMPY = False
 
-from .base import BaseToolCategory
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
+from .base import BaseToolCategory
 
 logger = logging.getLogger(__name__)
 
 # Type aliases for better type hints
-FilePath: TypeAlias = str
-ColorValue: TypeAlias = float  # 0.0 to 1.0
-ColorTuple: TypeAlias = Tuple[float, float, float]
-AdjustmentResult: TypeAlias = Dict[str, Any]
+type FilePath = str
+type ColorValue = float  # 0.0 to 1.0
+type ColorTuple = tuple[float, float, float]
+type AdjustmentResult = dict[str, Any]
 
 
 class ColorAdjustmentTools(BaseToolCategory):
@@ -63,7 +57,7 @@ class ColorAdjustmentTools(BaseToolCategory):
             brightness: float = 0.0,
             contrast: float = 0.0,
             preserve_colors: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust image brightness and contrast with optional color preservation.
 
@@ -131,7 +125,7 @@ class ColorAdjustmentTools(BaseToolCategory):
             lightness: float = 0.0,
             overlap: float = 0.0,
             colorize: bool = False,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Adjust hue, saturation, and lightness of an image.
 
@@ -206,7 +200,7 @@ class ColorAdjustmentTools(BaseToolCategory):
         @app.tool()
         async def desaturate(
             input_path: str, output_path: str, mode: str = "luminosity"
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """
             Desaturate an image (convert to grayscale).
 

@@ -22,8 +22,8 @@ from .config import load_config
 from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
 from .mcp_tool_types import InkscapeAnalysisOperation
-from .mcp_tool_types import InkscapeFileOperation
 from .mcp_tool_types import InkscapeFabArtOperation
+from .mcp_tool_types import InkscapeFileOperation
 from .mcp_tool_types import InkscapeFleetOperation
 from .mcp_tool_types import InkscapeRenderOperation
 from .mcp_tool_types import InkscapeSimArtOperation
@@ -32,8 +32,8 @@ from .mcp_tool_types import InkscapeValidationOperation
 from .mcp_tool_types import InkscapeVectorOperation
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
-from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fab_art as inkscape_fab_art_tool
+from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fleet as inkscape_fleet_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_sim_art as inkscape_sim_art_tool
@@ -171,13 +171,11 @@ class InkscapeMCPServer:
                 except Exception as e:
                     logger.warning(f"Failed to register Prefab UI: {e}")
 
-            from .utils.telemetry import (
-                init_metrics,
-                install_tool_call_wrapper,
-                metrics_enabled,
-                register_metrics_routes,
-                start_metrics_server,
-            )
+            from .utils.telemetry import init_metrics
+            from .utils.telemetry import install_tool_call_wrapper
+            from .utils.telemetry import metrics_enabled
+            from .utils.telemetry import register_metrics_routes
+            from .utils.telemetry import start_metrics_server
 
             init_metrics()
             install_tool_call_wrapper(self.mcp)

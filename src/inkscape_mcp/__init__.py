@@ -27,21 +27,16 @@ __email__ = "sandra@sandraschi.dev"
 from .server import InkscapeMcpServer
 
 # Module-level app for ASGI compatibility
-app = None
+from .tools import PORTMANTEAU_TOOLS
+from .tools import inkscape_analysis
+from .tools import inkscape_file
+from .tools import inkscape_system
 
-# Export portmanteau tools for direct use
-from .tools import (
-    inkscape_file,
-    inkscape_vector,
-    inkscape_analysis,
-    inkscape_system,
-    PORTMANTEAU_TOOLS,
-)
+app = None
 
 __all__ = [
     "InkscapeMcpServer",
-    "app",  # Export app for ASGI loader
-    # Portmanteau tools
+    "app",
     "inkscape_file",
     "inkscape_transform",
     "",

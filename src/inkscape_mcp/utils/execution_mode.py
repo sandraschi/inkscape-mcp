@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from ..config import InkscapeConfig
-from .inkscape_runtime import cli_available, detect_inkscape_gui_process, gui_watch_enabled
+from .inkscape_runtime import cli_available
+from .inkscape_runtime import detect_inkscape_gui_process
+from .inkscape_runtime import gui_watch_enabled
 
 
 async def describe_execution_mode(

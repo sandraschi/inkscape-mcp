@@ -7,10 +7,16 @@ This package contains all the tool categories for the GIMP MCP server,
 providing comprehensive image editing capabilities through GIMP integration.
 """
 
-import sys
 import logging
+import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import TypeVar
+from typing import Union
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -29,16 +35,16 @@ ToolCategoryT = TypeVar("ToolCategoryT", bound=BaseToolCategory)
 # Import tool categories
 try:
     # Import all tool categories
-    from .file_operations_tools import FileOperationTools
-    from .transforms import TransformTools
-    from .color_adjustments import ColorAdjustmentTools
-    from .filters import FilterTools
     from .batch_processing import BatchProcessingTools
+    from .color_adjustments import ColorAdjustmentTools
+    from .file_operations_tools import FileOperationTools
+    from .filters import FilterTools
     from .help_tools import HelpTools
-    from .status_tools import StatusTools
-    from .layer_management import LayerManagementTools
     from .image_analysis import ImageAnalysisTools
+    from .layer_management import LayerManagementTools
     from .performance_tools import PerformanceTools
+    from .status_tools import StatusTools
+    from .transforms import TransformTools
 
     # Define all tool categories
     ALL_TOOL_CATEGORIES = [
@@ -59,7 +65,7 @@ try:
 except ImportError as e:
     logger.error(f"Failed to import tool categories: {e}")
     MISSING_IMPLEMENTATIONS = True
-    ALL_TOOL_CATEGORIES: List[Type[BaseToolCategory]] = []
+    ALL_TOOL_CATEGORIES: list[type[BaseToolCategory]] = []
 
 # Version information
 __version__ = "0.1.0"
@@ -79,7 +85,7 @@ TOOL_CATEGORIES = {
 }
 
 
-def get_tool_category(category_name: str) -> Type[BaseToolCategory]:
+def get_tool_category(category_name: str) -> type[BaseToolCategory]:
     """Get a tool category by name."""
     if MISSING_IMPLEMENTATIONS:
         raise RuntimeError("Some tool categories failed to import. Check logs for details.")
@@ -95,7 +101,7 @@ def get_tool_category(category_name: str) -> Type[BaseToolCategory]:
     return category
 
 
-def list_tool_categories(include_experimental: bool = False) -> List[str]:
+def list_tool_categories(include_experimental: bool = False) -> list[str]:
     """List all available tool categories."""
     if MISSING_IMPLEMENTATIONS:
         raise RuntimeError("Some tool categories failed to import. Check logs for details.")
@@ -107,7 +113,7 @@ def list_tool_categories(include_experimental: bool = False) -> List[str]:
     ]
 
 
-def get_tool_category_info(category_name: str) -> Dict[str, Any]:
+def get_tool_category_info(category_name: str) -> dict[str, Any]:
     """Get information about a specific tool category."""
     category = get_tool_category(category_name)
     return {
@@ -153,7 +159,7 @@ class ToolCategoryInfo:
     requires_gpu: bool = False
 
 
-def get_tool_category(category_name: str) -> Type[BaseToolCategory]:
+def get_tool_category(category_name: str) -> type[BaseToolCategory]:
     """
     Get a tool category class by name.
 
@@ -179,7 +185,7 @@ def get_tool_category(category_name: str) -> Type[BaseToolCategory]:
     return TOOL_CATEGORIES[category_name]
 
 
-def list_tool_categories(include_experimental: bool = False) -> List[str]:
+def list_tool_categories(include_experimental: bool = False) -> list[str]:
     """
     Get a list of all available tool category names.
 
@@ -198,7 +204,7 @@ def list_tool_categories(include_experimental: bool = False) -> List[str]:
     ]
 
 
-def get_tool_category_info(category_name: str) -> Dict[str, Any]:
+def get_tool_category_info(category_name: str) -> dict[str, Any]:
     """
     Get detailed information about a specific tool category.
 
@@ -221,7 +227,7 @@ def get_tool_category_info(category_name: str) -> Dict[str, Any]:
     category = get_tool_category(category_name)
 
     # Get basic metadata from the class
-    info: Dict[str, Any] = {
+    info: dict[str, Any] = {
         "name": category_name,
         "display_name": getattr(category, "DISPLAY_NAME", category_name.replace("_", " ").title()),
         "description": (getattr(category, "__doc__", "") or "No description available").strip(),

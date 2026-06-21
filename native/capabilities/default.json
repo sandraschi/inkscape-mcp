@@ -1,0 +1,14 @@
+{
+    "$schema": "https://schema.tauri.app/config/2/capability",
+    "identifier": "default",
+    "description": "Default capability set for Inkscape MCP",
+    "windows": ["main"],
+    "permissions": [
+        "core:default",
+        "shell:allow-open",
+        "shell:allow-spawn",
+        "shell:allow-execute",
+        "fs:default",
+        "process:default"
+    ]
+}

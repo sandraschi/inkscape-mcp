@@ -5,20 +5,18 @@ Provides comprehensive system monitoring, diagnostics, and status information
 for the GIMP MCP Server including tool health, system resources, and operational metrics.
 """
 
-import time
-import psutil
 import platform
-from typing import Dict, Any, List
+import time
+from typing import Any
 
+import psutil
 from fastmcp import FastMCP
 
+from ..logging_config import get_logger
+from ..logging_config import log_operation_error
+from ..logging_config import log_operation_start
+from ..logging_config import log_operation_success
 from .base import BaseToolCategory
-from ..logging_config import (
-    get_logger,
-    log_operation_start,
-    log_operation_success,
-    log_operation_error,
-)
 
 logger = get_logger(__name__)
 
@@ -45,7 +43,7 @@ class StatusTools(BaseToolCategory):
         instance = self
 
         @app.tool()
-        async def get_server_status() -> Dict[str, Any]:
+        async def get_server_status() -> dict[str, Any]:
             """
             Get comprehensive server status and health information.
 
@@ -73,7 +71,7 @@ class StatusTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get server status")
 
         @app.tool()
-        async def get_system_info() -> Dict[str, Any]:
+        async def get_system_info() -> dict[str, Any]:
             """
             Get detailed system information and capabilities.
 
@@ -100,7 +98,7 @@ class StatusTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get system information")
 
         @app.tool()
-        async def check_tool_health() -> Dict[str, Any]:
+        async def check_tool_health() -> dict[str, Any]:
             """
             Perform comprehensive health check on all tools.
 
@@ -135,7 +133,7 @@ class StatusTools(BaseToolCategory):
                 return instance.create_error_response("Failed to check tool health")
 
         @app.tool()
-        async def get_performance_metrics(time_range: str = "all") -> Dict[str, Any]:
+        async def get_performance_metrics(time_range: str = "all") -> dict[str, Any]:
             """
             Get detailed performance metrics and statistics.
 
@@ -168,7 +166,7 @@ class StatusTools(BaseToolCategory):
                 return instance.create_error_response("Failed to get performance metrics")
 
         @app.tool()
-        async def diagnose_issues() -> Dict[str, Any]:
+        async def diagnose_issues() -> dict[str, Any]:
             """
             Run diagnostic checks and identify potential issues.
 
@@ -194,7 +192,7 @@ class StatusTools(BaseToolCategory):
                 return instance.create_error_response("Failed to run diagnostics")
 
         @app.tool()
-        async def get_operational_log(level: str = "INFO", limit: int = 50) -> Dict[str, Any]:
+        async def get_operational_log(level: str = "INFO", limit: int = 50) -> dict[str, Any]:
             """
             Get recent operational log entries.
 
@@ -232,7 +230,7 @@ class StatusTools(BaseToolCategory):
                 logger.error(f"Error getting operational log: {e}", exc_info=True)
                 return instance.create_error_response("Failed to get operational log")
 
-    def _get_server_info(self) -> Dict[str, Any]:
+    def _get_server_info(self) -> dict[str, Any]:
         """Get basic server information."""
         return {
             "name": "GIMP MCP Server",
@@ -242,7 +240,7 @@ class StatusTools(BaseToolCategory):
             "status": "running",
         }
 
-    def _get_health_status(self) -> Dict[str, Any]:
+    def _get_health_status(self) -> dict[str, Any]:
         """Get comprehensive health status."""
         return {
             "overall_status": "healthy",
@@ -258,7 +256,7 @@ class StatusTools(BaseToolCategory):
             "errors": [],
         }
 
-    def _get_resource_usage(self) -> Dict[str, Any]:
+    def _get_resource_usage(self) -> dict[str, Any]:
         """Get current resource usage."""
         try:
             process = psutil.Process()
@@ -276,7 +274,7 @@ class StatusTools(BaseToolCategory):
             logger.warning(f"Could not get resource usage: {e}")
             return {"error": "Resource monitoring unavailable"}
 
-    def _get_tool_status(self) -> Dict[str, Any]:
+    def _get_tool_status(self) -> dict[str, Any]:
         """Get tool registration and availability status."""
         return {
             "categories_registered": 9,  # Would be dynamic
@@ -294,7 +292,7 @@ class StatusTools(BaseToolCategory):
             },
         }
 
-    def _get_performance_metrics(self) -> Dict[str, Any]:
+    def _get_performance_metrics(self) -> dict[str, Any]:
         """Get performance statistics."""
         return {
             "operations_per_second": self._operation_count / max(time.time() - self._start_time, 1),
@@ -303,7 +301,7 @@ class StatusTools(BaseToolCategory):
             "response_time_avg": 0.5,  # Would track actual response times
         }
 
-    def _get_platform_info(self) -> Dict[str, Any]:
+    def _get_platform_info(self) -> dict[str, Any]:
         """Get platform and system information."""
         return {
             "system": platform.system(),
@@ -314,7 +312,7 @@ class StatusTools(BaseToolCategory):
             "python_version": platform.python_version(),
         }
 
-    def _get_gimp_status(self) -> Dict[str, Any]:
+    def _get_gimp_status(self) -> dict[str, Any]:
         """Get GIMP installation and status."""
         try:
             # Would check actual GIMP status
@@ -327,7 +325,7 @@ class StatusTools(BaseToolCategory):
         except Exception:
             return {"installed": False, "error": "GIMP detection failed"}
 
-    def _get_python_info(self) -> Dict[str, Any]:
+    def _get_python_info(self) -> dict[str, Any]:
         """Get Python environment information."""
         import sys
 
@@ -340,7 +338,7 @@ class StatusTools(BaseToolCategory):
             },
         }
 
-    def _get_system_resources(self) -> Dict[str, Any]:
+    def _get_system_resources(self) -> dict[str, Any]:
         """Get system resource information."""
         try:
             return {
@@ -353,7 +351,7 @@ class StatusTools(BaseToolCategory):
         except Exception as e:
             return {"error": f"System resource check failed: {e}"}
 
-    def _get_config_summary(self) -> Dict[str, Any]:
+    def _get_config_summary(self) -> dict[str, Any]:
         """Get configuration summary."""
         return {
             "allowed_directories": getattr(self.config, "allowed_directories", []),
@@ -362,7 +360,7 @@ class StatusTools(BaseToolCategory):
             "log_level": getattr(self.config, "log_level", "INFO"),
         }
 
-    def _run_diagnostics(self) -> List[Dict[str, Any]]:
+    def _run_diagnostics(self) -> list[dict[str, Any]]:
         """Run diagnostic checks."""
         issues = []
 
@@ -398,7 +396,7 @@ class StatusTools(BaseToolCategory):
 
         return issues
 
-    def _get_recommendations(self) -> List[str]:
+    def _get_recommendations(self) -> list[str]:
         """Get system recommendations."""
         return [
             "Monitor memory usage during large batch operations",
@@ -407,7 +405,7 @@ class StatusTools(BaseToolCategory):
             "Regularly clear cache and temporary files",
         ]
 
-    def _get_system_checks(self) -> Dict[str, Any]:
+    def _get_system_checks(self) -> dict[str, Any]:
         """Get system health checks."""
         return {
             "gimp_available": self.cli_wrapper is not None,

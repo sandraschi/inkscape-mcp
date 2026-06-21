@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ExternalLink, RefreshCw } from "lucide-react";
+import API_BASE from "@/lib/api";
 
 interface HelpPayload {
     title?: string;
@@ -19,7 +20,7 @@ export function Help() {
     const load = async () => {
         setError(null);
         try {
-            const res = await fetch("/api/help");
+            const res = await fetch(API_BASE + "/api/help");
             if (!res.ok) {
                 setError(`HTTP ${res.status}`);
                 setData(null);

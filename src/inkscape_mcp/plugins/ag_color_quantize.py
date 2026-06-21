@@ -72,7 +72,7 @@ class AGColorQuantize(inkex.EffectExtension):
                     nearest_color = self._find_nearest_color(stroke_color, palette)
                     elem.style["stroke"] = self._rgb_to_hex(nearest_color)
 
-    def _quantize_colors(self, max_colors, dither):
+    def _quantize_colors(self, max_colors, _dither):
         """Auto-quantize colors using median cut algorithm."""
         # Collect all colors used in the document
         colors = set()
@@ -156,7 +156,7 @@ class AGColorQuantize(inkex.EffectExtension):
 
     def _color_distance(self, color1, color2):
         """Calculate Euclidean distance between two RGB colors."""
-        return sum((a - b) ** 2 for a, b in zip(color1, color2)) ** 0.5
+        return sum((a - b) ** 2 for a, b in zip(color1, color2, strict=False)) ** 0.5
 
     def _rgb_to_hex(self, rgb):
         """Convert RGB tuple to hex string."""

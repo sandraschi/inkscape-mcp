@@ -9,7 +9,6 @@ probe tools to ground its decisions before producing a final SVG plan/script.
 from __future__ import annotations
 
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any

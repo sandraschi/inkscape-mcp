@@ -13,20 +13,18 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 
-def register_prefabs(mcp: "FastMCP") -> None:
+def register_prefabs(mcp: FastMCP) -> None:
     """Register Prefab UI components with the FastMCP instance."""
 
     try:
-        from fastmcp.prefab import (
-            Button,
-            Column,
-            Dropdown,
-            Row,
-            Slider,
-            Text,
-            TextInput,
-            prefab,
-        )
+        from fastmcp.prefab import Button
+        from fastmcp.prefab import Column
+        from fastmcp.prefab import Dropdown
+        from fastmcp.prefab import Row
+        from fastmcp.prefab import Slider
+        from fastmcp.prefab import Text
+        from fastmcp.prefab import TextInput
+        from fastmcp.prefab import prefab
     except ImportError:
         import logging
         logging.getLogger(__name__).warning(

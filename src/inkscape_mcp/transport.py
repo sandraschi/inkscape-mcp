@@ -32,7 +32,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Literal, Optional
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ def resolve_config(args: argparse.Namespace) -> dict:
 
 
 def run_server(
-    mcp_app, args: Optional[argparse.Namespace] = None, server_name: str = "mcp-server"
+    mcp_app, args: argparse.Namespace | None = None, server_name: str = "mcp-server"
 ) -> None:
     """
     Unified server runner for all transport modes.
@@ -199,7 +199,7 @@ def run_server(
 
 
 async def run_server_async(
-    mcp_app, args: Optional[argparse.Namespace] = None, server_name: str = "mcp-server"
+    mcp_app, args: argparse.Namespace | None = None, server_name: str = "mcp-server"
 ) -> None:
     """
     Asynchronous unified server runner for all transport modes.

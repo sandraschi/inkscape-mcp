@@ -5,9 +5,10 @@ Converts bitmaps to optimized SVG vectors with color quantization.
 Designed for Unity/VRChat workflows to reduce vertex counts and file sizes.
 """
 
-import inkex
 import subprocess
 from pathlib import Path
+
+import inkex
 
 
 class AGBatchTrace(inkex.EffectExtension):
@@ -46,7 +47,7 @@ class AGBatchTrace(inkex.EffectExtension):
 
         inkex.errormsg(f"Batch trace completed. Processed {processed_count} files.")
 
-    def _process_single_file(self, input_path: Path, output_dir: Path, colors: int, simplify: bool):
+    def _process_single_file(self, input_path: Path, output_dir: Path, _colors: int, simplify: bool):
         """Process a single bitmap file."""
         output_path = output_dir / f"{input_path.stem}_traced.svg"
 

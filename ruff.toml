@@ -1,5 +1,6 @@
 target-version = "py312"
 line-length = 100
+exclude = ["src/inkscape_mcp/tools_legacy"]
 
 [lint]
 select = [

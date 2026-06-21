@@ -4,9 +4,10 @@ Consolidates heraldry generation, blazon parsing, and SVG asset creation.
 """
 
 import logging
-import os
 import time
-from typing import Any, Dict, List, Literal, Optional
+from pathlib import Path
+from typing import Any
+from typing import Literal
 
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel
@@ -20,15 +21,15 @@ class HeraldryResult(BaseModel):
     success: bool
     operation: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     execution_time_ms: float
 
 
 async def generate_heraldry_trumponia(
     output_path: str,
-    cli_wrapper: Any = None,
-    config: Any = None,
-) -> Dict[str, Any]:
+    _cli_wrapper: Any = None,
+    _config: Any = None,
+) -> dict[str, Any]:
     """Generate the 'Empire of Trumponia' heraldic coat of arms.
 
     Subject: Two asses rampant.
@@ -38,7 +39,7 @@ async def generate_heraldry_trumponia(
 
     try:
         # SOTA Heraldry SVG Template
-        svg_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+        svg_content = """<?xml version="1.0" encoding="UTF-8"?>
 <svg width="600" height="800" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -52,13 +53,13 @@ async def generate_heraldry_trumponia(
   </defs>
 
   <!-- Shield (Escutcheon) - Crimson / Gules -->
-  <path d="M 50,50 L 550,50 L 550,450 C 550,650 300,750 300,750 C 300,750 50,650 50,450 Z" 
+  <path d="M 50,50 L 550,50 L 550,450 C 550,650 300,750 300,750 C 300,750 50,650 50,450 Z"
         fill="#960018" stroke="#FFD700" stroke-width="10" filter="url(#dropShadow)"/>
 
   <!-- Two Asses Rampant (Left) - Or / Gold -->
   <g transform="translate(150, 400) scale(1.2)" fill="url(#goldGrad)">
      <!-- Stylized Ass Rampant Silhouettes -->
-     <path d="M 0,0 C -20,-20 -40,-10 -50,10 C -60,30 -40,60 -20,70 L -30,100 L 0,80 L 30,100 L 20,70 C 40,60 60,30 50,10 C 40,-10 20,-20 0,0 Z" 
+     <path d="M 0,0 C -20,-20 -40,-10 -50,10 C -60,30 -40,60 -20,70 L -30,100 L 0,80 L 30,100 L 20,70 C 40,60 60,30 50,10 C 40,-10 20,-20 0,0 Z"
            transform="rotate(-15)"/>
      <circle cx="0" cy="-30" r="15"/> <!-- Head -->
      <rect x="-5" y="-60" width="10" height="40" rx="5"/> <!-- Ears -->
@@ -66,14 +67,14 @@ async def generate_heraldry_trumponia(
 
   <!-- Two Asses Rampant (Right) - Or / Gold -->
   <g transform="translate(450, 400) scale(1.2) scale(-1, 1)" fill="url(#goldGrad)">
-     <path d="M 0,0 C -20,-20 -40,-10 -50,10 C -60,30 -40,60 -20,70 L -30,100 L 0,80 L 30,100 L 20,70 C 40,60 60,30 50,10 C 40,-10 20,-20 0,0 Z" 
+     <path d="M 0,0 C -20,-20 -40,-10 -50,10 C -60,30 -40,60 -20,70 L -30,100 L 0,80 L 30,100 L 20,70 C 40,60 60,30 50,10 C 40,-10 20,-20 0,0 Z"
            transform="rotate(-15)"/>
      <circle cx="0" cy="-30" r="15"/>
      <rect x="-5" y="-60" width="10" height="40" rx="5"/>
   </g>
 
   <!-- Cyan Accents (Motto Scroll) -->
-  <path d="M 100,700 Q 300,650 500,700 L 500,760 Q 300,710 100,760 Z" 
+  <path d="M 100,700 Q 300,650 500,700 L 500,760 Q 300,710 100,760 Z"
         fill="#00FFFF" stroke="#000000" stroke-width="2"/>
   <text x="300" y="740" text-anchor="middle" font-family="Serif" font-size="24" font-weight="bold" fill="black">
     TRUMPONIA IMPERIUM
@@ -83,7 +84,7 @@ async def generate_heraldry_trumponia(
   <path d="M 200,40 L 250,10 L 300,40 L 350,10 L 400,40 L 300,80 Z" fill="url(#goldGrad)" stroke="black"/>
 </svg>"""
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with Path(output_path).open("w", encoding="utf-8") as f:
             f.write(svg_content)
 
         return HeraldryResult(
@@ -122,9 +123,9 @@ def register_heraldry_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
     )
     async def generate_heraldry(
         operation: Literal["trumponia", "custom"] = "trumponia",
-        output_path: Optional[str] = None,
-        ctx: Any = None,
-    ) -> Dict[str, Any]:
+        output_path: str | None = None,
+        _ctx: Any = None,
+    ) -> dict[str, Any]:
         """GENERATE_HERALDRY — Emit heraldic SVG assets (preset compositions).
 
         PORTMANTEAU RATIONALE: Single entry point for heraldry; `operation` selects preset.
@@ -141,7 +142,7 @@ def register_heraldry_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
             Write failures or missing temp directory — see message.
         """
         if not output_path:
-            output_path = os.path.join(config.temp_directory, f"heraldry_{operation}.svg")
+            output_path = str(Path(config.temp_directory) / f"heraldry_{operation}.svg")
 
         if operation == "trumponia":
             return await generate_heraldry_trumponia(output_path, cli_wrapper, config)

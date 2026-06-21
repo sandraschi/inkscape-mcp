@@ -5,12 +5,15 @@ This module provides the corrected MCP tool registration for file operations,
 fixing the missing _get_image_info method and other implementation issues.
 """
 
-import time
 import logging
-from typing import Dict, Any, Callable, TypeVar
+import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
+from typing import TypeVar
 
 from fastmcp import FastMCP
+
 from ..config import InkscapeConfig
 from ..tool_utils import tool
 from .file_operations_base import FileOperationBase
@@ -23,7 +26,7 @@ T = TypeVar("T", bound=Callable[..., Any])
 class FileOperationTools(FileOperationBase):
     """Tools for file operations in GIMP MCP Server."""
 
-    def __init__(self, cli_wrapper: InkscapeCliWrapper, config: InkscapeConfig):
+    def __init__(self, cli_wrapper: Any, config: InkscapeConfig):
         """Initialize file operation tools.
 
         Args:
@@ -34,7 +37,7 @@ class FileOperationTools(FileOperationBase):
 
     async def _get_image_info(
         self, file_path: str, load_metadata: bool = True, max_dimension: int = 0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get image information using GIMP CLI wrapper.
 
         Args:
@@ -81,7 +84,7 @@ class FileOperationTools(FileOperationBase):
             }
         },
     )
-    async def test_tool(self, name: str = "World") -> Dict[str, Any]:
+    async def test_tool(self, name: str = "World") -> dict[str, Any]:
         """Test tool that returns a greeting.
 
         Args:
@@ -119,7 +122,7 @@ class FileOperationTools(FileOperationBase):
     )
     async def load_image(
         self, file_path: str, load_metadata: bool = True, max_dimension: int = 0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Load an image file and return its information.
 
         Args:
@@ -164,7 +167,7 @@ class FileOperationTools(FileOperationBase):
         """Register all file operation tools with FastMCP."""
 
         @app.tool()
-        async def test_tool(name: str = "World") -> Dict[str, Any]:
+        async def test_tool(name: str = "World") -> dict[str, Any]:
             """Test tool that returns a greeting.
 
             Args:
@@ -178,7 +181,7 @@ class FileOperationTools(FileOperationBase):
         @app.tool()
         async def load_image(
             file_path: str, load_metadata: bool = True, max_dimension: int = 0
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Load an image file and return its information.
 
             Args:

@@ -12,7 +12,6 @@ import re
 import subprocess
 import winreg
 from pathlib import Path
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class InkscapeDetector:
         self.system = platform.system().lower()
         self.logger = logging.getLogger(__name__)
 
-    def detect_inkscape_installation(self) -> Optional[str]:
+    def detect_inkscape_installation(self) -> str | None:
         """
         Detect Inkscape installation across different platforms.
 
@@ -45,7 +44,7 @@ class InkscapeDetector:
             self.logger.warning(f"Unsupported platform: {self.system}")
             return None
 
-    def _detect_windows(self) -> Optional[str]:
+    def _detect_windows(self) -> str | None:
         """
         Detect Inkscape on Windows using registry and common paths.
 
@@ -81,7 +80,7 @@ class InkscapeDetector:
 
         return None
 
-    def _check_windows_registry(self) -> Optional[str]:
+    def _check_windows_registry(self) -> str | None:
         """
         Check Windows registry for Inkscape installation.
 
@@ -107,7 +106,7 @@ class InkscapeDetector:
                             if exe_path.exists():
                                 return str(exe_path)
 
-                except (WindowsError, FileNotFoundError, OSError):
+                except (FileNotFoundError, OSError):
                     continue
 
         except ImportError:
@@ -118,7 +117,7 @@ class InkscapeDetector:
 
         return None
 
-    def _detect_macos(self) -> Optional[str]:
+    def _detect_macos(self) -> str | None:
         """
         Detect GIMP on macOS.
 
@@ -144,7 +143,7 @@ class InkscapeDetector:
 
         return None
 
-    def _detect_linux(self) -> Optional[str]:
+    def _detect_linux(self) -> str | None:
         """
         Detect GIMP on Linux.
 
@@ -166,13 +165,13 @@ class InkscapeDetector:
         ]
 
         for path in common_paths:
-            expanded_path = os.path.expanduser(path)
+            expanded_path = Path(path).expanduser()
             if self._validate_executable(expanded_path):
                 return expanded_path
 
         return None
 
-    def _check_path_environment(self, executable_names: List[str]) -> Optional[str]:
+    def _check_path_environment(self, executable_names: list[str]) -> str | None:
         """
         Check if GIMP is available in PATH environment.
 
@@ -269,12 +268,12 @@ class InkscapeDetector:
             self.logger.info(f"Validated GIMP version: {version}")
             return version
 
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("GIMP version check timed out")
+        except subprocess.TimeoutExpired as te:
+            raise RuntimeError("GIMP version check timed out") from te
         except Exception as e:
-            raise RuntimeError(f"GIMP version validation failed: {e}")
+            raise RuntimeError(f"GIMP version validation failed: {e}") from e
 
-    def get_default_paths(self) -> List[str]:
+    def get_default_paths(self) -> list[str]:
         """
         Get platform-specific default installation paths.
 

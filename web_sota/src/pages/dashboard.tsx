@@ -11,8 +11,10 @@ interface HealthPayload {
   status?: string;
   server?: string;
   version?: string;
+  uptime_seconds?: number;
+  tool_count?: number;
   providers?: {
-    ollama?: { available?: boolean };
+    ollama?: { available?: boolean; base_url?: string; model?: string };
     inkscape?: { available?: boolean; version_line?: string | null };
   };
 }
@@ -130,7 +132,7 @@ export function Dashboard() {
 
       {err && <p className="text-yellow-400" data-testid="dashboard-error">{err}</p>}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-server">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
@@ -143,6 +145,23 @@ export function Dashboard() {
               {h?.server ?? "—"}
             </div>
             <p className="text-xs text-slate-400">{h?.version ?? ""}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-tools">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-200">
+              Tools
+            </CardTitle>
+            <Activity className="h-4 w-4 text-violet-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-semibold text-white">
+              {h?.tool_count ?? "—"}
+            </div>
+            <p className="text-xs text-slate-400">
+              {h?.uptime_seconds != null ? `${Math.floor(h.uptime_seconds / 60)}m uptime` : ""}
+            </p>
           </CardContent>
         </Card>
 

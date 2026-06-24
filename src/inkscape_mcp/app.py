@@ -408,6 +408,8 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         inkscape_exe = config.inkscape_executable
 
     app = FastAPI(title="Inkscape MCP REST Bridge", version="2.6.0")
+    _start_time = datetime.now(UTC)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -482,6 +484,8 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
             "status": "ok",
             "server": "inkscape-mcp",
             "version": "2.6.0",
+            "uptime_seconds": int((datetime.now(UTC) - _start_time).total_seconds()),
+            "tool_count": len(mcp._tool_manager.list_tools()) if hasattr(mcp, "_tool_manager") else 0,
             "providers": {
                 "ollama": {
                     "available": ollama_ok,
@@ -498,6 +502,26 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 "gemini_key": bool(_env("GEMINI_API_KEY")),
                 "anthropic_key": bool(_env("ANTHROPIC_API_KEY")),
             },
+        }
+
+    # ── /api/v1/diagnostics (CUA-NSIS smoke testing standard) ────────────────
+    @app.get("/api/v1/diagnostics")
+    async def diagnostics() -> dict:
+        tools = []
+        if hasattr(mcp, "_tool_manager"):
+            try:
+                tools = [{"name": t.name} for t in mcp._tool_manager.list_tools()]
+            except Exception:
+                pass
+        return {
+            "status": "ok",
+            "server": "inkscape-mcp",
+            "version": "2.6.0",
+            "uptime_seconds": int((datetime.now(UTC) - _start_time).total_seconds()),
+            "tool_count": len(tools),
+            "tools": tools,
+            "system": {"windows": True},
+            "errors": [],
         }
 
     # ── /api/generate-svg ────────────────────────────────────────────────────

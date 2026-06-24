@@ -103,15 +103,35 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 fn free_port(port: u16) {
     #[cfg(windows)]
     {
-        let script = format!(
+        // Kill any process holding the port
+        let kill_script = format!(
             "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}"
         );
         let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", &script])
+            .args(["-NoProfile", "-Command", &kill_script])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status();
-        thread::sleep(Duration::from_millis(300));
+        // Wait for the port to be truly free — TIME_WAIT can last 240s on Windows.
+        // The new backend's uvicorn will fail with E10048 if the port is in any state.
+        // Poll every 1s up to ~120s — this is the "grace period" Windows needs.
+        let poll_script = format!(
+            "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
+        );
+        for _ in 0..120 {
+            let output = Command::new("powershell.exe")
+                .args(["-NoProfile", "-Command", &poll_script])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .output();
+            let occupied = output.ok().and_then(|o| {
+                String::from_utf8(o.stdout).ok().and_then(|s| s.trim().parse::<u32>().ok())
+            }).unwrap_or(1);
+            if occupied == 0 {
+                break;
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
     }
 }
 
@@ -148,6 +168,7 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .env("MCP_PORT", BACKEND_PORT.to_string())
         .env("MCP_HOST", "127.0.0.1")
         .env("INKSCAPE_TAURI", "1")
+        .env("PYTHONUNBUFFERED", "1")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 

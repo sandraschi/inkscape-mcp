@@ -6,8 +6,10 @@ $ResourceDir = "$PSScriptRoot\resources"
 $DevDir = "$PSScriptRoot\binaries"
 New-Item -ItemType Directory -Force -Path $ResourceDir, $DevDir | Out-Null
 
-# Step 0: Kill stale backend processes that hold file locks
-Get-Process "${RepoName}-backend" -ErrorAction SilentlyContinue | Stop-Process -Force
+# Step 0: Free backend port from stale processes (sandbox-safe: no Get-Process enumeration)
+Get-NetTCPConnection -LocalPort 11028 -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
 Start-Sleep -Seconds 2
 
 Write-Host "=== ${RepoName} Tauri Release Build ===" -ForegroundColor Cyan

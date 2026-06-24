@@ -10,7 +10,7 @@ import { useBackendStore } from "@/lib/store";
 export function Topbar() {
   const online = useBackendStore((s) => s.online);
   const setOnline = useBackendStore((s) => s.setOnline);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const check = useCallback(async () => {
     try {
@@ -24,7 +24,7 @@ export function Topbar() {
   useEffect(() => {
     check();
     intervalRef.current = setInterval(check, 30_000);
-    return () => clearInterval(intervalRef.current);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [check]);
 
   useEffect(() => {

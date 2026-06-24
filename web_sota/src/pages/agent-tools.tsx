@@ -1,12 +1,12 @@
 import {
-  Bot,
+  type Bot,
   Camera,
   GitPullRequest,
   ImageIcon,
   ScanEye,
+  Search,
   Server,
   ShieldCheck,
-  Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -14,11 +14,17 @@ import {
   clearPreviews,
   getBackendHealth,
   loadPreviews,
-  savePreview,
   type PreviewRecord,
+  savePreview,
 } from "@/api/mcp";
 
-type TabId = "runtime" | "vision" | "validation" | "gallery" | "analysis" | "fleet";
+type TabId =
+  | "runtime"
+  | "vision"
+  | "validation"
+  | "gallery"
+  | "analysis"
+  | "fleet";
 
 function ResultBox({ text }: { text: string | null }) {
   if (!text) return null;
@@ -36,13 +42,19 @@ export function AgentTools() {
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [previews, setPreviews] = useState<PreviewRecord[]>([]);
 
-  const [inputPath, setInputPath] = useState("D:/Temp/inkscape_mcp/diagram.svg");
-  const [outputPath, setOutputPath] = useState("D:/Temp/inkscape_mcp/review.png");
+  const [inputPath, setInputPath] = useState(
+    "D:/Temp/inkscape_mcp/diagram.svg",
+  );
+  const [outputPath, setOutputPath] = useState(
+    "D:/Temp/inkscape_mcp/review.png",
+  );
   const [dpi, setDpi] = useState("192");
   const [dpiList, setDpiList] = useState("96,192,384");
 
   const [projectPath, setProjectPath] = useState("D:/Unity/MyProject");
-  const [stagingDir, setStagingDir] = useState("D:/Temp/fleet_pipeline/inkscape_staging");
+  const [stagingDir, setStagingDir] = useState(
+    "D:/Temp/fleet_pipeline/inkscape_staging",
+  );
   const [skipGimp, setSkipGimp] = useState(false);
 
   const tabs: { id: TabId; label: string; icon: typeof Bot }[] = [
@@ -99,9 +111,12 @@ export function AgentTools() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Agent Tools</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white">
+            Agent Tools
+          </h2>
           <p className="text-sm text-slate-400 mt-1">
-            Phase 1–3: execution mode, vision exports, SVG validation, fleet handoff.
+            Phase 1–3: execution mode, vision exports, SVG validation, fleet
+            handoff.
           </p>
         </div>
         <button
@@ -114,8 +129,11 @@ export function AgentTools() {
       </div>
 
       {backendOk !== null && (
-        <p className={`text-sm ${backendOk ? "text-emerald-400" : "text-red-400"}`}>
-          Backend {backendOk ? "online" : "offline"} — run web_sota start.ps1 if needed.
+        <p
+          className={`text-sm ${backendOk ? "text-emerald-400" : "text-red-400"}`}
+        >
+          Backend {backendOk ? "online" : "offline"} — run web_sota start.ps1 if
+          needed.
         </p>
       )}
 
@@ -145,14 +163,17 @@ export function AgentTools() {
           <>
             <h3 className="font-semibold text-white">Runtime guidance</h3>
             <p className="text-sm text-slate-400">
-              Hands-In: open SVG in Inkscape GUI or set INKSCAPE_GUI_WATCH=1. Hands-Off: batch CLI.
+              Hands-In: open SVG in Inkscape GUI or set INKSCAPE_GUI_WATCH=1.
+              Hands-Off: batch CLI.
             </p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={loading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm"
-                onClick={() => run("inkscape_system", { operation: "execution_mode" })}
+                onClick={() =>
+                  run("inkscape_system", { operation: "execution_mode" })
+                }
               >
                 Execution mode
               </button>
@@ -168,7 +189,9 @@ export function AgentTools() {
                 type="button"
                 disabled={loading}
                 className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
-                onClick={() => run("inkscape_system", { operation: "diagnostics" })}
+                onClick={() =>
+                  run("inkscape_system", { operation: "diagnostics" })
+                }
               >
                 Diagnostics
               </button>
@@ -289,7 +312,10 @@ export function AgentTools() {
                   disabled={loading}
                   className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
                   onClick={() =>
-                    run("inkscape_validation", { operation: op, input_path: inputPath })
+                    run("inkscape_validation", {
+                      operation: op,
+                      input_path: inputPath,
+                    })
                   }
                 >
                   {label}
@@ -315,7 +341,9 @@ export function AgentTools() {
               </button>
             </div>
             {previews.length === 0 ? (
-              <p className="text-sm text-slate-500">No previews yet. Run export_preview first.</p>
+              <p className="text-sm text-slate-500">
+                No previews yet. Run export_preview first.
+              </p>
             ) : (
               <ul className="space-y-2 text-sm text-slate-300">
                 {previews.map((p) => (
@@ -323,9 +351,12 @@ export function AgentTools() {
                     key={p.id}
                     className="rounded-md border border-slate-800 bg-slate-900/50 p-3"
                   >
-                    <div className="font-medium text-white truncate">{p.outputPath}</div>
+                    <div className="font-medium text-white truncate">
+                      {p.outputPath}
+                    </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {p.inputPath} · {p.dpi ?? "?"} DPI · {new Date(p.capturedAt).toLocaleString()}
+                      {p.inputPath} · {p.dpi ?? "?"} DPI ·{" "}
+                      {new Date(p.capturedAt).toLocaleString()}
                     </div>
                   </li>
                 ))}
@@ -361,7 +392,10 @@ export function AgentTools() {
                   disabled={loading}
                   className="px-4 py-2 bg-slate-800 text-slate-200 rounded-md text-sm"
                   onClick={() =>
-                    run("inkscape_analysis", { operation: op, input_path: inputPath })
+                    run("inkscape_analysis", {
+                      operation: op,
+                      input_path: inputPath,
+                    })
                   }
                 >
                   {label}
@@ -375,7 +409,8 @@ export function AgentTools() {
           <>
             <h3 className="font-semibold text-white">Fleet handoff</h3>
             <p className="text-sm text-slate-400">
-              inkscape SVG → PNG export → gimp-mcp QA (:10773) → unity3d-mcp sprite (:10831)
+              inkscape SVG → PNG export → gimp-mcp QA (:10773) → unity3d-mcp
+              sprite (:10831)
             </p>
             <label className="block text-sm text-slate-300">
               Unity project path

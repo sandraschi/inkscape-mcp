@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 
-def register_prefabs(mcp: "FastMCP") -> None:
+def register_prefabs(mcp: FastMCP) -> None:
     """Register Prefab UI components with the FastMCP instance."""
 
     try:

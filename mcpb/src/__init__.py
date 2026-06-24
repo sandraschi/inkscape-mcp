@@ -31,11 +31,11 @@ app = None
 
 # Export portmanteau tools for direct use
 from .tools import (
-    inkscape_file,
-    inkscape_vector,
-    inkscape_analysis,
-    inkscape_system,
     PORTMANTEAU_TOOLS,
+    inkscape_analysis,
+    inkscape_file,
+    inkscape_system,
+    inkscape_vector,
 )
 
 __all__ = [

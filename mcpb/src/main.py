@@ -17,23 +17,24 @@ from typing import Any
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from .config import InkscapeConfig
-from .config import load_config
+from .config import InkscapeConfig, load_config
 from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
-from .mcp_tool_types import InkscapeAnalysisOperation
-from .mcp_tool_types import InkscapeFileOperation
-from .mcp_tool_types import InkscapeFabArtOperation
-from .mcp_tool_types import InkscapeFleetOperation
-from .mcp_tool_types import InkscapeRenderOperation
-from .mcp_tool_types import InkscapeSimArtOperation
-from .mcp_tool_types import InkscapeSystemOperation
-from .mcp_tool_types import InkscapeValidationOperation
-from .mcp_tool_types import InkscapeVectorOperation
+from .mcp_tool_types import (
+    InkscapeAnalysisOperation,
+    InkscapeFabArtOperation,
+    InkscapeFileOperation,
+    InkscapeFleetOperation,
+    InkscapeRenderOperation,
+    InkscapeSimArtOperation,
+    InkscapeSystemOperation,
+    InkscapeValidationOperation,
+    InkscapeVectorOperation,
+)
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
-from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fab_art as inkscape_fab_art_tool
+from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fleet as inkscape_fleet_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_sim_art as inkscape_sim_art_tool

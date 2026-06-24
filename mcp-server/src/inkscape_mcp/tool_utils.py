@@ -4,21 +4,24 @@ Tool utilities for GIMP MCP Server.
 This module provides decorators and utilities for registering tools with FastMCP.
 """
 
-import logging
 import inspect
-from typing import Dict, Any, Optional, List, Callable, TypeVar, cast, Type, Union
+import logging
+from collections.abc import Callable
 from functools import wraps
+from typing import Any
+from typing import TypeVar
+from typing import cast
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=Callable[..., Any])
 
 
 def tool(
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    parameters: Optional[Dict[str, Any]] = None,
-    required_parameters: Optional[List[str]] = None,
-) -> Callable[[Union[T, Type]], T]:
+    name: str | None = None,
+    description: str | None = None,
+    parameters: dict[str, Any] | None = None,
+    required_parameters: list[str] | None = None,
+) -> Callable[[T | type], T]:
     """Decorator to mark a method as an MCP tool.
 
     Args:
@@ -31,7 +34,7 @@ def tool(
         A decorator that marks the method as an MCP tool
     """
 
-    def decorator(func: Union[T, Type]) -> T:
+    def decorator(func: T | type) -> T:
         # Get function name and docstring
         func_name = name or func.__name__
         func_doc = (inspect.getdoc(func) or "").strip()
@@ -73,7 +76,7 @@ def tool(
             "required_parameters": required_parameters or [],
         }
 
-        setattr(func, "_mcp_tool", tool_meta)
+        func._mcp_tool = tool_meta
 
         # If it's already a coroutine function, just add the metadata
         if inspect.iscoroutinefunction(func):

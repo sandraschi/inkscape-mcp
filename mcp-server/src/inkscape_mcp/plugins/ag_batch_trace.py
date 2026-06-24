@@ -5,9 +5,10 @@ Converts bitmaps to optimized SVG vectors with color quantization.
 Designed for Unity/VRChat workflows to reduce vertex counts and file sizes.
 """
 
-import inkex
 import subprocess
 from pathlib import Path
+
+import inkex
 
 
 class AGBatchTrace(inkex.EffectExtension):
@@ -17,7 +18,9 @@ class AGBatchTrace(inkex.EffectExtension):
         pars.add_argument("--input_dir", type=str, help="Directory containing bitmaps")
         pars.add_argument("--output_dir", type=str, help="Directory to save SVGs")
         pars.add_argument("--colors", type=int, default=4, help="Number of colors to quantize to")
-        pars.add_argument("--simplify", type=bool, default=True, help="Simplify paths after tracing")
+        pars.add_argument(
+            "--simplify", type=bool, default=True, help="Simplify paths after tracing"
+        )
 
     def effect(self):
         """Execute batch bitmap tracing."""
@@ -35,7 +38,7 @@ class AGBatchTrace(inkex.EffectExtension):
         # Process each bitmap file
         processed_count = 0
         for file_path in input_dir.glob("*"):
-            if file_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.bmp', '.tiff']:
+            if file_path.suffix.lower() in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
                 try:
                     self._process_single_file(file_path, output_dir, num_colors, should_simplify)
                     processed_count += 1
@@ -44,27 +47,27 @@ class AGBatchTrace(inkex.EffectExtension):
 
         inkex.errormsg(f"Batch trace completed. Processed {processed_count} files.")
 
-    def _process_single_file(self, input_path: Path, output_dir: Path, colors: int, simplify: bool):
+    def _process_single_file(self, input_path: Path, output_dir: Path, _colors: int, simplify: bool):
         """Process a single bitmap file."""
         output_path = output_dir / f"{input_path.stem}_traced.svg"
 
         # Build Inkscape command for tracing
         cmd = [
-            'inkscape',
+            "inkscape",
             str(input_path),
-            '--batch-process',
-            f'--export-filename={output_path}',
-            '--export-do'
+            "--batch-process",
+            f"--export-filename={output_path}",
+            "--export-do",
         ]
 
         # Add tracing actions
         actions = []
-        actions.append('select-all')  # Select the bitmap
-        actions.append('object-to-path')  # Convert to path (trace)
+        actions.append("select-all")  # Select the bitmap
+        actions.append("object-to-path")  # Convert to path (trace)
         if simplify:
-            actions.append('selection-simplify')  # Simplify the path
+            actions.append("selection-simplify")  # Simplify the path
 
-        cmd.append(f'--actions={"".join(f"{action};" for action in actions)}')
+        cmd.append(f"--actions={''.join(f'{action};' for action in actions)}")
 
         # Execute the command
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -75,5 +78,5 @@ class AGBatchTrace(inkex.EffectExtension):
         inkex.errormsg(f"Processed: {input_path.name} -> {output_path.name}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     AGBatchTrace().run()

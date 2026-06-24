@@ -82,6 +82,7 @@ dev = [
     "twine>=5.0.0",
     "bandit>=1.7.0",
     "safety>=3.0.0",
+    "pyinstaller>=6.21.0",
 ]
 
 # PyPI Publishing Configuration

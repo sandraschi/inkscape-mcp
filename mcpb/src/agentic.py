@@ -9,7 +9,6 @@ probe tools to ground its decisions before producing a final SVG plan/script.
 from __future__ import annotations
 
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -207,7 +206,7 @@ def _save_svg(svg_content: str, description: str, style_preset: str) -> Path:
 def register_agentic_tools(mcp_instance=None):
     """Register agentic workflow tools with FastMCP 3.1 SEP-1577 sampling."""
     if mcp_instance is None:
-        from .main import mcp as mcp_instance  # noqa: PLC0415
+        from .main import mcp as mcp_instance
 
     @mcp_instance.tool()
     async def generate_svg(

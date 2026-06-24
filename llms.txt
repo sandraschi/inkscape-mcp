@@ -1,6 +1,6 @@
 # Inkscape MCP
 
-> **Inkscape MCP** is a FastMCP **3.1+** server that drives the **Inkscape CLI** for SVG and vector workflows. Agents use portmanteau tools (`inkscape_file`, `inkscape_vector`, `inkscape_analysis`, `inkscape_system`) plus optional **sampling/agentic** tools when the host supports `ctx.sample()`. Transports: **stdio** and **HTTP** (`MCP_PORT`, default **10847**); optional **REST** `/api/*` and **Vite** dashboard (**10846**) when you run the web stack.
+> **Inkscape MCP** is a FastMCP **3.4+** server that drives the **Inkscape CLI** for SVG and vector workflows. Agents use portmanteau tools (`inkscape_file`, `inkscape_vector`, `inkscape_analysis`, `inkscape_system`) plus optional **sampling/agentic** tools when the host supports `ctx.sample()`. Transports: **stdio** and **HTTP** (`MCP_PORT`, default **11028**); optional **REST** `/api/*` and **Vite** dashboard (**11029**) when you run the web stack.
 
 **Full detail:** see [`llms-full.txt`](llms-full.txt) for every tool operation, environment variables, run commands, troubleshooting, and MCP config snippets.
 
@@ -42,8 +42,8 @@ Registered URIs (FastMCP 3.1):
 
 | Service | Port | Notes |
 |---------|------|--------|
-| Vite dev UI (`web_sota`) | **10846** | Proxies `/api` and `/mcp` to backend |
-| MCP HTTP + REST bridge | **10847** | `MCP_PORT`; MCP path default `/mcp` |
+| Vite dev UI (`web_sota`) | **11029** | Proxies `/api` and `/mcp` to backend |
+| MCP HTTP + REST bridge | **11028** | `MCP_PORT`; MCP path default `/mcp` |
 
 ## Packaging
 

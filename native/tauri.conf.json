@@ -1,12 +1,11 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "Inkscape MCP",
-    "version": "0.1.0",
+    "version": "2.6.0",
     "identifier": "ai.fleet.inkscape-mcp",
     "build": {
         "frontendDist": "../web_sota/dist",
-        "beforeDevCommand": "npm --prefix ../web_sota run dev",
-        "beforeBuildCommand": "pwsh -NoProfile -File ./scripts/build-desktop.ps1"
+        "beforeDevCommand": "npm --prefix ../web_sota run dev"
     },
     "app": {
         "windows": [
@@ -15,7 +14,9 @@
                 "title": "Inkscape MCP",
                 "width": 1280,
                 "height": 860,
-                "resizable": true
+                "resizable": true,
+                "minWidth": 700,
+                "minHeight": 500
             }
         ],
         "security": {
@@ -24,10 +25,11 @@
     },
     "bundle": {
         "active": true,
-        "targets": ["msi", "nsis"],
+        "targets": ["nsis"],
         "icon": ["icons/icon.png", "icons/icon.ico"],
         "resources": [
-            "resources/inkscape-mcp-backend.exe"
+            "resources/inkscape-mcp-backend.exe",
+            "resources/.env.example"
         ],
         "windows": {
             "webviewInstallMode": {
@@ -35,14 +37,10 @@
             },
             "nsis": {
                 "installerHooks": "./windows/hooks.nsh",
-                "installMode": "currentUser",
-                "createDesktopShortcut": true,
-                "createStartMenuShortcut": true
+                "installMode": "currentUser"
             }
         }
     },
     "plugins": {}
 }
-
-
 

@@ -34,7 +34,7 @@
         "message": 120000
       },
       "metadata": {
-        "version": "2.0.0b0",
+        "version": "2.6.0",
         "author": "Sandra Schipal",
         "homepage": "https://github.com/sandraschi/inkscape-mcp",
         "license": "MIT",
@@ -57,8 +57,8 @@
   "description": "MCP server for Inkscape-backed SVG and vector operations. FastMCP 3.1+ with portmanteau tools, registered prompts/resources, optional sampling agentic workflows, REST bridge on HTTP, and MCPB packaging.",
   "type": "mcp_server",
   "status": "beta",
-  "framework": "FastMCP 3.1+",
-  "tools": 10,
+  "framework": "FastMCP 3.4+",
+  "tools": 16,
   "transport": ["stdio", "http"],
   "keywords": [
     "inkscape",

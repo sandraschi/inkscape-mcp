@@ -9,10 +9,12 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class InkscapeConfig(BaseModel):
     """
 
     # Inkscape Configuration
-    inkscape_executable: Optional[str] = Field(
+    inkscape_executable: str | None = Field(
         default=None, description="Path to Inkscape executable (auto-detected if None)"
     )
 
@@ -60,7 +62,7 @@ class InkscapeConfig(BaseModel):
         default="lanczos", description="Default interpolation method for resizing"
     )
 
-    supported_formats: List[str] = Field(
+    supported_formats: list[str] = Field(
         default_factory=lambda: [
             "svg",
             "pdf",
@@ -86,15 +88,15 @@ class InkscapeConfig(BaseModel):
     # Extension System
     enable_extensions: bool = Field(default=True, description="Enable Inkscape extension system")
 
-    extension_dirs: List[str] = Field(
+    extension_dirs: list[str] = Field(
         default_factory=list, description="List of directories to search for extensions"
     )
 
-    disabled_extensions: List[str] = Field(
+    disabled_extensions: list[str] = Field(
         default_factory=list, description="List of extension IDs to disable"
     )
 
-    extension_config: Dict[str, Dict[str, Any]] = Field(
+    extension_config: dict[str, dict[str, Any]] = Field(
         default_factory=dict, description="Extension-specific configuration"
     )
 
@@ -114,7 +116,7 @@ class InkscapeConfig(BaseModel):
     # Security Settings
     enable_file_validation: bool = Field(default=True, description="Enable file type validation")
 
-    allowed_directories: List[str] = Field(
+    allowed_directories: list[str] = Field(
         default_factory=list, description="List of allowed directories for file operations"
     )
 
@@ -128,7 +130,7 @@ class InkscapeConfig(BaseModel):
             if not os.access(path, os.W_OK):
                 raise ValueError(f"Temp directory not writable: {v}")
         except Exception as e:
-            raise ValueError(f"Invalid temp directory: {v} - {e}")
+            raise ValueError(f"Invalid temp directory: {v} - {e}") from e
         return str(path)
 
     @field_validator("default_interpolation")
@@ -150,7 +152,7 @@ class InkscapeConfig(BaseModel):
         return v.upper()
 
     @classmethod
-    def load_from_file(cls, config_path: Union[str, Path]) -> "InkscapeConfig":
+    def load_from_file(cls, config_path: str | Path) -> "InkscapeConfig":
         """
         Load configuration from YAML file.
 
@@ -170,7 +172,7 @@ class InkscapeConfig(BaseModel):
             raise FileNotFoundError(f"Configuration file not found: {path}")
 
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with Path(path).open(encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
 
             if config_data is None:
@@ -179,9 +181,9 @@ class InkscapeConfig(BaseModel):
             return cls(**config_data)
 
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML in config file: {e}")
+            raise ValueError(f"Invalid YAML in config file: {e}") from e
         except Exception as e:
-            raise ValueError(f"Failed to load config: {e}")
+            raise ValueError(f"Failed to load config: {e}") from e
 
     @classmethod
     def load_default(cls) -> "InkscapeConfig":
@@ -210,7 +212,7 @@ class InkscapeConfig(BaseModel):
         logger.info("Using default configuration")
         return cls()
 
-    def save_to_file(self, config_path: Union[str, Path]) -> None:
+    def save_to_file(self, config_path: str | Path) -> None:
         """
         Save configuration to YAML file.
 
@@ -224,7 +226,7 @@ class InkscapeConfig(BaseModel):
         config_dict = self.dict(exclude_none=True)
 
         try:
-            with open(path, "w", encoding="utf-8") as f:
+            with Path(path).open("w", encoding="utf-8") as f:
                 yaml.dump(config_dict, f, default_flow_style=False, sort_keys=True, indent=2)
             logger.info(f"Configuration saved to: {path}")
 
@@ -273,7 +275,7 @@ class InkscapeConfig(BaseModel):
         filename = f"inkscape_mcp_{uuid.uuid4().hex[:8]}{suffix}"
         return Path(self.temp_directory) / filename
 
-    def validate_file_size(self, file_path: Union[str, Path]) -> bool:
+    def validate_file_size(self, file_path: str | Path) -> bool:
         """
         Validate file size against configured limits.
 
@@ -291,7 +293,7 @@ class InkscapeConfig(BaseModel):
             return False
 
 
-def load_config(config_path: Optional[Union[str, Path]] = None) -> InkscapeConfig:
+def load_config(config_path: str | Path | None = None) -> InkscapeConfig:
     """
     Load configuration from file or create a default config if it doesn't exist.
 
@@ -326,7 +328,7 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> InkscapeConfi
         return InkscapeConfig.load_default()
 
 
-def create_default_config_file(config_path: Union[str, Path]) -> None:
+def create_default_config_file(config_path: str | Path) -> None:
     """
     Create a default configuration file with comments.
 
@@ -397,7 +399,7 @@ enable_file_validation: true
     path = Path(config_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(path, "w", encoding="utf-8") as f:
+    with Path(path).open("w", encoding="utf-8") as f:
         f.write(config_content)
 
     logger.info(f"Created default configuration file: {path}")

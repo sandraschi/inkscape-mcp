@@ -1,6 +1,6 @@
 [package]
 name = "inkscape-mcp-native"
-version = "0.1.0"
+version = "2.6.0"
 description = "Tauri desktop shell for Inkscape MCP"
 edition = "2021"
 

@@ -1,14 +1,19 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/app-layout';
-import { AgentTools } from '@/pages/agent-tools';
-import { Dashboard } from '@/pages/dashboard';
-import { Actions } from '@/pages/actions';
-import Logs from '@/pages/logs';
-import { Chat } from '@/pages/chat';
-import { Settings } from '@/pages/settings';
-import { SvgStudio } from '@/pages/svg-studio';
-import { Status } from '@/pages/status';
-import { Help } from '@/pages/help';
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Actions } from "@/pages/actions";
+import { AgentTools } from "@/pages/agent-tools";
+import { Chat } from "@/pages/chat";
+import { Dashboard } from "@/pages/dashboard";
+import { Help } from "@/pages/help";
+import Logs from "@/pages/logs";
+import { Settings } from "@/pages/settings";
+import { Status } from "@/pages/status";
+import { SvgStudio } from "@/pages/svg-studio";
 
 function App() {
   return (

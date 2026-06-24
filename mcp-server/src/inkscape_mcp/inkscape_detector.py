@@ -10,9 +10,10 @@ import os
 import platform
 import re
 import subprocess
-import winreg
 from pathlib import Path
-from typing import List, Optional
+
+if platform.system() == "Windows":
+    import winreg
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class InkscapeDetector:
         self.system = platform.system().lower()
         self.logger = logging.getLogger(__name__)
 
-    def detect_inkscape_installation(self) -> Optional[str]:
+    def detect_inkscape_installation(self) -> str | None:
         """
         Detect Inkscape installation across different platforms.
 
@@ -34,6 +35,12 @@ class InkscapeDetector:
             Optional[str]: Path to Inkscape executable if found, None otherwise
         """
         self.logger.info(f"Detecting Inkscape installation on {self.system}")
+
+        # Honor explicit override first
+        env_path = os.environ.get("INKSCAPE_PATH", "").strip()
+        if env_path and self._validate_executable(env_path):
+            self.logger.info(f"Using INKSCAPE_PATH from environment: {env_path}")
+            return env_path
 
         if self.system == "windows":
             return self._detect_windows()
@@ -45,12 +52,12 @@ class InkscapeDetector:
             self.logger.warning(f"Unsupported platform: {self.system}")
             return None
 
-    def _detect_windows(self) -> Optional[str]:
+    def _detect_windows(self) -> str | None:
         """
         Detect Inkscape on Windows using registry and common paths.
 
         Returns:
-            Optional[str]: Path to GIMP executable
+            Optional[str]: Path to Inkscape executable
         """
         # Try registry first
         registry_path = self._check_windows_registry()
@@ -81,7 +88,7 @@ class InkscapeDetector:
 
         return None
 
-    def _check_windows_registry(self) -> Optional[str]:
+    def _check_windows_registry(self) -> str | None:
         """
         Check Windows registry for Inkscape installation.
 
@@ -102,12 +109,12 @@ class InkscapeDetector:
 
                         # Look for executable in bin directory
                         bin_dir = Path(install_location) / "bin"
-                        for exe_name in ["gimp-3.0.exe", "gimp-2.10.exe", "gimp.exe"]:
+                        for exe_name in ["inkscape.exe"]:
                             exe_path = bin_dir / exe_name
                             if exe_path.exists():
                                 return str(exe_path)
 
-                except (WindowsError, FileNotFoundError, OSError):
+                except (FileNotFoundError, OSError):
                     continue
 
         except ImportError:
@@ -118,19 +125,17 @@ class InkscapeDetector:
 
         return None
 
-    def _detect_macos(self) -> Optional[str]:
+    def _detect_macos(self) -> str | None:
         """
-        Detect GIMP on macOS.
+        Detect Inkscape on macOS.
 
         Returns:
-            Optional[str]: Path to GIMP executable
+            Optional[str]: Path to Inkscape executable
         """
         common_paths = [
-            "/Applications/GIMP 3.0.app/Contents/MacOS/gimp",
-            "/Applications/GIMP-2.10.app/Contents/MacOS/gimp",
-            "/Applications/GIMP.app/Contents/MacOS/gimp",
-            "/usr/local/bin/gimp",
-            "/opt/homebrew/bin/gimp",
+            "/Applications/Inkscape.app/Contents/MacOS/inkscape",
+            "/usr/local/bin/inkscape",
+            "/opt/homebrew/bin/inkscape",
         ]
 
         for path in common_paths:
@@ -138,43 +143,43 @@ class InkscapeDetector:
                 return path
 
         # Try PATH environment
-        path_executable = self._check_path_environment(["gimp"])
+        path_executable = self._check_path_environment(["inkscape"])
         if path_executable:
             return path_executable
 
         return None
 
-    def _detect_linux(self) -> Optional[str]:
+    def _detect_linux(self) -> str | None:
         """
-        Detect GIMP on Linux.
+        Detect Inkscape on Linux.
 
         Returns:
-            Optional[str]: Path to GIMP executable
+            Optional[str]: Path to Inkscape executable
         """
         # Try PATH first (most common)
-        path_executable = self._check_path_environment(["gimp", "gimp-3.0", "gimp-2.10"])
+        path_executable = self._check_path_environment(["inkscape"])
         if path_executable:
             return path_executable
 
         # Try common installation paths
         common_paths = [
-            "/usr/bin/gimp",
-            "/usr/local/bin/gimp",
-            "/snap/bin/gimp",
-            "/flatpak/app/org.gimp.GIMP/current/active/export/bin/gimp",
-            "~/.local/bin/gimp",
+            "/usr/bin/inkscape",
+            "/usr/local/bin/inkscape",
+            "/snap/bin/inkscape",
+            "/flatpak/app/org.inkscape.Inkscape/current/active/export/bin/inkscape",
+            "~/.local/bin/inkscape",
         ]
 
         for path in common_paths:
-            expanded_path = os.path.expanduser(path)
+            expanded_path = Path(path).expanduser()
             if self._validate_executable(expanded_path):
                 return expanded_path
 
         return None
 
-    def _check_path_environment(self, executable_names: List[str]) -> Optional[str]:
+    def _check_path_environment(self, executable_names: list[str]) -> str | None:
         """
-        Check if GIMP is available in PATH environment.
+        Check if Inkscape is available in PATH environment.
 
         Args:
             executable_names: List of possible executable names
@@ -200,7 +205,7 @@ class InkscapeDetector:
 
     def _validate_executable(self, path: str) -> bool:
         """
-        Validate that the given path is a valid GIMP executable.
+        Validate that the given path is a valid Inkscape executable.
 
         Args:
             path: Path to validate
@@ -218,9 +223,9 @@ class InkscapeDetector:
             if not path_obj.exists() or not os.access(path, os.X_OK):
                 return False
 
-            # Quick validation by checking if it's likely a GIMP executable
+            # Quick validation by checking if it's likely an Inkscape executable
             path_str = str(path_obj).lower()
-            if "gimp" not in path_str:
+            if "inkscape" not in path_str:
                 return False
 
             return True
@@ -229,12 +234,12 @@ class InkscapeDetector:
             self.logger.debug(f"Validation failed for {path}: {e}")
             return False
 
-    def validate_gimp_version(self, executable_path: str) -> str:
+    def validate_inkscape_version(self, executable_path: str) -> str:
         """
-        Validate GIMP version and check compatibility.
+        Validate Inkscape version and check compatibility.
 
         Args:
-            executable_path: Path to GIMP executable
+            executable_path: Path to Inkscape executable
 
         Returns:
             str: Version string
@@ -243,38 +248,39 @@ class InkscapeDetector:
             RuntimeError: If version check fails or version is incompatible
         """
         try:
-            # Run GIMP with version flag
+            # Run Inkscape with version flag
             result = subprocess.run(
                 [executable_path, "--version"], capture_output=True, text=True, timeout=30
             )
 
             if result.returncode != 0:
-                raise RuntimeError(f"GIMP version check failed: {result.stderr}")
+                raise RuntimeError(f"Inkscape version check failed: {result.stderr}")
 
-            # Parse version from output (e.g., "GNU Image Manipulation Program version 3.0.0")
-            version_match = re.search(r"version (\d+\.\d+\.\d+)", result.stdout)
+            # Parse version from output (e.g., "Inkscape 1.3.2 (1.3.2, 2023-11-25)")
+            version_match = re.search(r"Inkscape\s+(\d+\.\d+(?:\.\d+)?)", result.stdout)
             if not version_match:
-                raise RuntimeError(f"Could not parse GIMP version from: {result.stdout}")
+                raise RuntimeError(f"Could not parse Inkscape version from: {result.stdout}")
 
             version = version_match.group(1)
-            major, minor, patch = map(int, version.split("."))
+            major, minor, *_ = version.split(".")
+            major, minor = int(major), int(minor)
 
             # Check minimum version requirements
-            if major < 2 or (major == 2 and minor < 10):
+            if major < 1:
                 raise RuntimeError(
-                    f"GIMP version {version} is too old. "
-                    "Please install GIMP 2.10+ or preferably GIMP 3.0+"
+                    f"Inkscape version {version} is too old. "
+                    "Please install Inkscape 1.0+"
                 )
 
-            self.logger.info(f"Validated GIMP version: {version}")
+            self.logger.info(f"Validated Inkscape version: {version}")
             return version
 
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("GIMP version check timed out")
+        except subprocess.TimeoutExpired as te:
+            raise RuntimeError("Inkscape version check timed out") from te
         except Exception as e:
-            raise RuntimeError(f"GIMP version validation failed: {e}")
+            raise RuntimeError(f"Inkscape version validation failed: {e}") from e
 
-    def get_default_paths(self) -> List[str]:
+    def get_default_paths(self) -> list[str]:
         """
         Get platform-specific default installation paths.
 
@@ -283,22 +289,20 @@ class InkscapeDetector:
         """
         if self.system == "windows":
             return [
-                r"C:\Program Files\GIMP 3\bin\gimp-3.0.exe",
-                r"C:\Program Files\GIMP 2\bin\gimp-2.10.exe",
-                r"C:\Program Files (x86)\GIMP 3\bin\gimp-3.0.exe",
-                r"C:\Program Files (x86)\GIMP 2\bin\gimp-2.10.exe",
+                r"C:\Program Files\Inkscape\bin\inkscape.exe",
+                r"C:\Program Files (x86)\Inkscape\bin\inkscape.exe",
             ]
         elif self.system == "darwin":
             return [
-                "/Applications/GIMP 3.0.app/Contents/MacOS/gimp",
-                "/Applications/GIMP-2.10.app/Contents/MacOS/gimp",
-                "/Applications/GIMP.app/Contents/MacOS/gimp",
+                "/Applications/Inkscape.app/Contents/MacOS/inkscape",
+                "/usr/local/bin/inkscape",
+                "/opt/homebrew/bin/inkscape",
             ]
         elif self.system == "linux":
             return [
-                "/usr/bin/gimp",
-                "/usr/local/bin/gimp",
-                "/snap/bin/gimp",
+                "/usr/bin/inkscape",
+                "/usr/local/bin/inkscape",
+                "/snap/bin/inkscape",
             ]
         else:
             return []

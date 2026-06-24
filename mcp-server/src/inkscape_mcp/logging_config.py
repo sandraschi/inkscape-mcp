@@ -6,10 +6,11 @@ error handling, and multiple output formats for development and production.
 """
 
 import sys
-from pathlib import Path
-from typing import Dict, Any, Optional
-from loguru import logger
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from loguru import logger
 
 
 class StructuredLogger:
@@ -20,7 +21,7 @@ class StructuredLogger:
     proper error handling and multiple output formats.
     """
 
-    def __init__(self, log_level: str = "INFO", log_file: Optional[Path] = None):
+    def __init__(self, log_level: str = "INFO", log_file: Path | None = None):
         """
         Initialize structured logger.
 
@@ -76,11 +77,11 @@ class StructuredLogger:
 
 
 # Global logger instance
-_logger_instance: Optional[StructuredLogger] = None
+_logger_instance: StructuredLogger | None = None
 
 
 def setup_logging(
-    log_level: str = "INFO", log_file: Optional[Path] = None, component: str = "gimp_mcp"
+    log_level: str = "INFO", log_file: Path | None = None, component: str = "gimp_mcp"
 ) -> "logger":
     """
     Setup global logging configuration.
@@ -117,7 +118,7 @@ def get_logger(component: str = "gimp_mcp") -> "logger":
     return _logger_instance.get_logger(component)
 
 
-def log_operation_start(operation: str, **kwargs) -> Dict[str, Any]:
+def log_operation_start(operation: str, **kwargs) -> dict[str, Any]:
     """
     Log the start of an operation with structured data.
 
@@ -138,7 +139,7 @@ def log_operation_start(operation: str, **kwargs) -> Dict[str, Any]:
     return context
 
 
-def log_operation_success(context: Dict[str, Any], result: Any = None) -> None:
+def log_operation_success(context: dict[str, Any], result: Any = None) -> None:
     """
     Log successful operation completion.
 
@@ -155,7 +156,7 @@ def log_operation_success(context: Dict[str, Any], result: Any = None) -> None:
 
 
 def log_operation_error(
-    context: Dict[str, Any], error: Exception, error_details: Optional[Dict[str, Any]] = None
+    context: dict[str, Any], error: Exception, error_details: dict[str, Any] | None = None
 ) -> None:
     """
     Log operation error with full context.
@@ -182,7 +183,7 @@ def log_operation_error(
     )
 
 
-def log_tool_call(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+def log_tool_call(tool_name: str, parameters: dict[str, Any]) -> dict[str, Any]:
     """
     Log MCP tool call with parameters.
 
@@ -203,7 +204,7 @@ def log_tool_call(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def log_tool_result(context: Dict[str, Any], result: Any, success: bool = True) -> None:
+def log_tool_result(context: dict[str, Any], result: Any, success: bool = True) -> None:
     """
     Log MCP tool result.
 
@@ -226,7 +227,7 @@ def log_tool_result(context: Dict[str, Any], result: Any, success: bool = True) 
 
 
 # Convenience functions for common logging patterns
-def log_server_start(port: Optional[int] = None, mode: str = "stdio") -> None:
+def log_server_start(port: int | None = None, mode: str = "stdio") -> None:
     """Log server startup."""
     logger.info(
         f"GIMP MCP Server starting in {mode} mode",
@@ -250,7 +251,7 @@ def log_tool_registration(category: str, tool_count: int, success: bool = True) 
     )
 
 
-def log_inkscape_detection(inkscape_path: Optional[str], success: bool) -> None:
+def log_inkscape_detection(inkscape_path: str | None, success: bool) -> None:
     """Log Inkscape detection result."""
     if success and inkscape_path:
         logger.info(
@@ -264,7 +265,7 @@ def log_inkscape_detection(inkscape_path: Optional[str], success: bool) -> None:
         )
 
 
-def log_config_load(config_path: Optional[Path], success: bool) -> None:
+def log_config_load(config_path: Path | None, success: bool) -> None:
     """Log configuration loading."""
     if success:
         logger.info(

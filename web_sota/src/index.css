@@ -48,7 +48,10 @@
 
 @layer utilities {
   .checkerboard-bg {
-    background-image: repeating-conic-gradient(#454545 0% 25%, transparent 0% 50%);
+    background-image: repeating-conic-gradient(
+      #454545 0% 25%,
+      transparent 0% 50%
+    );
     background-size: 20px 20px;
   }
 }

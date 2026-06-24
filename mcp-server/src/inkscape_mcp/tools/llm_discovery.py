@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+
 import httpx
 
 logger = logging.getLogger(__name__)

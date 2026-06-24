@@ -5,13 +5,19 @@
 
 const API_BASE = "/api";
 
-export async function getBackendHealth(): Promise<{ ok: boolean; error?: string }> {
+export async function getBackendHealth(): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
   try {
     const r = await fetch(`${API_BASE}/health`);
     if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Network error",
+    };
   }
 }
 

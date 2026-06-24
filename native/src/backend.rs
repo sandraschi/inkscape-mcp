@@ -1,7 +1,9 @@
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::str::FromStr;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -172,6 +174,26 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         let app_handle = app.clone();
         thread::spawn(move || watch_backend_stream(err, app_handle));
     }
+
+    let health_app = app.clone();
+    thread::spawn(move || {
+        let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
+        for attempt in 0..30 {
+            thread::sleep(Duration::from_secs(2));
+            match TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
+                Ok(_) => {
+                    log_line(&health_app, &format!("Backend health check PASSED on port {BACKEND_PORT} (attempt {})", attempt + 1));
+                    let _ = health_app.emit("backend-status", "ready");
+                    return;
+                }
+                Err(e) => {
+                    log_line(&health_app, &format!("Backend health check: {e} (attempt {})", attempt + 1));
+                }
+            }
+        }
+        log_line(&health_app, &format!("Backend health check FAILED — not listening on port {BACKEND_PORT} after 30 attempts"));
+        let _ = health_app.emit("backend-status", "error: backend not reachable");
+    });
 
     Ok(format!("Backend starting on port {BACKEND_PORT}"))
 }

@@ -1,4 +1,4 @@
-"""Inkscape MCP Tools - FastMCP 2.14.1+ Portmanteau Architecture.
+"""Inkscape MCP Tools — FastMCP 3.1+ portmanteau surface.
 
 Consolidated tools for vector graphics operations with reduced cognitive load and better discoverability.
 
@@ -14,17 +14,27 @@ TOOLS:
 
 from typing import Any
 
-from .file_operations import inkscape_file
-from .vector_operations import inkscape_vector
 from .analysis import inkscape_analysis
-from .system import inkscape_system
+from .fab_art_tools import inkscape_fab_art
+from .file_operations import inkscape_file
+from .fleet_tools import inkscape_fleet
 from .heraldry import register_heraldry_tools
 from .llm_discovery import list_local_models
+from .render_tools import inkscape_render
+from .sim_art_tools import inkscape_sim_art
+from .system import inkscape_system
+from .validation_tools import inkscape_validation
+from .vector_operations import inkscape_vector
 
 __all__ = [
     "inkscape_file",
     "inkscape_vector",
     "inkscape_analysis",
+    "inkscape_render",
+    "inkscape_validation",
+    "inkscape_fleet",
+    "inkscape_fab_art",
+    "inkscape_sim_art",
     "inkscape_system",
     "register_heraldry_tools",
     "list_local_models",
@@ -81,10 +91,51 @@ PORTMANTEAU_TOOLS = [
         ],
     },
     {
+        "name": "inkscape_render",
+        "function": inkscape_render,
+        "category": "agent_vision",
+        "operations": ["export_preview", "export_multi_dpi", "get_document_summary"],
+    },
+    {
+        "name": "inkscape_validation",
+        "function": inkscape_validation,
+        "category": "validation",
+        "operations": [
+            "validate_svg",
+            "check_viewbox",
+            "check_stroke_fill",
+            "check_size_limits",
+            "audit_web_svg",
+            "audit_svg_pack",
+        ],
+    },
+    {
+        "name": "inkscape_sim_art",
+        "function": inkscape_sim_art,
+        "category": "sim_art",
+        "operations": [
+            "list_presets",
+            "svg_pack_batch",
+            "build_icon_sheet",
+            "audit_svg_pack",
+            "ai_svg_refine_loop",
+            "push_gimp_texture_sheet",
+            "stage_resonite_ui",
+            "run_sim_pipeline",
+        ],
+    },
+    {
         "name": "inkscape_system",
         "function": inkscape_system,
         "category": "system",
-        "operations": ["status", "help", "diagnostics", "version", "config"],
+        "operations": [
+            "status",
+            "execution_mode",
+            "help",
+            "diagnostics",
+            "version",
+            "config",
+        ],
     },
 ]
 

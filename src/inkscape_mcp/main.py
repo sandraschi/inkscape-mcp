@@ -670,6 +670,18 @@ async def main_async():
             import inkscape_mcp
 
             inkscape_mcp.app = server.mcp
+            # Strip main.py-only args (--mode) before passing to transport's parser
+            cleaned = []
+            skip = False
+            for a in sys.argv[1:]:
+                if a == "--mode":
+                    skip = True
+                elif skip and not a.startswith("--"):
+                    skip = False
+                else:
+                    skip = False
+                    cleaned.append(a)
+            sys.argv = [sys.argv[0]] + cleaned
             await run_server_async(server.mcp, server_name="Inkscape MCP Server")
         else:
             return 1

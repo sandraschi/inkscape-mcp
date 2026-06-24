@@ -34,7 +34,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class ShellModeWrapper:
         self._exe = inkscape_exe
         self._timeout = timeout
         self._startup_timeout = startup_timeout
-        self._proc: Optional[asyncio.subprocess.Process] = None
+        self._proc: asyncio.subprocess.Process | None = None
 
     # ── lifecycle ────────────────────────────────────────────────────────────
 
@@ -85,15 +84,13 @@ class ShellModeWrapper:
         )
         # Wait for the initial ">" prompt
         try:
-            await asyncio.wait_for(
-                self._read_until_prompt(), timeout=self._startup_timeout
-            )
-        except asyncio.TimeoutError:
+            await asyncio.wait_for(self._read_until_prompt(), timeout=self._startup_timeout)
+        except TimeoutError as te:
             await self.close()
             raise ShellModeError(
                 f"Inkscape shell did not produce initial prompt within {self._startup_timeout}s. "
                 "Inkscape 1.0+ required."
-            )
+            ) from te
         logger.info("Inkscape shell ready (pid=%s)", self._proc.pid)
 
     async def close(self) -> None:
@@ -113,7 +110,7 @@ class ShellModeWrapper:
             self._proc = None
             logger.info("Inkscape shell closed")
 
-    async def __aenter__(self) -> "ShellModeWrapper":
+    async def __aenter__(self) -> ShellModeWrapper:
         await self.start()
         return self
 
@@ -145,13 +142,9 @@ class ShellModeWrapper:
         await self._proc.stdin.drain()
 
         try:
-            response = await asyncio.wait_for(
-                self._read_until_prompt(), timeout=self._timeout
-            )
-        except asyncio.TimeoutError:
-            raise ShellModeError(
-                f"Inkscape shell timed out ({self._timeout}s) on: {command!r}"
-            )
+            response = await asyncio.wait_for(self._read_until_prompt(), timeout=self._timeout)
+        except TimeoutError as te:
+            raise ShellModeError(f"Inkscape shell timed out ({self._timeout}s) on: {command!r}") from te
         logger.debug("Shell ← %r", response[:120])
         return response
 
@@ -161,7 +154,7 @@ class ShellModeWrapper:
 
     async def save_file(self, output_path: str, plain_svg: bool = True) -> str:
         """Export the current document to output_path."""
-        actions: List[str] = [f"export-filename:{output_path}"]
+        actions: list[str] = [f"export-filename:{output_path}"]
         if plain_svg:
             actions.append("export-plain-svg")
         actions.append("export-do")
@@ -191,7 +184,7 @@ class ShellModeWrapper:
     async def vacuum_defs(self) -> str:
         return await self.run_actions("vacuum-defs")
 
-    async def run_action_sequence(self, actions: List[str]) -> str:
+    async def run_action_sequence(self, actions: list[str]) -> str:
         """Run a pre-built list of action strings as one command."""
         return await self.run_actions(*actions)
 
@@ -199,7 +192,7 @@ class ShellModeWrapper:
         self,
         input_path: str,
         output_path: str,
-        actions: List[str],
+        actions: list[str],
     ) -> str:
         """
         Convenience: open file, run actions, save. All in one shell session.
@@ -248,7 +241,7 @@ class ShellModeWrapper:
         return bool(self._proc and self._proc.returncode is None)
 
     @property
-    def pid(self) -> Optional[int]:
+    def pid(self) -> int | None:
         return self._proc.pid if self._proc else None
 
 
@@ -271,7 +264,7 @@ class ShellModePool:
     def __init__(self, inkscape_exe: str, size: int = 3) -> None:
         self._exe = inkscape_exe
         self._size = size
-        self._wrappers: List[ShellModeWrapper] = []
+        self._wrappers: list[ShellModeWrapper] = []
         self._sem = asyncio.Semaphore(size)
 
     async def start(self) -> None:
@@ -280,18 +273,16 @@ class ShellModePool:
         logger.info("ShellModePool started (%d sessions)", self._size)
 
     async def close(self) -> None:
-        await asyncio.gather(
-            *(w.close() for w in self._wrappers), return_exceptions=True
-        )
+        await asyncio.gather(*(w.close() for w in self._wrappers), return_exceptions=True)
         self._wrappers.clear()
 
-    def acquire(self) -> "ShellModePool._AcquiredShell":
+    def acquire(self) -> ShellModePool._AcquiredShell:
         return ShellModePool._AcquiredShell(self)
 
     class _AcquiredShell:
-        def __init__(self, pool: "ShellModePool") -> None:
+        def __init__(self, pool: ShellModePool) -> None:
             self._pool = pool
-            self._wrapper: Optional[ShellModeWrapper] = None
+            self._wrapper: ShellModeWrapper | None = None
             self._idx = 0
 
         async def __aenter__(self) -> ShellModeWrapper:

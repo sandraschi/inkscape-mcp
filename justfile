@@ -59,7 +59,7 @@ run-stdio:
     uv run inkscape-mcp --mode stdio
 
 # Launch Inkscape MCP (HTTP Mode)
-run-http port="10847":
+run-http port="11028":
     uv run inkscape-mcp --mode http --port {{port}}
 
 # ── Packaging ─────────────────────────────────────────────────────────────────
@@ -88,14 +88,15 @@ pre-commit:
 
 # ── Tauri NSIS ─────────────────────────────────────────────────────────────────
 
-# Build the Tauri NSIS desktop installer (full pipeline: frontend -> Rust -> NSIS)
+# Build the PyInstaller backend .exe (step before Tauri build)
+build-sidecar:
+    Set-Location '{{justfile_directory()}}\native'
+    pwsh -NoProfile -File .\build.ps1
+
+# Build the Tauri NSIS desktop installer (full pipeline)
 build-native:
-	$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-	$vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-	$envOutput = cmd /c "`"$vcvars`" > nul & set" | Where-Object { $_ -match '^(INCLUDE|LIB|LIBPATH|VCToolsVersion|WindowsSdkDir|UniversalCRTSdkDir|UCRTVersion)=' }
-	foreach ($line in $envOutput) { $parts = $line.Split('=', 2); Set-Item -Path "env:$($parts[0])" -Value $parts[1] -ErrorAction SilentlyContinue }
-	Set-Location '{{justfile_directory()}}\native'
-	npx @tauri-apps/cli build --bundles nsis
+    Set-Location '{{justfile_directory()}}\native'
+    pwsh -NoProfile -File .\build.ps1
 
 # Run the CUA smoke test against the installed NSIS app
 cua-nsis-test:
@@ -104,11 +105,11 @@ cua-nsis-test:
 
 # Install Playwright browsers (one-time)
 e2e-install:
-    cd {{REPO}}\web_sota
+    Set-Location '{{justfile_directory()}}\web_sota'
     npx playwright install chromium
 
 # Run Playwright E2E smoke tests (start backend first: just serve)
 e2e:
-    cd {{REPO}}\web_sota
+    Set-Location '{{justfile_directory()}}\web_sota'
     npx playwright test
 

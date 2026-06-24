@@ -17,16 +17,21 @@ Environment (via .env or system):
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
 import tempfile
+import threading
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 try:
     import httpx
     from fastapi import FastAPI
+    from fastapi import Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     from starlette.routing import Mount
@@ -36,6 +41,106 @@ except ImportError:
     FASTAPI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+# ── In-memory log ring (HTTP dashboard GET /api/logs) ─────────────────────────
+MAX_MEMORY_LOGS = 1000
+_memory_logs: list[dict[str, str]] = []
+_memory_lock = threading.Lock()
+_memory_handler: logging.Handler | None = None
+
+
+class _MemoryLogHandler(logging.Handler):
+    """Capture log records for the web UI (no persistence)."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            msg = self.format(record)
+            ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            entry = {"timestamp": ts, "level": record.levelname, "message": msg}
+            with _memory_lock:
+                _memory_logs.append(entry)
+                overflow = len(_memory_logs) - MAX_MEMORY_LOGS
+                if overflow > 0:
+                    del _memory_logs[0:overflow]
+        except Exception:
+            self.handleError(record)
+
+
+def _attach_memory_logging() -> None:
+    global _memory_handler
+    if _memory_handler is not None:
+        return
+    _memory_handler = _MemoryLogHandler()
+    _memory_handler.setLevel(logging.INFO)
+    _memory_handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    root = logging.getLogger()
+    root.addHandler(_memory_handler)
+    logger.info("REST: memory log buffer enabled (GET/DELETE /api/logs)")
+
+
+def _help_payload() -> dict[str, Any]:
+    return {
+        "title": "Inkscape MCP — help",
+        "summary": (
+            "Vector and SVG operations run through MCP tools that call the Inkscape CLI. "
+            "Use Cursor, Claude Desktop, or another MCP client for natural-language workflows. "
+            "This dashboard shows status, logs, and optional REST helpers."
+        ),
+        "tools": [
+            "inkscape_file — load, convert, info, validate, list_formats",
+            "inkscape_vector — trace, boolean, simplify, preview, QR, …",
+            "inkscape_render — export_preview, export_multi_dpi, get_document_summary",
+            "inkscape_validation — validate_svg, check_viewbox, audit_web_svg, …",
+            "inkscape_fleet — push_gimp_raster, stage_blender_svg, push_unity_sprite, run_pipeline",
+            "inkscape_fab_art — DXF/laser fab paths, Gazebo schematics, robotics staging",
+            "inkscape_sim_art — SVG icon packs, icon sheets, Resonite UI staging",
+            "inkscape_analysis — statistics, validate, dimensions",
+            "inkscape_system — status, execution_mode, help, config, diagnostics",
+            "list_local_models — optional Ollama/LM Studio discovery",
+        ],
+        "http_ports": {
+            "vite_dev_ui": 10899,
+            "mcp_http_listener": int(os.environ.get("MCP_PORT", "10900")),
+        },
+        "env": {
+            "OLLAMA_BASE_URL": "Optional; for /api/generate-svg and health check",
+            "OLLAMA_MODEL": "Default model name for Ollama",
+            "MCP_PORT": "HTTP port for MCP + this REST bridge",
+            "INKSCAPE_PATH": "Override Inkscape executable if not on PATH",
+        },
+        "links": [
+            {"label": "Repository", "url": "https://github.com/sandraschi/inkscape-mcp"},
+            {"label": "Install (docs)", "path": "docs/INSTALL.md"},
+        ],
+    }
+
+
+async def _inkscape_version_line(exe: str) -> str | None:
+    """First line of `inkscape --version` for health reporting."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            exe,
+            "--version",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=10.0)
+        if proc.returncode == 0 and out:
+            line = out.decode(errors="replace").strip().split("\n")[0].strip()
+            return line[:240] if line else None
+    except Exception:
+        return None
+    return None
+
+
+def _inkscape_version_tuple(version_line: str | None) -> tuple[int, int] | None:
+    if not version_line:
+        return None
+    m = re.search(r"Inkscape\s+(\d+)\.(\d+)", version_line, re.I)
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2))
+
 
 # ── Config from env ───────────────────────────────────────────────────────────
 
@@ -83,9 +188,7 @@ RULES:
 Output NOTHING except the SVG XML itself."""
 
 
-def _user_prompt(
-    description: str, style: str, width: int, height: int, quality: str
-) -> str:
+def _user_prompt(description: str, style: str, width: int, height: int, quality: str) -> str:
     detail = {
         "draft": "Simple, minimal detail.",
         "standard": "Good detail, all elements rendered.",
@@ -216,7 +319,7 @@ async def _generate_svg(
             raise ValueError(
                 f"Ollama unreachable ({ollama_err}) and no cloud API keys configured. "
                 "Check that Ollama is running: ollama serve"
-            )
+            ) from ollama_err
 
     svg = _extract_svg(raw)
     if not svg:
@@ -238,9 +341,7 @@ async def _generate_svg(
 # ── Inkscape CLI save ─────────────────────────────────────────────────────────
 
 
-async def _save_via_inkscape(
-    svg_xml: str, stem: str, inkscape_exe: str | None
-) -> str | None:
+async def _save_via_inkscape(svg_xml: str, stem: str, inkscape_exe: str | None) -> str | None:
     """
     Write SVG to temp file, then use Inkscape to re-export it (normalises,
     validates, and saves a clean SVG). Returns final saved path or None.
@@ -298,9 +399,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         logger.warning("fastapi/httpx not installed — REST API bridge unavailable.")
         return
     if not hasattr(mcp, "_additional_http_routes"):
-        logger.warning(
-            "FastMCP has no _additional_http_routes — REST bridge unavailable."
-        )
+        logger.warning("FastMCP has no _additional_http_routes — REST bridge unavailable.")
         return
 
     # Grab Inkscape path from config if available
@@ -308,18 +407,60 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     if config and hasattr(config, "inkscape_executable"):
         inkscape_exe = config.inkscape_executable
 
-    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.0.0")
+    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.6.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
+
+    _attach_memory_logging()
+
+    @app.get("/api/logs")
+    async def api_logs(limit: int = 400) -> dict:
+        limit = max(1, min(limit, MAX_MEMORY_LOGS))
+        with _memory_lock:
+            tail = _memory_logs[-limit:]
+        return {"logs": tail, "returned": len(tail), "total": len(_memory_logs)}
+
+    @app.delete("/api/logs")
+    async def api_logs_clear() -> dict:
+        with _memory_lock:
+            _memory_logs.clear()
+        logger.info("REST: log buffer cleared (DELETE /api/logs)")
+        return {"ok": True}
+
+    @app.get("/api/help")
+    async def api_help() -> dict:
+        return _help_payload()
+
+    @app.post("/api/chat")
+    async def api_chat(request: Request) -> dict:
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        msg = payload.get("message", "")
+        if not isinstance(msg, str):
+            msg = str(msg)
+        logger.info("REST: /api/chat (len=%d)", len(msg))
+        return {
+            "reply": (
+                "This dashboard does not run a standalone chat LLM. "
+                "Use an MCP-capable IDE (Cursor, Claude Desktop) with the inkscape-mcp server for natural-language tool use. "
+                "If you install Ollama, optional POST /api/generate-svg (and health checks) can use it."
+            ),
+            "echo": msg[:2000],
+        }
 
     # ── /api/health ──────────────────────────────────────────────────────────
     @app.get("/api/health")
     async def health() -> dict:
         ollama_ok = False
+        models: list[str] = []
         try:
             async with httpx.AsyncClient(timeout=3.0) as c:
                 r = await c.get(f"{_ollama_base()}/api/tags")
@@ -328,10 +469,19 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                     ollama_ok = True
         except Exception:
             models = []
+
+        inkscape_path = str(inkscape_exe) if inkscape_exe else None
+        ink_available = bool(inkscape_exe and Path(inkscape_exe).exists())
+        ink_ver_line: str | None = None
+        if ink_available and inkscape_path:
+            ink_ver_line = await _inkscape_version_line(inkscape_path)
+        ver_t = _inkscape_version_tuple(ink_ver_line)
+        actions_api_ok = ver_t is not None and (ver_t[0] > 1 or ver_t[1] >= 2)
+
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.0.0b0",
+            "version": "2.6.0",
             "providers": {
                 "ollama": {
                     "available": ollama_ok,
@@ -340,8 +490,10 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                     "models": models,
                 },
                 "inkscape": {
-                    "available": bool(inkscape_exe and Path(inkscape_exe).exists()),
-                    "path": inkscape_exe,
+                    "available": ink_available,
+                    "path": inkscape_path,
+                    "version_line": ink_ver_line,
+                    "actions_api_recommended": actions_api_ok,
                 },
                 "gemini_key": bool(_env("GEMINI_API_KEY")),
                 "anthropic_key": bool(_env("ANTHROPIC_API_KEY")),
@@ -369,9 +521,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 quality,
             )
 
-            svg_xml, model_used = await _generate_svg(
-                description, style, dimensions, quality
-            )
+            svg_xml, model_used = await _generate_svg(description, style, dimensions, quality)
 
             # Save via Inkscape CLI
             import re as _re
@@ -404,16 +554,78 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 status_code=500,
             )
 
+    @app.post("/v1/tool")
+    async def api_v1_tool(request: Request) -> JSONResponse:
+        """Bridge endpoint for webapp Agent Tools to call MCP tools."""
+        try:
+            payload = await request.json()
+        except Exception as exc:
+            return JSONResponse(
+                {"success": False, "error": f"Invalid request: {exc}", "data": None},
+                status_code=400,
+            )
+
+        if not isinstance(payload, dict):
+            return JSONResponse(
+                {"success": False, "error": "Request body must be a JSON object", "data": None},
+                status_code=400,
+            )
+
+        tool_name = payload.get("tool")
+        params = payload.get("params") or {}
+        if not tool_name:
+            return JSONResponse(
+                {"success": False, "error": "Missing tool name", "data": None},
+                status_code=400,
+            )
+        if not isinstance(params, dict):
+            return JSONResponse(
+                {"success": False, "error": "params must be an object", "data": None},
+                status_code=400,
+            )
+
+        try:
+            result = await mcp.call_tool(str(tool_name), params)
+        except Exception as exc:
+            logger.exception("Tool %s failed: %s", tool_name, exc)
+            return JSONResponse(
+                {"success": False, "error": str(exc), "data": None},
+                status_code=500,
+            )
+
+        mcp_result = result.to_mcp_result()
+        is_error = False
+        content_list: list[Any] = []
+        if isinstance(mcp_result, tuple) and len(mcp_result) >= 2:
+            content_list = mcp_result[0]
+            is_error = mcp_result[1]
+        else:
+            content_list = getattr(result, "content", [])
+
+        data: Any = None
+        if content_list:
+            text = getattr(content_list[0], "text", str(content_list[0]))
+            try:
+                data = json.loads(text)
+            except Exception:
+                data = {"output": text}
+
+        return JSONResponse(
+            {
+                "success": not is_error and data is not None,
+                "data": data,
+                "error": None if not is_error else "Tool returned error",
+            }
+        )
+
     # ── /api/capabilities ────────────────────────────────────────────────────
     @app.get("/api/capabilities")
     async def capabilities() -> dict:
-        from inkscape_mcp.agentic import (  # noqa: PLC0415
-            get_inkscape_file_capabilities,
-            get_inkscape_vector_capabilities,
-            get_inkscape_heraldic_capabilities,
-            get_inkscape_style_capabilities,
-            get_svg_generation_approach,
-        )
+        from inkscape_mcp.agentic import get_inkscape_file_capabilities  # noqa: PLC0415
+        from inkscape_mcp.agentic import get_inkscape_heraldic_capabilities  # noqa: PLC0415
+        from inkscape_mcp.agentic import get_inkscape_style_capabilities  # noqa: PLC0415
+        from inkscape_mcp.agentic import get_inkscape_vector_capabilities  # noqa: PLC0415
+        from inkscape_mcp.agentic import get_svg_generation_approach  # noqa: PLC0415
 
         return {
             "file": get_inkscape_file_capabilities(),
@@ -424,7 +636,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         }
 
     try:
-        mcp._additional_http_routes.append(Mount("/api", app=app))
+        mcp._additional_http_routes.append(Mount("", app=app))
         logger.info(
             "REST API bridge mounted at /api  [Ollama: %s/%s]",
             _ollama_base(),

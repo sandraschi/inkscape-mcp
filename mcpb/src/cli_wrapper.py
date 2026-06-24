@@ -8,7 +8,6 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class InkscapeCliWrapper:
         export_type: str = "png",
         dpi: int = 300,
         export_area: str = "drawing",
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> str:
         """
         Export SVG file to raster or vector format using Inkscape CLI.
@@ -112,7 +111,7 @@ class InkscapeCliWrapper:
         input_path: str,
         object_id: str,
         query_type: str = "bbox",
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> str:
         """
         Query object properties from SVG file using Inkscape CLI.
@@ -158,9 +157,9 @@ class InkscapeCliWrapper:
     async def execute_verbs(
         self,
         input_path: str,
-        verbs: List[str],
-        output_path: Optional[str] = None,
-        timeout: Optional[int] = None,
+        verbs: list[str],
+        output_path: str | None = None,
+        timeout: int | None = None,
     ) -> str:
         """
         Execute Inkscape verbs (actions) on an SVG file.
@@ -203,8 +202,8 @@ class InkscapeCliWrapper:
         self,
         input_path: str,
         actions: list[str],
-        output_path: Optional[str] = None,
-        timeout: Optional[int] = None,
+        output_path: str | None = None,
+        timeout: int | None = None,
     ) -> str:
         """
         Execute Inkscape actions using the --actions flag.
@@ -243,7 +242,7 @@ class InkscapeCliWrapper:
 
         # If an output path is specified, add an export action to the chain
         if output_path:
-            cmd_args.append(f"--export-filename={str(Path(output_path).resolve())}")
+            cmd_args.append(f"--export-filename={Path(output_path).resolve()!s}")
             # Ensure an export action is part of the chain if output_path is given
             if "export-do" not in actions_str:
                 cmd_args[-1] += ";export-do"  # Append export-do if not already present
@@ -254,8 +253,8 @@ class InkscapeCliWrapper:
         self,
         input_path: str,
         actions: list[str],
-        output_path: Optional[str] = None,
-        timeout: Optional[int] = None,
+        output_path: str | None = None,
+        timeout: int | None = None,
     ) -> str:
         """
         Execute a sequence of Inkscape actions using --batch-process.
@@ -275,7 +274,7 @@ class InkscapeCliWrapper:
         """
         return await self._execute_actions(input_path, actions, output_path, timeout)
 
-    async def get_document_info(self, input_path: str, timeout: Optional[int] = None) -> str:
+    async def get_document_info(self, input_path: str, timeout: int | None = None) -> str:
         """
         Get document information and metadata from SVG file.
 
@@ -301,7 +300,7 @@ class InkscapeCliWrapper:
 
         return await self._execute_command(cmd_args, timeout)
 
-    async def _execute_command(self, cmd_args: List[str], timeout: int) -> str:
+    async def _execute_command(self, cmd_args: list[str], timeout: int) -> str:
         """
         Execute command with proper error handling and logging.
         """
@@ -328,7 +327,7 @@ class InkscapeCliWrapper:
 
                 return output
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 raise InkscapeTimeoutError(f"Command timed out after {timeout} seconds")
@@ -340,7 +339,7 @@ class InkscapeCliWrapper:
         except Exception as e:
             raise InkscapeExecutionError(f"Command execution failed: {e}")
 
-    def _get_environment(self) -> Dict[str, str]:
+    def _get_environment(self) -> dict[str, str]:
         """
         Get environment variables for subprocess execution.
         """

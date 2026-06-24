@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -53,7 +53,7 @@ class _MemoryLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         try:
             msg = self.format(record)
-            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
             entry = {"timestamp": ts, "level": record.levelname, "message": msg}
             with _memory_lock:
                 _memory_logs.append(entry)
@@ -619,11 +619,11 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     # ── /api/capabilities ────────────────────────────────────────────────────
     @app.get("/api/capabilities")
     async def capabilities() -> dict:
-        from inkscape_mcp.agentic import (  # noqa: PLC0415
+        from inkscape_mcp.agentic import (
             get_inkscape_file_capabilities,
-            get_inkscape_vector_capabilities,
             get_inkscape_heraldic_capabilities,
             get_inkscape_style_capabilities,
+            get_inkscape_vector_capabilities,
             get_svg_generation_approach,
         )
 

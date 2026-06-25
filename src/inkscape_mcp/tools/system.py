@@ -250,6 +250,7 @@ async def inkscape_system(
         "version",
         "config",
         "execution_mode",
+        "hands_in_command",
         "list_extensions",
         "execute_extension",
     ],
@@ -257,6 +258,7 @@ async def inkscape_system(
     _extension_params: dict[str, Any] | None = None,
     _input_file: str | None = None,
     _output_file: str | None = None,
+    action: str = "",
     cli_wrapper: Any = None,
     config: Any = None,
 ) -> dict[str, Any]:
@@ -320,6 +322,35 @@ async def inkscape_system(
                 data=mode_data,
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
+
+        elif operation == "hands_in_command":
+            if not action:
+                return SystemResult(
+                    success=False, operation="hands_in_command",
+                    message="action parameter is required (e.g. 'select-all;object-flip-horizontally')",
+                    data={}, execution_time_ms=0, error="ValueError",
+                ).model_dump()
+
+            try:
+                # Attempt --active-window: send actions to a running Inkscape GUI
+                result = await cli_wrapper._execute_command(
+                    [str(config.inkscape_executable), "--active-window", "--actions", action],
+                    config.process_timeout,
+                )
+                return SystemResult(
+                    success=True, operation="hands_in_command",
+                    message=f"Sent action to active Inkscape window: {action[:120]}",
+                    data={"action": action, "response": result.strip()[:500]},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except Exception as exc:
+                return SystemResult(
+                    success=False, operation="hands_in_command",
+                    message=f"Hands-in command failed: {exc}. Is Inkscape GUI running?",
+                    data={"action": action,
+                          "hint": "Open Inkscape GUI first, then set INKSCAPE_GUI_WATCH=1"},
+                    execution_time_ms=0, error=str(exc),
+                ).model_dump()
 
         elif operation == "version":
             # Get version information

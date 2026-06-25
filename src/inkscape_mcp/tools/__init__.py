@@ -19,6 +19,7 @@ from .fab_art_tools import inkscape_fab_art
 from .file_operations import inkscape_file
 from .fleet_tools import inkscape_fleet
 from .heraldry import register_heraldry_tools
+from .layer_operations import inkscape_layers
 from .llm_discovery import list_local_models
 from .render_tools import inkscape_render
 from .sim_art_tools import inkscape_sim_art
@@ -36,6 +37,7 @@ __all__ = [
     "inkscape_fab_art",
     "inkscape_sim_art",
     "inkscape_system",
+    "inkscape_layers",
     "register_heraldry_tools",
     "list_local_models",
 ]
@@ -69,6 +71,7 @@ PORTMANTEAU_TOOLS = [
             "optimize_svg",
             "scour_svg",
             "measure_object",
+            "inspect",
             "query_document",
             "count_nodes",
             "export_dxf",
@@ -135,10 +138,27 @@ PORTMANTEAU_TOOLS = [
         "operations": [
             "status",
             "execution_mode",
+            "hands_in_command",
             "help",
             "diagnostics",
             "version",
             "config",
+        ],
+    },
+    {
+        "name": "inkscape_layers",
+        "function": inkscape_layers,
+        "category": "layer_management",
+        "operations": [
+            "list",
+            "get",
+            "create",
+            "rename",
+            "hide",
+            "show",
+            "reorder",
+            "lock",
+            "unlock",
         ],
     },
 ]

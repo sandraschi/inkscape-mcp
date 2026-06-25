@@ -331,6 +331,7 @@ Errors:
 """
 
 import math
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -368,6 +369,7 @@ async def inkscape_vector(
         "optimize_svg",
         "scour_svg",
         "measure_object",
+        "inspect",
         "query_document",
         "count_nodes",
         "export_dxf",
@@ -418,6 +420,9 @@ async def inkscape_vector(
 
         elif operation == "measure_object":
             return await _measure_object(input_path, object_id, cli_wrapper, config)
+
+        elif operation == "inspect":
+            return await _inspect_object(input_path, object_id, cli_wrapper, config)
 
         elif operation == "query_document":
             return await _query_document(input_path, cli_wrapper, config)
@@ -722,6 +727,75 @@ async def _measure_object(
             data={"object_id": object_id},
             execution_time_ms=0,
             error=str(e),
+        ).model_dump()
+
+
+async def _inspect_object(
+    input_path: str, object_id: str, _cli_wrapper: Any, _config: Any,
+) -> dict[str, Any]:
+    """Inspect object style (fill, stroke, opacity, transform) from SVG XML."""
+    try:
+        _start = time.time()
+        svg = Path(input_path).read_text(encoding="utf-8", errors="replace")
+        tag_pattern = re.compile(
+            rf'<(\w+)[^>]*\bid=["\']{re.escape(object_id)}["\'][^>]*/?>', re.DOTALL
+        )
+        m = tag_pattern.search(svg)
+        if not m:
+            return VectorOperationResult(
+                success=False, operation="inspect",
+                message=f"Object '{object_id}' not found",
+                data={"object_id": object_id}, execution_time_ms=0, error="NotFound",
+            ).model_dump()
+        el_type = m.group(1)
+        tag_str = m.group(0)
+        attr_pattern = re.compile(r'(\b[\w:.-]+)\s*=\s*["\']([^"\']*)["\']')
+        attrs = dict(attr_pattern.findall(tag_str))
+        style_str = attrs.get("style", "")
+        style: dict[str, str] = {}
+        if style_str:
+            for part in style_str.split(";"):
+                if ":" in part:
+                    k, sep, v = part.partition(":")
+                    style[k.strip()] = v.strip()
+        fill = style.get("fill") or attrs.get("fill")
+        stroke = style.get("stroke") or attrs.get("stroke")
+        stroke_width = style.get("stroke-width") or attrs.get("stroke-width")
+        opacity = style.get("opacity") or attrs.get("opacity") or "1.0"
+        transform = attrs.get("transform")
+        bbox = None
+        try:
+            if _cli_wrapper and _config:
+                x_s = await _cli_wrapper._execute_command(
+                    [str(_config.inkscape_executable), input_path, f"--query-x={object_id}"],
+                    _config.process_timeout)
+                y_s = await _cli_wrapper._execute_command(
+                    [str(_config.inkscape_executable), input_path, f"--query-y={object_id}"],
+                    _config.process_timeout)
+                w_s = await _cli_wrapper._execute_command(
+                    [str(_config.inkscape_executable), input_path, f"--query-width={object_id}"],
+                    _config.process_timeout)
+                h_s = await _cli_wrapper._execute_command(
+                    [str(_config.inkscape_executable), input_path, f"--query-height={object_id}"],
+                    _config.process_timeout)
+                bbox = {"x": float(x_s.strip()), "y": float(y_s.strip()),
+                        "w": float(w_s.strip()), "h": float(h_s.strip())}
+        except Exception:
+            pass
+        return VectorOperationResult(
+            success=True, operation="inspect",
+            message=f"Inspected {el_type}#{object_id}",
+            data={"object_id": object_id, "type": el_type,
+                  "fill": fill, "stroke": stroke, "stroke_width": stroke_width,
+                  "opacity": opacity, "transform": transform,
+                  "all_style": style, "bbox": bbox},
+            execution_time_ms=(time.time() - _start) * 1000,
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False, operation="inspect",
+            message=f"Inspect failed: {e}", data={"object_id": object_id},
+            execution_time_ms=0, error=str(e),
         ).model_dump()
 
 

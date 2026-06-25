@@ -1,8 +1,10 @@
 !macro KillFleetProcesses
   DetailPrint "Stopping Inkscape MCP processes..."
 
-  ; Kill by image name (Stop-Process works for same-user processes)
-  ExecWait 'powershell -NoProfile -Command "Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; Stop-Process -Name inkscape-mcp-native -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; taskkill /F /IM inkscape-mcp-native.exe /T 2>nul"' $0
+  ; Stop-Process (same-user) + taskkill /F /IM (any user).  If the process is
+  ; running as SYSTEM or another user, the Rust free_port() function has a UAC
+  ; elevation fallback that fires on the next app launch.
+  ExecWait 'powershell -NoProfile -Command "Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; Stop-Process -Name inkscape-mcp-native -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T; taskkill /F /IM inkscape-mcp-native.exe /T"' $0
 
   ; NSIS plugin fallback
   !if "${INSTALLMODE}" == "currentUser"
@@ -16,6 +18,7 @@
     nsis_tauri_utils::KillProcess "inkscape-mcp-native.exe"
     Pop $0
   !endif
+
   Sleep 3000
 !macroend
 

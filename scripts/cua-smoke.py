@@ -319,15 +319,15 @@ def kill_stale():
             ["powershell", "-NoProfile", "-Command",
              f"Stop-Process -Name '{name}' -Force -ErrorAction SilentlyContinue; "
              f"Stop-Process -Name '{name}-backend' -Force -ErrorAction SilentlyContinue; "
-             f"taskkill /F /IM {name}.exe /T 2>nul; "
-             f"taskkill /F /IM {name}-backend.exe /T 2>nul"],
+             f"taskkill /F /IM {name}.exe /T 2>$null; "
+             f"taskkill /F /IM {name}-backend.exe /T 2>$null"],
             capture_output=True, timeout=15)
     # Kill by port (handles TIME_WAIT zombies)
     port = BACKEND_PORT
     subprocess.run(
         ["powershell", "-NoProfile", "-Command",
          f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
-         f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"],
+         f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}"],
         capture_output=True, timeout=15)
     time.sleep(2)
     # Final check — if port still occupied, elevate
@@ -341,9 +341,9 @@ def kill_stale():
             ["powershell", "-NoProfile", "-Command",
              f"Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList "
              f"'-NoProfile -Command \"Stop-Process -Name {PROCESS_NAMES[0]} -Force -ErrorAction SilentlyContinue; "
-             f"taskkill /F /IM {PROCESS_NAMES[0]}.exe /T 2>nul; "
+             f"taskkill /F /IM {PROCESS_NAMES[0]}.exe /T 2>$null; "
              f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
-             f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"],
+             f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}\"'"],
             capture_output=True, timeout=30)
         time.sleep(3)
     log("Stale processes killed")

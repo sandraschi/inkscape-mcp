@@ -110,7 +110,7 @@ fn free_port(port: u16) -> bool {
         // (5 retries * 60s = 5 min of automatic retry).
 
         // Kill by image name (catches zombies NOT holding the port)
-        let img_kill = "Stop-Process -Name 'inkscape-mcp-backend' -Force -ErrorAction SilentlyContinue; Stop-Process -Name 'inkscape-mcp-native' -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; taskkill /F /IM inkscape-mcp-native.exe /T 2>nul".to_string();
+        let img_kill = "Stop-Process -Name 'inkscape-mcp-backend' -Force -ErrorAction SilentlyContinue; Stop-Process -Name 'inkscape-mcp-native' -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T; taskkill /F /IM inkscape-mcp-native.exe /T".to_string();
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", &img_kill])
             .stdout(Stdio::null()).stderr(Stdio::null())
@@ -118,7 +118,7 @@ fn free_port(port: u16) -> bool {
 
         // Kill by port (precise port-holder)
         let port_kill = format!(
-            "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"
+            "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T }}"
         );
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", &port_kill])

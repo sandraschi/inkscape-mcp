@@ -62,7 +62,6 @@ CUA_SMOKE_VERSION = 2  # bump when template changes; see docstring
 def _check_version():
     """Warn if this file doesn't match the template version."""
     from pathlib import Path
-    ver_file = Path(__file__)
     # If the template path exists, compare versions
     tpl = Path(os.getenv("MCP_CENTRAL_DOCS", "")) / "templates/tauri-native/scripts/cua-smoke.py"
     if tpl.exists():
@@ -296,12 +295,14 @@ def cua_click(window_handle: int, x: int, y: int):
 # ── Helpers ───────────────────────────────────────────────────────────
 
 class PhaseFailed(Exception):
-    """Non-fatal phase failure — script continues to uninstall."""
+    """Phase failure — the phase runner catches this and continues to summary."""
 
 
 def fatal(msg: str):
+    """Fatal error — raises PhaseFailed. If caught by phase runner, summary is shown.
+    If called before phase runner (init), the unhandled exception exits the script."""
     print(f"  [cua] FATAL: {msg}", flush=True)
-    sys.exit(1)
+    raise PhaseFailed(msg)
 
 
 def phase_fail(msg: str):
@@ -401,7 +402,7 @@ def launch_app():
 
 def verify_window():
     if not cua_available():
-        log("CUA client unavailable -- window check skipped")
+        phase_fail("CUA client unavailable — cannot verify window")
         return
     win = cua_find_window(WINDOW_TITLE_RE)
     if win:
@@ -412,19 +413,22 @@ def verify_window():
         if (isinstance(w, int) and isinstance(h, int) and w > 0 and h > 0 and (w < 100 or h < 100)):
             phase_fail(f"Window too small: {w}x{h}")
     else:
-        log(f"Window matching '{WINDOW_TITLE_RE}' not found")
+        phase_fail(f"Window matching '{WINDOW_TITLE_RE}' not found")
 
 
 # ── Phase 5: Screenshot ──────────────────────────────────────────────
 
 def take_screenshot(output_dir: str):
+    if not cua_available():
+        phase_fail("CUA client unavailable — cannot take screenshot")
+        return
     os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, f"cua-smoke-{int(time.time())}.png")
     result = cua_screenshot(0, path)
     if result and os.path.exists(result):
         log(f"Screenshot saved: {result} ({os.path.getsize(result)} bytes)")
     else:
-        log("Screenshot not available (CUA client needed)")
+        phase_fail("Screenshot capture returned no result")
 
 
 # ── Phase 6: Feature-route smoke ─────────────────────────────────────
@@ -437,7 +441,7 @@ def check_feature_route():
         if resp.status == 200:
             log(f"  response keys: {list(body.keys())[:5]}")
     except Exception as e:
-        log(f"Feature route check failed (non-fatal): {e}")
+        phase_fail(f"Feature route {FEATURE_PATH} unreachable: {e}")
 
 
 # ── Phase 7: Diagnostics ─────────────────────────────────────────────
@@ -455,16 +459,16 @@ def check_diagnostics():
             if d.get("errors", {}).get("count", 0) > 0:
                 log(f"WARNING: {d['errors']['count']} errors logged")
         else:
-            log(f"Diagnostics returned: {data}")
+            phase_fail(f"Diagnostics returned: {data}")
     except Exception as e:
-        log(f"Diagnostics check failed (non-fatal): {e}")
+        phase_fail(f"Diagnostics endpoint unreachable: {e}")
 
 
 # ── Phase 8: WebView bridge proof (OCR) ──────────────────────────────
 
 def verify_webview_bridge(output_dir: str):
     if not cua_available():
-        log("CUA client unavailable -- WebView bridge check skipped")
+        phase_fail("CUA client unavailable — cannot verify WebView bridge")
         return
     os.makedirs(output_dir, exist_ok=True)
     snap_path = os.path.join(output_dir, f"bridge-snap-{int(time.time())}.png")
@@ -475,38 +479,38 @@ def verify_webview_bridge(output_dir: str):
     if BRIDGE_OK_TEXT.lower() in text.lower() or "connected" in text.lower():
         log(f"WebView bridge OK (found '{BRIDGE_OK_TEXT}' in screenshot OCR)")
     elif text:
-        os.makedirs(output_dir, exist_ok=True)
         log(f"WebView OCR text: {text[:200]}")
-        phase_fail(f"WebView bridge not OK — likely API_BASE/CSP/CORS (expected '{BRIDGE_OK_TEXT}')")
+        phase_fail(f"WebView bridge not OK — expected '{BRIDGE_OK_TEXT}' or 'connected' in screenshot")
     else:
-        log("WebView bridge check skipped (no OCR available)")
+        phase_fail("OCR returned no text — cannot verify WebView bridge status")
 
 
 # ── Phase 9: Nav click-through ──────────────────────────────────────
 
 def nav_click_through(output_dir: str):
-    """Click each sidebar nav item, verify page loads via OCR."""
     if not cua_available():
-        log("CUA client unavailable -- nav click-through skipped")
+        phase_fail("CUA client unavailable — cannot do nav click-through")
         return
-
-    nav_routes = cfg("nav_routes", [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]])
-    if isinstance(nav_routes, list):
-        nav_routes = [(r[0], r[1]) for r in nav_routes if len(r) >= 2]
-
-    # Get window rect for coordinate-based clicking
     win = cua_find_window(WINDOW_TITLE_RE)
     if not win:
-        log("No window found for nav click-through")
+        phase_fail("No window found for nav click-through")
         return
     r = win.get("rect", {}) or {}
     wx = r.get("left", 0) or 0
     wy = r.get("top", 0) or 0
     snap_dir = os.path.join(output_dir, "nav")
 
+    nav_routes = [["Overview", "Overview"], ["Status", "Server status"], ["Animation", "Animation Studio"], ["Layers", "Layer Manager"]]
+    if isinstance(nav_routes, list):
+        nav_routes = [(r[0], r[1]) for r in nav_routes if len(r) >= 2]
+
+    sidebar_click_x = 30
+    sidebar_first_y = 90
+    sidebar_step_y = 55
+
     for label, expected_header in nav_routes:
         try:
-            idx = next((i for i, (l, _) in enumerate(nav_routes) if l == label), 0)
+            idx = next((i for i, (_label, _) in enumerate(nav_routes) if _label == label), 0)
             sidebar_click_x = int(cfg("sidebar_click_x", 30))
             sidebar_first_y = int(cfg("sidebar_first_y", 90))
             sidebar_step_y = int(cfg("sidebar_step_y", 55))
@@ -518,7 +522,7 @@ def nav_click_through(output_dir: str):
             # OCR after click
             snap_path = os.path.join(snap_dir, f"nav-{label.lower()}-{int(time.time())}.png")
             os.makedirs(snap_dir, exist_ok=True)
-            result = cua_screenshot(win.get("handle", 0), snap_path)
+            cua_screenshot(win.get("handle", 0), snap_path)
             text = cua_ocr_text(win.get("handle", 0), snap_path)
 
             if expected_header.lower() in text.lower():
@@ -539,8 +543,8 @@ def nav_click_through(output_dir: str):
 def analyze_logs():
     """Read the Tauri app logs and report errors/warnings."""
     log_paths = [
-        os.path.join(INSTALL_DIR, "pywinauto-mcp.log"),
-        os.path.expandvars(r"%APPDATA%\com.sandraschi.pywinauto-mcp\logs\backend-spawn.log"),
+        os.path.expandvars(r"%LOCALAPPDATA%\ai.fleet.inkscape-mcp\logs\backend-spawn.log"),
+        os.path.join(INSTALL_DIR, "inkscape-mcp.log"),
     ]
     errors = []
     warnings = []
@@ -642,8 +646,9 @@ def main():
             fn()
             print(f"  V {name}\n")
             passed += 1
-        except PhaseFailed:
-            print(f"  X {name}\n")
+        except PhaseFailed as e:
+            msg = str(e) if str(e) else "failed"
+            print(f"  X {name} — {msg}\n")
             failed += 1
             if is_fatal:
                 fatal_failed = True

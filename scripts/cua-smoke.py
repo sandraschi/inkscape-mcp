@@ -94,7 +94,7 @@ OPERATOR_EXE = cfg("operator_exe", "pywinauto-mcp-operator.exe")
 PROCESS_NAMES = cfg("backend_process_names", ["pywinauto-mcp-operator", "pywinauto-mcp-backend"])
 NSIS_GLOB = cfg("nsis_glob", "web_sota/src-tauri/target/release/bundle/nsis/Pywinauto MCP Operator_*_x64-setup.exe")
 REGISTRY_FILTER = cfg("uninstall_registry_filter", "*Pywinauto*")
-MAX_RETRY = 15
+MAX_RETRY = 30
 RETRY_DELAY = 6
 
 _INSTALLED = False

@@ -480,12 +480,34 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         ver_t = _inkscape_version_tuple(ink_ver_line)
         actions_api_ok = ver_t is not None and (ver_t[0] > 1 or ver_t[1] >= 2)
 
+        # Build tool list and group by category
+        tool_list: list[str] = []
+        tool_count = 0
+        if hasattr(mcp, "_tool_manager"):
+            try:
+                raw_tools = mcp._tool_manager.list_tools()
+                tool_list = [t.name for t in raw_tools]
+                tool_count = len(tool_list)
+            except Exception:
+                pass
+
+        tool_groups: list[dict[str, Any]] = []
+        from ..tools import PORTMANTEAU_TOOLS
+        for pt in PORTMANTEAU_TOOLS:
+            tool_groups.append({"name": pt["name"], "category": pt.get("category", pt["name"]),
+                                "operations": pt.get("operations", []),
+                                "op_count": len(pt.get("operations", []))})
+
         return {
             "status": "ok",
             "server": "inkscape-mcp",
             "version": "2.6.0",
+            "description": "AI-powered vector graphics and SVG editing server. Exposes Inkscape's full feature surface through the Model Context Protocol.",
             "uptime_seconds": int((datetime.now(UTC) - _start_time).total_seconds()),
-            "tool_count": len(mcp._tool_manager.list_tools()) if hasattr(mcp, "_tool_manager") else 0,
+            "backend_port": int(_env("MCP_PORT", "11028")),
+            "tool_count": tool_count,
+            "tools": tool_list,
+            "tool_groups": tool_groups,
             "providers": {
                 "ollama": {
                     "available": ollama_ok,

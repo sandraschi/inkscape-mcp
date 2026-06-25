@@ -235,7 +235,18 @@ async def run_server_async(
             path = config["path"]
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP Streamable mode: {endpoint}")
-            await mcp_app.run_http_async(host=host, port=port, path=path)
+            # Retry bind on E10048 (port still in TIME_WAIT after Rust free_port)
+            for retry in range(5):
+                try:
+                    await mcp_app.run_http_async(host=host, port=port, path=path)
+                    break
+                except OSError as exc:
+                    if retry < 4 and "10048" in str(exc):
+                        wait = 60
+                        logger.warning(f"Port {port} still occupied (E10048), retry {retry+1}/5 after {wait}s")
+                        await asyncio.sleep(wait)
+                        continue
+                    raise
 
         elif transport == "sse":
             host = config["host"]

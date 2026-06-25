@@ -100,7 +100,7 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(bundled)
 }
 
-fn free_port(port: u16) {
+fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
         // Kill any process holding the port
@@ -112,13 +112,13 @@ fn free_port(port: u16) {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status();
-        // Wait for the port to be truly free — TIME_WAIT can last 240s on Windows.
-        // The new backend's uvicorn will fail with E10048 if the port is in any state.
-        // Poll every 1s up to ~120s — this is the "grace period" Windows needs.
+
+        // Poll up to 240s for TIME_WAIT to clear (default 240s on Windows).
+        // The backend's uvicorn will fail with E10048 if the port is in any state.
         let poll_script = format!(
             "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
         );
-        for _ in 0..120 {
+        for i in 0..240 {
             let output = Command::new("powershell.exe")
                 .args(["-NoProfile", "-Command", &poll_script])
                 .stdout(Stdio::piped())
@@ -128,11 +128,22 @@ fn free_port(port: u16) {
                 String::from_utf8(o.stdout).ok().and_then(|s| s.trim().parse::<u32>().ok())
             }).unwrap_or(1);
             if occupied == 0 {
-                break;
+                return true;  // Port is free
+            }
+            if i % 30 == 0 && i > 0 {
+                // Re-kill every 30s in case a new process grabbed it
+                let _ = Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", &kill_script])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
             }
             thread::sleep(Duration::from_secs(1));
         }
+        return false;  // Port never freed
     }
+    #[cfg(not(windows))]
+    { true }
 }
 
 fn stop_managed_child(state: &BackendProcess) {
@@ -144,7 +155,11 @@ fn stop_managed_child(state: &BackendProcess) {
 
 pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, String> {
     stop_managed_child(state);
-    free_port(BACKEND_PORT);
+    if !free_port(BACKEND_PORT) {
+        let msg = format!("Could not free port {BACKEND_PORT} after 240s — TIME_WAIT not cleared");
+        log_line(&app, &msg);
+        return Err(msg);
+    }
 
     let backend_path = materialize_backend(&app)?;
     let workdir = app

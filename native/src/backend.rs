@@ -154,26 +154,34 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         ),
     );
 
-    let mut command = Command::new(&backend_path);
+    // Strip \\?\ prefix — it works with CreateProcess but can confuse
+    // child processes that spawn further subprocesses internally.
+    let canon: PathBuf = backend_path.to_string_lossy().replace(r"\\?\", "").into();
+    let mut command = Command::new(&canon);
     command
         .current_dir(&workdir)
         .env("MCP_PORT", BACKEND_PORT.to_string())
         .env("MCP_HOST", "127.0.0.1")
-        .env("INKSCAPE_TAURI", "1")
         .env("PYTHONUNBUFFERED", "1")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-
     let mut child = command
         .spawn()
         .map_err(|e| format!("Failed to spawn {}: {e}", backend_path.display()))?;
+
+    // Check if child exited immediately (crash before Python starts)
+    thread::sleep(Duration::from_millis(500));
+    match child.try_wait() {
+        Ok(Some(status)) => {
+            log_line(&app, &format!("Backend exited immediately with code: {:?}", status.code()));
+            return Err(format!("Backend exited immediately with code {:?}", status.code()));
+        }
+        Ok(None) => { /* still running — good */ }
+        Err(e) => {
+            log_line(&app, &format!("Error checking backend status: {e}"));
+        }
+    }
 
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();

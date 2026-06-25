@@ -154,9 +154,11 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         ),
     );
 
-    // Strip \\?\ prefix — it works with CreateProcess but can confuse
-    // child processes that spawn further subprocesses internally.
+    // Strip \\?\ prefix from the path — harmless for CreateProcess but 
+    // avoids confusing child processes that inherit the path.
     let canon: PathBuf = backend_path.to_string_lossy().replace(r"\\?\", "").into();
+    log_line(&app, &format!("spawning via: {canon:?}"));
+
     let mut command = Command::new(&canon);
     command
         .current_dir(&workdir)
@@ -171,18 +173,6 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .map_err(|e| format!("Failed to spawn {}: {e}", backend_path.display()))?;
 
     // Check if child exited immediately (crash before Python starts)
-    thread::sleep(Duration::from_millis(500));
-    match child.try_wait() {
-        Ok(Some(status)) => {
-            log_line(&app, &format!("Backend exited immediately with code: {:?}", status.code()));
-            return Err(format!("Backend exited immediately with code {:?}", status.code()));
-        }
-        Ok(None) => { /* still running — good */ }
-        Err(e) => {
-            log_line(&app, &format!("Error checking backend status: {e}"));
-        }
-    }
-
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
     state.0.lock().unwrap().replace(child);
@@ -191,11 +181,11 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         let app_handle = app.clone();
         thread::spawn(move || watch_backend_stream(out, app_handle));
     }
+
     if let Some(err) = stderr {
         let app_handle = app.clone();
         thread::spawn(move || watch_backend_stream(err, app_handle));
     }
-
     let health_app = app.clone();
     thread::spawn(move || {
         let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();

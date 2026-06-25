@@ -1,80 +1,66 @@
 # Inkscape MCP — AI-powered vector graphics
 
-<p align="center">
-  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
-  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
-  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
-  <a href="https://fastmcp.com"><img src="https://img.shields.io/badge/FastMCP-3.4-7c5cfc?style=flat-square" alt="FastMCP"></a>
-  <a href="https://github.com/sandraschi/inkscape-mcp/releases"><img src="https://img.shields.io/badge/NSIS%20installer-download-blue?style=flat-square&logo=windows" alt="NSIS"></a>
-</p>
+AI agents create, edit, layer, animate, and export SVG files using Inkscape. Works as an MCP server (stdio/HTTP), Claude Desktop `.mcpb` bundle, webapp dashboard, or Windows desktop app.
 
-MCP server that exposes Inkscape's full vector graphics engine through the Model Context Protocol. Works as an **MCP server** (stdio/HTTP), an **MCPB bundle** for Claude Desktop, a **webapp dashboard** (React/Vite), and a **Tauri Windows desktop app** (NSIS installer).
+## Preview
 
-## Delivery Formats
+| Dashboard | Animation Studio | Layer Manager |
+|-----------|-----------------|---------------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Animation Studio](docs/screenshots/animation-studio.png) | ![Layer Manager](docs/screenshots/layer-manager.png) |
 
-| Format | How | Use case |
-|--------|-----|----------|
-| **MCP server** | `uv run inkscape-mcp` | Cursor, Claude Code, any MCP client |
-| **MCPB bundle** | `dist/inkscape-mcp-v2.6.0.mcpb` | Claude Desktop single-click install |
-| **Webapp** | `http://127.0.0.1:11029` | Dashboard, animation studio, layer manager, agent lab |
-| **Tauri NSIS app** | `Inkscape MCP_2.6.0_x64-setup.exe` | One-installer desktop app (embedded backend) |
+*Animated SVG presets render live in the browser — no Inkscape CLI needed.*
 
-## What It Does
+## How it runs
 
-9 portmanteau tools, 17 MCP tools total, 60+ operations:
+| Mode | Inkscape | When |
+|------|----------|------|
+| **Headless (default)** | CLI via `inkscape --actions` | Batch processing, export, validation, fleet pipelines |
+| **Live GUI (optional)** | Open Inkscape manually + `--active-window` | Interactive editing with agent co-pilot |
 
-| Tool | Operations |
-|------|-----------|
-| `inkscape_file` | load, save, convert, info, validate |
-| `inkscape_vector` | create shapes, text ops, path booleans, LPEs, inspect, trace, optimize, boolean, measure, export, render |
-| `inkscape_analysis` | statistics, validate, dimensions, objects, structure, quality |
-| `inkscape_render` | export_preview, export_multi_dpi, get_document_summary |
-| `inkscape_validation` | validate_svg, check_viewbox, audit_web_svg, stroke/fill, size limits |
-| `inkscape_layers` | list, create, rename, hide/show, lock/unlock, reorder |
-| `inkscape_animation` | SMIL presets (bounce, fade, slide, rotate, pulse, shake), element/transform/motion animation, CSS keyframes |
-| `inkscape_system` | status, diagnostics, hands-in command, extensions, config |
-| `inkscape_fleet` / `fab_art` / `sim_art` | cross-MCP handoffs (GIMP, Blender, Unity, Resonite) |
+> **Headless by default** — no GUI needed for most operations.
 
-## Quick Start
+## Features
+- Create and edit SVG files (shapes, text, paths, booleans)
+- Layer management — list, create, rename, hide, lock, reorder
+- SMIL animation — bounce, fade, slide, rotate, pulse, shake presets
+- Live Path Effects — bend, roughen, envelope, spiro, power stroke
+- Export to PNG, PDF, EPS, DXF
+- Fleet pipeline — hand off to GIMP, Blender, Unity, Resonite
+- LPEs, text operations, object inspection, hands-in control
 
-```powershell
-git clone https://github.com/sandraschi/inkscape-mcp
-cd inkscape-mcp
-just
-```
+## Quick Install
 
-`just serve` — start the HTTP server  
-`just dev` — start webapp + backend  
-`just build-native` — build the NSIS Windows installer  
-`just cua-nsis-test` — CUA smoke test (requires pywinauto + pytesseract + Tesseract OCR)
+**Claude Desktop:** download the `.mcpb` from [Releases](https://github.com/sandraschi/inkscape-mcp/releases) and drag it onto Claude.
 
-## Screenshots
+**Windows desktop app:** download the NSIS installer from [Releases](https://github.com/sandraschi/inkscape-mcp/releases) and run it.
 
-<p align="center">
-  <img src="docs/screenshots/demo-bounce.svg" width="240" alt="Bounce animation">
-  <img src="docs/screenshots/demo-rotate.svg" width="240" alt="Rotate animation">
-  <img src="docs/screenshots/demo-pulse.svg" width="240" alt="Pulse animation">
-</p>
+**Manual:** `git clone`, `uv sync`, `just serve`. See [INSTALL.md](INSTALL.md) for all methods.
 
-*Animated SVG presets generated by `inkscape_animation` — no Inkscape CLI needed. These render live in any browser.*
+## What You Can Do
 
-## Docs
+> "Create a bouncing circle animation with a pink fill and 2-second duration, then export as PNG."
 
-| Doc | What |
-|-----|------|
-| `docs/INSTALL.md` | Installation guide |
-| `docs/USAGE.md` | How to use the tools |
-| `llms.txt` / `llms-full.txt` | LLM index + full manifest |
-| `CHANGELOG.md` | Release history |
+> "List all layers in my SVG, hide the background layer, and rename the top layer to 'Hero'."
 
-## Infrastructure
+> "Convert this text element to paths, then apply a roughen LPE with medium intensity."
 
-- **Python**: FastMCP 3.4.2, dual transport (stdio + streamable HTTP)
-- **Webapp**: React 19 + Vite + TailwindCSS + Zustand + Framer Motion + Lucide
-- **Desktop**: Tauri 2.0 + NSIS installer (embedded PyInstaller backend)
-- **Quality**: Ruff lint, Biome, mypy, pytest, Playwright E2E, CUA-NSIS smoke test
-- **Ports**: Backend 11028, Frontend 11029
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [Installation](INSTALL.md) | All install methods, prerequisites |
+| [Configuration](docs/CONFIGURATION.md) | Env vars, Ollama, Tauri desktop mode |
+| [Tool Reference](docs/TOOLS.md) | All 17 tools, 60+ operations |
+| [Development](docs/DEVELOPMENT.md) | Contributing, local setup, building |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues |
+
+## Requirements
+
+- **Windows**, macOS, or Linux
+- **Inkscape 1.0+** (1.2+ recommended for Actions API)
+- **Python 3.12+** with [uv](https://docs.astral.sh/uv/)
+- Optional: Ollama for AI-assisted SVG generation
 
 ## License
 
-MIT — see [LICENSE](LICENSE.md).
+MIT — see [LICENSE.md](LICENSE.md).

@@ -1,86 +1,73 @@
-# Installation
+# Installing Inkscape MCP
 
-## 🚀 Quick Start (recommended)
+## Prerequisites
 
-```powershell
-# Install just if you don't have it
-winget install Casey.Just    # Windows
-# scoop install just          # Windows (alternative)
-# brew install just           # macOS
-# sudo apt install just       # Debian/Ubuntu
-# cargo install just          # Linux (Rust)
+Install these if you don't have them already:
 
-git clone https://github.com/sandraschi/inkscape-mcp
-cd inkscape-mcp
-just
-```
+| Tool | Purpose | Install |
+|------|---------|---------|
+| Claude Desktop | Required host | [download](https://claude.ai/download) |
+| Inkscape 1.0+ | Required for SVG ops | [inkscape.org](https://inkscape.org/release/) |
+| Git | Clone repo (manual only) | `winget install Git.Git` |
+| Python + uv | Run server (manual only) | `winget install astral-sh.uv` |
 
-The interactive recipe dashboard opens in your browser. From there:
+> Windows: all installs via [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/)  
+> macOS: use `brew install` equivalents  
+> Linux: use your distro package manager
 
-```powershell
-just bootstrap   # install all dependencies
-just serve       # start the server
-just web         # start the frontend (if applicable)
-```
+## Option A — Claude Desktop MCPB (Recommended)
 
-> **Why not `pip install`?** MCP servers bundle webapps, configs, project scaffolding, and tooling that a flat Python package can't deliver. PyPI offers no safety advantage — it doesn't audit packages either. `just` gives you the complete, ready-to-run stack.
+1. Download `inkscape-mcp-v2.6.0.mcpb` from [Releases](https://github.com/sandraschi/inkscape-mcp/releases)
+2. Open Claude Desktop → drag the file onto the window
+3. Start prompting: *"Create a bouncing circle animation"*
 
----
+## Option B — Windows Desktop App
 
-## 🐌 Traditional Setup
+Download `Inkscape MCP_2.6.0_x64-setup.exe` from [Releases](https://github.com/sandraschi/inkscape-mcp/releases) and run the installer. The app opens a browser dashboard at `http://127.0.0.1:11029`.
 
-If you prefer not to use `just`:
+## Option C — Manual Setup
 
-1. Install [Python 3.13+](https://python.org) and [uv](https://docs.astral.sh/uv/)
-2. Clone and enter the repo:
-   ```powershell
+1. Clone and install:
+   ```bash
    git clone https://github.com/sandraschi/inkscape-mcp
    cd inkscape-mcp
+   uv sync
    ```
-3. Install dependencies:
-   ```powershell
-   uv sync --all-extras
+
+2. Add to Claude Desktop config at `%APPDATA%\Claude\claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "inkscape-mcp": {
+         "command": "uv",
+         "args": ["--directory", "C:\\path\\to\\inkscape-mcp", "run", "inkscape-mcp"],
+         "env": { "PYTHONUNBUFFERED": "1" }
+       }
+     }
+   }
    ```
-4. Start the server:
-   ```powershell
-   # stdio mode (for MCP clients like Claude Desktop)
-   uv run python -m inkscape_mcp.server
 
-   # HTTP mode (for web dashboard)
-   uv run uvicorn inkscape_mcp.server:app --port 
-   ```
-5. Open `http://localhost:` or the frontend URL.
+3. Restart Claude Desktop
 
----
+## Option D — Developer Mode
 
-## ❓ Troubleshooting
+For contributing or running from source with live reload. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-| Issue | Fix |
-|---|---|
-| `just` not found | Install via `winget install Casey.Just`, `scoop install just`, or `brew install just` |
-| Port conflict | Run `just kill-all` to clear fleet ports (10700–11000) |
-| Dependencies out of sync | `uv sync --all-extras` |
-| Something else | [Open a GitHub issue](https://github.com/sandraschi/inkscape-mcp/issues) |
+## LLM Integration
 
----
+Inkscape MCP can use Ollama for AI-assisted SVG generation:
 
-*See the main [README](README.md) for feature overview and documentation.
+- **Local (Ollama):** install [Ollama](https://ollama.com) and pull a model: `ollama pull qwen2.5-coder`
+- **Cloud (Gemini):** set `GEMINI_API_KEY` in `claude_desktop_config.json` env
+- **Cloud (Anthropic):** set `ANTHROPIC_API_KEY`
 
----
+## Verify Installation
 
-## Legacy Documentation
+After installing, ask Claude:
+> "Run inkscape_system with operation=status to verify everything is working."
 
-_This INSTALL.md was updated with the standard fleet Quick Start template. The original instructions are preserved below._
+You should see a response with tool counts and Inkscape availability.
 
-# Installation
+## Troubleshooting
 
-See **[docs/INSTALL.md](docs/INSTALL.md)** for clone + **uv**, PyPI, and next steps (Inkscape, IDE config, MCPB).
-
-Quick path:
-
-```bash
-git clone https://github.com/sandraschi/inkscape-mcp.git
-cd inkscape-mcp
-uv sync
-uv run inkscape-mcp --help
-```
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues.

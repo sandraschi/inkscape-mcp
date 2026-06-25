@@ -153,9 +153,9 @@ fn free_port(port: u16) -> bool {
         let elevated = format!(
             "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
              '-NoProfile -Command \"Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; \
-             taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; \
+             taskkill /F /IM inkscape-mcp-backend.exe /T ; \
              Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
-             ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"
+             ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T  }}\"'"
         );
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", &elevated])

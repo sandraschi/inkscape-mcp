@@ -103,64 +103,64 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
-        // ── Kill by image name (catches zombies NOT holding the port) ──
+        // Multi-layer kill: Stop-Process (same-user), taskkill (any user),
+        // escalated kill (UAC), port release, TIME_WAIT poll.
+        // Quick attempt only (5s).  If the port is still occupied, return false
+        // and the Python E10048 retry loop in transport.py will handle it
+        // (5 retries * 60s = 5 min of automatic retry).
+
+        // Kill by image name (catches zombies NOT holding the port)
         let img_kill = "Stop-Process -Name 'inkscape-mcp-backend' -Force -ErrorAction SilentlyContinue; Stop-Process -Name 'inkscape-mcp-native' -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; taskkill /F /IM inkscape-mcp-native.exe /T 2>nul".to_string();
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", &img_kill])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::null()).stderr(Stdio::null())
             .status();
 
-        // ── Kill by port (handles precise port-holder) ──
+        // Kill by port (precise port-holder)
         let port_kill = format!(
             "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"
         );
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", &port_kill])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::null()).stderr(Stdio::null())
             .status();
 
-        // ── Poll port until free (up to 240s) ──
+        // Quick poll (5s max).  On timeout, return false — Python retries via E10048.
         let poll_script = format!(
             "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
         );
-        for i in 0..240 {
+        for i in 0..5 {
             let output = Command::new("powershell.exe")
                 .args(["-NoProfile", "-Command", &poll_script])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::null())
+                .stdout(Stdio::piped()).stderr(Stdio::null())
                 .output();
             let occupied = output.ok().and_then(|o| {
                 String::from_utf8(o.stdout).ok().and_then(|s| s.trim().parse::<u32>().ok())
             }).unwrap_or(1);
-            if occupied == 0 {
-                return true;
-            }
-            if i == 5 {
-                // Re-kill at 5s (first normal attempt may have failed)
+            if occupied == 0 { return true; }
+            // Re-kill at 3s
+            if i == 3 {
                 let _ = Command::new("powershell.exe")
                     .args(["-NoProfile", "-Command", &img_kill])
-                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
+                    .status();
                 let _ = Command::new("powershell.exe")
                     .args(["-NoProfile", "-Command", &port_kill])
-                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
-            }
-            if i == 15 {
-                // Still occupied — try elevated kill (UAC prompt once)
-                let elevated = format!(
-                    "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
-                     '-NoProfile -Command \"Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; \
-                     taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; \
-                     Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
-                     ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"
-                );
-                let _ = Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", &elevated])
-                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
+                    .status();
             }
             thread::sleep(Duration::from_secs(1));
         }
+        // Last resort: elevated kill (UAC prompt once)
+        let elevated = format!(
+            "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
+             '-NoProfile -Command \"Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; \
+             taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; \
+             Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
+             ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"
+        );
+        let _ = Command::new("powershell.exe")
+            .args(["-NoProfile", "-Command", &elevated])
+            .stdout(Stdio::null()).stderr(Stdio::null())
+            .status();
         return false;
     }
     #[cfg(not(windows))]
@@ -176,11 +176,7 @@ fn stop_managed_child(state: &BackendProcess) {
 
 pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, String> {
     stop_managed_child(state);
-    if !free_port(BACKEND_PORT) {
-        let msg = format!("Could not free port {BACKEND_PORT} after 240s — TIME_WAIT not cleared");
-        log_line(&app, &msg);
-        return Err(msg);
-    }
+    let _ = free_port(BACKEND_PORT);  // best-effort kill; Python E10048 retry handles leftovers
 
     let backend_path = materialize_backend(&app)?;
     let workdir = app
@@ -235,21 +231,23 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
     let health_app = app.clone();
     thread::spawn(move || {
         let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
-        for attempt in 0..30 {
+        let mut attempts = 0;
+        loop {
             thread::sleep(Duration::from_secs(2));
+            attempts += 1;
             match TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
                 Ok(_) => {
-                    log_line(&health_app, &format!("Backend health check PASSED on port {BACKEND_PORT} (attempt {})", attempt + 1));
+                    log_line(&health_app, &format!("Backend health check PASSED on port {BACKEND_PORT} (attempt {})", attempts));
                     let _ = health_app.emit("backend-status", "ready");
                     return;
                 }
                 Err(e) => {
-                    log_line(&health_app, &format!("Backend health check: {e} (attempt {})", attempt + 1));
+                    if attempts % 15 == 0 {
+                        log_line(&health_app, &format!("Backend health check: {e} (attempt {})", attempts));
+                    }
                 }
             }
         }
-        log_line(&health_app, &format!("Backend health check FAILED — not listening on port {BACKEND_PORT} after 30 attempts"));
-        let _ = health_app.emit("backend-status", "error: backend not reachable");
     });
 
     Ok(format!("Backend starting on port {BACKEND_PORT}"))

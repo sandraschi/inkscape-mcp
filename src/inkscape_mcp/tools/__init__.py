@@ -15,6 +15,7 @@ TOOLS:
 from typing import Any
 
 from .analysis import inkscape_analysis
+from .animation import inkscape_animation
 from .fab_art_tools import inkscape_fab_art
 from .file_operations import inkscape_file
 from .fleet_tools import inkscape_fleet
@@ -31,6 +32,7 @@ __all__ = [
     "inkscape_file",
     "inkscape_vector",
     "inkscape_analysis",
+    "inkscape_animation",
     "inkscape_render",
     "inkscape_validation",
     "inkscape_fleet",
@@ -60,8 +62,13 @@ PORTMANTEAU_TOOLS = [
             "create_object",
             "create_mesh_gradient",
             "text_to_path",
+            "text_set_content",
+            "text_set_style",
+            "text_list_fonts",
             "construct_svg",
             "apply_boolean",
+            "list_lpes",
+            "apply_lpe",
             "path_inset_outset",
             "path_simplify",
             "path_clean",
@@ -159,6 +166,20 @@ PORTMANTEAU_TOOLS = [
             "reorder",
             "lock",
             "unlock",
+        ],
+    },
+    {
+        "name": "inkscape_animation",
+        "function": inkscape_animation,
+        "category": "animation",
+        "operations": [
+            "list_presets",
+            "apply_preset",
+            "animate_element",
+            "animate_transform",
+            "animate_motion",
+            "animate_color",
+            "css_animation",
         ],
     },
 ]

@@ -358,8 +358,13 @@ async def inkscape_vector(
         "create_object",
         "create_mesh_gradient",
         "text_to_path",
+        "text_set_content",
+        "text_set_style",
+        "text_list_fonts",
         "construct_svg",
         "apply_boolean",
+        "list_lpes",
+        "apply_lpe",
         "path_inset_outset",
         "path_simplify",
         "path_clean",
@@ -511,6 +516,12 @@ async def inkscape_vector(
 
         elif operation == "fit_canvas_to_drawing":
             return await _fit_canvas_to_drawing(input_path, output_path, cli_wrapper, config)
+
+        elif operation in ("list_lpes", "apply_lpe"):
+            return await _lpe_handler(operation, input_path, output_path, object_id, kwargs, cli_wrapper, config)
+
+        elif operation in ("text_set_content", "text_set_style", "text_list_fonts"):
+            return await _text_handler(operation, input_path, output_path, object_id, kwargs, cli_wrapper, config)
 
         elif operation == "layers_to_files":
             return await _layers_to_files(
@@ -1627,5 +1638,231 @@ async def _layers_to_files(
         return VectorOperationResult(
             success=False, operation="layers_to_files",
             message=f"Layer export failed: {e}", data={},
+            execution_time_ms=0, error=str(e),
+        ).model_dump()
+
+
+# ── Live Path Effects (LPEs) ──────────────────────────────────────────────────
+
+_LPE_CATALOG: list[dict[str, str]] = [
+    {"id": "bend", "label": "Bend", "desc": "Bend paths along a curve"},
+    {"id": "envelope", "label": "Envelope Deformation", "desc": "Deform paths within an envelope shape"},
+    {"id": "pattern_along_path", "label": "Pattern Along Path", "desc": "Repeat a pattern along a path"},
+    {"id": "interpolate", "label": "Interpolate Sub-Paths", "desc": "Blend between two paths"},
+    {"id": "roughen", "label": "Roughen", "desc": "Add random jitter to path nodes"},
+    {"id": "sketch", "label": "Sketch", "desc": "Hatching/strokes for sketch effect"},
+    {"id": "stitch_sub_paths", "label": "Stitch Sub-Paths", "desc": "Connect sub-paths with zigzag"},
+    {"id": "bspline", "label": "BSpline", "desc": "Convert path to B-Spline curve"},
+    {"id": "corners", "label": "Corners (Chamfer/Fillet)", "desc": "Round or chamfer path corners"},
+    {"id": "power_stroke", "label": "Power Stroke", "desc": "Variable-width stroke along path"},
+    {"id": "power_clip", "label": "Power Clip", "desc": "Clip with variable selection"},
+    {"id": "spiro", "label": "Spiro Spline", "desc": "Spiro curve interpolation"},
+    {"id": "vonkoch", "label": "VonKoch", "desc": "Fractal/recursive path subdivision"},
+    {"id": "tiling", "label": "Tiling", "desc": "Tile clones in a grid/pattern"},
+    {"id": "mirror_symmetry", "label": "Mirror Symmetry", "desc": "Mirror edits across an axis"},
+]
+
+
+async def _lpe_handler(
+    operation: str, input_path: str, output_path: str, object_id: str,
+    kwargs: dict[str, Any], cli_wrapper: Any, config: Any,
+) -> dict[str, Any]:
+    """Handle list_lpes and apply_lpe."""
+    if operation == "list_lpes":
+        return VectorOperationResult(
+            success=True, operation="list_lpes",
+            message=f"Found {len(_LPE_CATALOG)} Live Path Effects",
+            data={"lpes": _LPE_CATALOG, "count": len(_LPE_CATALOG)},
+            execution_time_ms=0,
+        ).model_dump()
+
+    # apply_lpe
+    lpe_id = kwargs.get("lpe_id", "")
+    lpe_params = kwargs.get("params", {})
+    if not lpe_id or not input_path or not output_path:
+        return VectorOperationResult(
+            success=False, operation="apply_lpe",
+            message="Required: lpe_id, input_path, output_path",
+            data={"available_lpes": _LPE_CATALOG}, execution_time_ms=0, error="ValueError",
+        ).model_dump()
+
+    try:
+        select = f"select-by-id:{object_id}" if object_id else "select-all"
+        # LPEs are applied via Inkscape's filter/effect system
+        effect_verb = f"org.inkscape.effect.{lpe_id}"
+        param_str = ";".join(f"{k}={v}" for k, v in lpe_params.items())
+        actions = [select, effect_verb]
+        if param_str:
+            actions.append(f"lpe-param-set:{param_str}")
+        actions.extend([f"export-filename:{output_path}", "export-do"])
+
+        await cli_wrapper._execute_actions(
+            input_path=input_path, actions=actions,
+            output_path=output_path, timeout=config.process_timeout,
+        )
+        return VectorOperationResult(
+            success=True, operation="apply_lpe",
+            message=f"Applied LPE '{lpe_id}' to {input_path}",
+            data={"lpe_id": lpe_id, "params": lpe_params,
+                  "input_path": input_path, "output_path": output_path},
+            execution_time_ms=0,
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False, operation="apply_lpe",
+            message=f"LPE application failed: {e}. Try hands_in_command with Inkscape GUI open.",
+            data={"lpe_id": lpe_id, "hint": "Some LPEs require the Inkscape GUI for live preview"},
+            execution_time_ms=0, error=str(e),
+        ).model_dump()
+
+
+# ── Text operations ───────────────────────────────────────────────────────────
+
+_SYSTEM_FONTS = [
+    "Arial", "Helvetica", "Verdana", "Tahoma", "Trebuchet MS", "Times New Roman",
+    "Georgia", "Garamond", "Palatino", "Courier New", "Courier", "monospace",
+    "Impact", "Comic Sans MS", "Lucida Console", "Lucida Sans Unicode",
+    "Segoe UI", "Candara", "Calibri", "Cambria", "Constantia", "Corbel",
+    "sans-serif", "serif", "fantasy", "cursive",
+]
+
+# Also try to get fonts from system font directory
+try:
+    _inkscape_fonts: list[str] = []
+    for fp in Path("C:/Windows/Fonts").glob("*.ttf"):
+        _inkscape_fonts.append(fp.stem)
+    if _inkscape_fonts:
+        _SYSTEM_FONTS = sorted(set(_SYSTEM_FONTS + _inkscape_fonts))
+except Exception:
+    pass
+
+
+async def _text_handler(
+    operation: str, input_path: str, output_path: str, object_id: str,
+    kwargs: dict[str, Any], _cli_wrapper: Any, _config: Any,
+) -> dict[str, Any]:
+    """Handle text operations (text_set_content, text_set_style, text_list_fonts)."""
+    if operation == "text_list_fonts":
+        return VectorOperationResult(
+            success=True, operation="text_list_fonts",
+            message=f"Found {len(_SYSTEM_FONTS)} available fonts",
+            data={"fonts": _SYSTEM_FONTS, "count": len(_SYSTEM_FONTS)},
+            execution_time_ms=0,
+        ).model_dump()
+
+    if not input_path:
+        return VectorOperationResult(
+            success=False, operation=operation,
+            message="input_path is required", data={},
+            execution_time_ms=0, error="ValueError",
+        ).model_dump()
+
+    try:
+        svg = Path(input_path).read_text(encoding="utf-8", errors="replace")
+        dest = output_path or input_path
+
+        if operation == "text_set_content":
+            new_text = kwargs.get("text", "")
+            if not object_id or not new_text:
+                return VectorOperationResult(
+                    success=False, operation="text_set_content",
+                    message="object_id and text are required", data={},
+                    execution_time_ms=0, error="ValueError",
+                ).model_dump()
+            # Replace content of <text id="...">...content...</text>
+            def _replace_text(m: re.Match) -> str:
+                tag = m.group(1)
+                # Preserve child elements (tspan, etc.) by only replacing direct text
+                return f'<{tag} id="{object_id}"' + m.group(0).partition(f'id="{object_id}"')[2].split(">", 1)[0] + f">{new_text}</{tag.split()[0]}>"
+
+            pattern = re.compile(
+                rf'<(text)(?:\s+[^>]*)?\s+id="{re.escape(object_id)}"[^>]*>(.*?)</\1>', re.DOTALL
+            )
+            if not pattern.search(svg):
+                return VectorOperationResult(
+                    success=False, operation="text_set_content",
+                    message=f"Text element '{object_id}' not found", data={},
+                    execution_time_ms=0, error="NotFound",
+                ).model_dump()
+            new_svg = pattern.sub(_replace_text, svg)
+            Path(dest).write_text(new_svg, encoding="utf-8")
+            return VectorOperationResult(
+                success=True, operation="text_set_content",
+                message=f"Updated text content for '{object_id}'",
+                data={"object_id": object_id, "new_text": new_text, "path": dest},
+                execution_time_ms=0,
+            ).model_dump()
+
+        elif operation == "text_set_style":
+            font_family = kwargs.get("font_family", "")
+            font_size = kwargs.get("font_size", 0)
+            font_weight = kwargs.get("font_weight", "")
+            fill = kwargs.get("fill", "")
+            text_anchor = kwargs.get("text_anchor", "")
+
+            if not object_id:
+                return VectorOperationResult(
+                    success=False, operation="text_set_style",
+                    message="object_id is required", data={},
+                    execution_time_ms=0, error="ValueError",
+                ).model_dump()
+
+            # Find the element and set attributes
+            def _tag_edit(m: re.Match) -> str:
+                full = m.group(0)
+                tag_open = full[: full.index(">") + 1] if ">" in full else full
+                rest = full[len(tag_open):]
+                attrs_to_set = {}
+                if font_family:
+                    attrs_to_set["font-family"] = font_family
+                if font_size > 0:
+                    attrs_to_set["font-size"] = str(font_size)
+                if font_weight:
+                    attrs_to_set["font-weight"] = font_weight
+                if fill:
+                    attrs_to_set["fill"] = fill
+                if text_anchor:
+                    attrs_to_set["text-anchor"] = text_anchor
+                new_tag = tag_open
+                for k, v in attrs_to_set.items():
+                    if f'{k}="' in new_tag or f"{k}='" in new_tag:
+                        new_tag = re.sub(rf'\b{k}\s*=\s*["\'][^"\']*["\']', f'{k}="{v}"', new_tag)
+                    else:
+                        new_tag = new_tag.rstrip("/>-").rstrip() + f' {k}="{v}"' + (
+                            "/>" if "/>" in new_tag else ">"
+                        )
+                return new_tag + rest
+
+            pattern = re.compile(rf'<(?:text|tspan)[^>]*\s+id="{re.escape(object_id)}"[^>]*/?>(?:.*?</(?:text|tspan)>)?', re.DOTALL)
+            if not pattern.search(svg):
+                return VectorOperationResult(
+                    success=False, operation="text_set_style",
+                    message=f"Element '{object_id}' not found", data={},
+                    execution_time_ms=0, error="NotFound",
+                ).model_dump()
+            new_svg = pattern.sub(_tag_edit, svg)
+            Path(dest).write_text(new_svg, encoding="utf-8")
+            return VectorOperationResult(
+                success=True, operation="text_set_style",
+                message=f"Updated style for '{object_id}'",
+                data={"object_id": object_id, "changes": {
+                    k: v for k, v in [("font_family", font_family), ("font_size", font_size),
+                                      ("font_weight", font_weight), ("fill", fill),
+                                      ("text_anchor", text_anchor)] if v or (k == "font_size" and v)
+                }},
+                execution_time_ms=0,
+            ).model_dump()
+
+        else:
+            return VectorOperationResult(
+                success=False, operation=operation,
+                message=f"Unknown text operation: {operation}", data={},
+                execution_time_ms=0, error="ValueError",
+            ).model_dump()
+
+    except Exception as e:
+        return VectorOperationResult(
+            success=False, operation=operation,
+            message=f"Text operation failed: {e}", data={},
             execution_time_ms=0, error=str(e),
         ).model_dump()

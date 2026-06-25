@@ -220,6 +220,7 @@ Errors:
 
 import logging
 import time
+from pathlib import Path
 from typing import Any
 from typing import Literal
 
@@ -390,17 +391,41 @@ async def inkscape_system(
             ).model_dump()
 
         elif operation == "list_extensions":
-            # Extension system disabled - plugins directory removed
+            # Scan Inkscape extensions directories for .inx files
+            extensions: list[dict[str, str]] = []
+            ext_dirs: list[str] = []
+            if config and config.inkscape_executable:
+                base = Path(str(config.inkscape_executable)).parent.parent
+                ext_dirs.append(str(base / "share" / "inkscape" / "extensions"))
+                ext_dirs.append(str(Path.home() / ".config" / "inkscape" / "extensions"))
+                ext_dirs.append(str(Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions"))
+            for d in ext_dirs:
+                dp = Path(d)
+                if dp.is_dir():
+                    for inx in sorted(dp.glob("*.inx")):
+                        try:
+                            txt = inx.read_text(encoding="utf-8", errors="replace")
+                            name = ""
+                            for line in txt.split("\n"):
+                                ll = line.strip()
+                                if ll.startswith("<_name>"):
+                                    name = ll.replace("<_name>", "").replace("</_name>", "").strip()
+                                elif ll.startswith("<name>"):
+                                    name = ll.replace("<name>", "").replace("</name>", "").strip()
+                                elif ll.startswith("<_effect"):
+                                    name = inx.stem
+                                elif ll.startswith("<id>"):
+                                    ext_id = ll.replace("<id>", "").replace("</id>", "").strip()
+                            if name:
+                                extensions.append({"id": ext_id or inx.stem, "name": name,
+                                                   "path": str(inx)})
+                        except Exception:
+                            pass
             return SystemResult(
-                success=True,
-                operation="list_extensions",
-                message="Extension system disabled - plugins directory removed",
-                data={
-                    "extensions": [],
-                    "total_count": 0,
-                    "categories": [],
-                    "note": "Extension system temporarily disabled",
-                },
+                success=True, operation="list_extensions",
+                message=f"Found {len(extensions)} extensions in {len(ext_dirs)} directories",
+                data={"extensions": extensions, "total_count": len(extensions),
+                      "source_dirs": ext_dirs},
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 

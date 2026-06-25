@@ -103,18 +103,25 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
-        // Kill any process holding the port
-        let kill_script = format!(
-            "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}"
-        );
+        // ── Kill by image name (catches zombies NOT holding the port) ──
+        let img_kill = "Stop-Process -Name 'inkscape-mcp-backend' -Force -ErrorAction SilentlyContinue; Stop-Process -Name 'inkscape-mcp-native' -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; taskkill /F /IM inkscape-mcp-native.exe /T 2>nul".to_string();
         let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", &kill_script])
+            .args(["-NoProfile", "-Command", &img_kill])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status();
 
-        // Poll up to 240s for TIME_WAIT to clear (default 240s on Windows).
-        // The backend's uvicorn will fail with E10048 if the port is in any state.
+        // ── Kill by port (handles precise port-holder) ──
+        let port_kill = format!(
+            "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"
+        );
+        let _ = Command::new("powershell.exe")
+            .args(["-NoProfile", "-Command", &port_kill])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+
+        // ── Wait for port to be truly free (TIME_WAIT ~240s on Windows) ──
         let poll_script = format!(
             "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
         );
@@ -128,19 +135,20 @@ fn free_port(port: u16) -> bool {
                 String::from_utf8(o.stdout).ok().and_then(|s| s.trim().parse::<u32>().ok())
             }).unwrap_or(1);
             if occupied == 0 {
-                return true;  // Port is free
+                return true;
             }
-            if i % 30 == 0 && i > 0 {
-                // Re-kill every 30s in case a new process grabbed it
+            if i % 15 == 0 && i > 0 {
+                // Re-kill every 15s (new process may have claimed the port)
                 let _ = Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", &kill_script])
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status();
+                    .args(["-NoProfile", "-Command", &img_kill])
+                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
+                let _ = Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", &port_kill])
+                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
             }
             thread::sleep(Duration::from_secs(1));
         }
-        return false;  // Port never freed
+        return false;
     }
     #[cfg(not(windows))]
     { true }

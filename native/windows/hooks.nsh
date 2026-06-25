@@ -1,7 +1,10 @@
 !macro KillFleetProcesses
   DetailPrint "Stopping Inkscape MCP processes..."
-  ExecWait 'taskkill /F /IM "inkscape-mcp-backend.exe" /T' $0
-  ExecWait 'taskkill /F /IM "inkscape-mcp-native.exe" /T' $0
+
+  ; Kill by image name (Stop-Process works for same-user processes)
+  ExecWait 'powershell -NoProfile -Command "Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; Stop-Process -Name inkscape-mcp-native -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; taskkill /F /IM inkscape-mcp-native.exe /T 2>nul"' $0
+
+  ; NSIS plugin fallback
   !if "${INSTALLMODE}" == "currentUser"
     nsis_tauri_utils::KillProcessCurrentUser "inkscape-mcp-backend.exe"
     Pop $0
@@ -13,7 +16,7 @@
     nsis_tauri_utils::KillProcess "inkscape-mcp-native.exe"
     Pop $0
   !endif
-  Sleep 2000
+  Sleep 3000
 !macroend
 
 !macro UninstallPrevious

@@ -301,9 +301,23 @@ def phase_fail(msg: str):
 # ── Phase 1: Kill stale ───────────────────────────────────────────────
 
 def kill_stale():
+    # Kill by image name (Stop-Process for same-user, taskkill for SYSTEM)
     for name in PROCESS_NAMES:
-        subprocess.run(["taskkill", "/F", "/IM", f"{name}.exe", "/T"], capture_output=True, timeout=10)
-    time.sleep(1)
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f"Stop-Process -Name '{name}' -Force -ErrorAction SilentlyContinue; "
+             f"Stop-Process -Name '{name}-backend' -Force -ErrorAction SilentlyContinue; "
+             f"taskkill /F /IM {name}.exe /T 2>nul; "
+             f"taskkill /F /IM {name}-backend.exe /T 2>nul"],
+            capture_output=True, timeout=15)
+    # Kill by port (handles TIME_WAIT zombies)
+    port = BACKEND_PORT
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
+         f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"],
+        capture_output=True, timeout=15)
+    time.sleep(2)
     log("Stale processes killed")
 
 

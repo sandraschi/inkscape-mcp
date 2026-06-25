@@ -103,65 +103,23 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
-        // Multi-layer kill: Stop-Process (same-user), taskkill (any user),
-        // escalated kill (UAC), port release, TIME_WAIT poll.
-        // Quick attempt only (5s).  If the port is still occupied, return false
-        // and the Python E10048 retry loop in transport.py will handle it
-        // (5 retries * 60s = 5 min of automatic retry).
-
-        // Kill by image name (catches zombies NOT holding the port)
-        let img_kill = "Stop-Process -Name 'inkscape-mcp-backend' -Force -ErrorAction SilentlyContinue; Stop-Process -Name 'inkscape-mcp-native' -Force -ErrorAction SilentlyContinue; taskkill /F /IM inkscape-mcp-backend.exe /T; taskkill /F /IM inkscape-mcp-native.exe /T".to_string();
-        let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", &img_kill])
-            .stdout(Stdio::null()).stderr(Stdio::null())
-            .status();
-
-        // Kill by port (precise port-holder)
-        let port_kill = format!(
-            "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T }}"
-        );
-        let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", &port_kill])
-            .stdout(Stdio::null()).stderr(Stdio::null())
-            .status();
-
-        // Quick poll (5s max).  On timeout, return false — Python retries via E10048.
-        let poll_script = format!(
-            "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
-        );
-        for i in 0..5 {
-            let output = Command::new("powershell.exe")
-                .args(["-NoProfile", "-Command", &poll_script])
-                .stdout(Stdio::piped()).stderr(Stdio::null())
-                .output();
-            let occupied = output.ok().and_then(|o| {
-                String::from_utf8(o.stdout).ok().and_then(|s| s.trim().parse::<u32>().ok())
-            }).unwrap_or(1);
-            if occupied == 0 { return true; }
-            // Re-kill at 3s
-            if i == 3 {
-                let _ = Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", &img_kill])
-                    .status();
-                let _ = Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", &port_kill])
-                    .status();
-            }
-            thread::sleep(Duration::from_secs(1));
-        }
-        // Last resort: elevated kill (UAC prompt once)
-        let elevated = format!(
-            "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
+        // Fire-and-forget kill via Start-Process (non-blocking).
+        // The Python E10048 retry loop (5×60s) and the indefinite
+        // health check thread handle the rest.
+        let kill = format!(
+            "Start-Process powershell -WindowStyle Hidden -ArgumentList \
              '-NoProfile -Command \"Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; \
-             taskkill /F /IM inkscape-mcp-backend.exe /T ; \
-             Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
-             ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T  }}\"'"
+             Stop-Process -Name inkscape-mcp-native -Force -ErrorAction SilentlyContinue; \
+             taskkill /F /IM inkscape-mcp-backend.exe /T; \
+             taskkill /F /IM inkscape-mcp-native.exe /T; \
+             Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue \
+             | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T }}\"'"
         );
         let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", &elevated])
+            .args(["-NoProfile", "-Command", &kill])
             .stdout(Stdio::null()).stderr(Stdio::null())
             .status();
-        return false;
+        true
     }
     #[cfg(not(windows))]
     { true }
@@ -176,7 +134,9 @@ fn stop_managed_child(state: &BackendProcess) {
 
 pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, String> {
     stop_managed_child(state);
+    log_line(&app, "spawn_backend: killing old processes...");
     let _ = free_port(BACKEND_PORT);  // best-effort kill; Python E10048 retry handles leftovers
+    log_line(&app, "spawn_backend: processes killed, materializing backend...");
 
     let backend_path = materialize_backend(&app)?;
     let workdir = app

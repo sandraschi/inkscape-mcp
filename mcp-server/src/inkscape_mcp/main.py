@@ -671,25 +671,22 @@ async def main_async():
     try:
         server = InkscapeMCPServer(config_path=Path(args.config) if args.config else None)
         if await server.initialize():
-            logger.info("initialize() returned True — calling run_server_async...")
             # Set module-level app for ASGI compatibility
             import inkscape_mcp
 
             inkscape_mcp.app = server.mcp
-            # Strip main.py-only args (--mode) before passing to transport's parser
-            cleaned = []
-            skip = False
-            for a in sys.argv[1:]:
-                if a == "--mode":
-                    skip = True
-                elif skip and not a.startswith("--"):
-                    skip = False
-                else:
-                    skip = False
-                    cleaned.append(a)
-            sys.argv = [sys.argv[0]] + cleaned
-            logger.info("sys.argv cleaned, calling run_server_async...")
-            await run_server_async(server.mcp, server_name="Inkscape MCP Server")
+            # Build transport Namespace from already-parsed main.py args
+            # instead of stripping sys.argv (which breaks --mode stdio).
+            transport_args = argparse.Namespace(
+                stdio=args.mode == "stdio",
+                http=args.mode in ("http", "dual"),
+                sse=False,
+                host=None,
+                port=args.port if args.mode != "stdio" else None,
+                path=None,
+                debug=args.log_level.upper() == "DEBUG",
+            )
+            await run_server_async(server.mcp, args=transport_args, server_name="Inkscape MCP Server")
             logger.info("run_server_async returned (unexpected)")
         else:
             return 1

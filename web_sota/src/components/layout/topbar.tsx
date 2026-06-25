@@ -8,6 +8,7 @@ import API_BASE from "@/lib/api";
 import { useBackendStore } from "@/lib/store";
 import { HelpModal } from "@/components/modals/HelpModal";
 import { LogModal } from "@/components/modals/LogModal";
+import { isTauri } from "@/lib/is-tauri";
 
 export function Topbar() {
   const online = useBackendStore((s) => s.online);
@@ -32,14 +33,13 @@ export function Topbar() {
   }, [check]);
 
   useEffect(() => {
+    if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
     (async () => {
-      try {
-        const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<string>("backend-status", (event) => {
-          setOnline(event.payload === "ready");
-        });
-      } catch { /* not in Tauri */ }
+      const { listen } = await import("@tauri-apps/api/event");
+      unlisten = await listen<string>("backend-status", (event) => {
+        setOnline(event.payload === "ready");
+      });
     })();
     return () => { if (unlisten) unlisten(); };
   }, [setOnline]);

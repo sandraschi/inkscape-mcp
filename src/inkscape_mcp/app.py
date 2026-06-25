@@ -492,11 +492,14 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 pass
 
         tool_groups: list[dict[str, Any]] = []
-        from ..tools import PORTMANTEAU_TOOLS
-        for pt in PORTMANTEAU_TOOLS:
-            tool_groups.append({"name": pt["name"], "category": pt.get("category", pt["name"]),
-                                "operations": pt.get("operations", []),
-                                "op_count": len(pt.get("operations", []))})
+        try:
+            from inkscape_mcp.tools import PORTMANTEAU_TOOLS
+            for pt in PORTMANTEAU_TOOLS:
+                tool_groups.append({"name": pt["name"], "category": pt.get("category", pt["name"]),
+                                    "operations": pt.get("operations", []),
+                                    "op_count": len(pt.get("operations", []))})
+        except Exception:
+            pass
 
         return {
             "status": "ok",

@@ -38,8 +38,6 @@ __all__ = [
     "InkscapeMcpServer",
     "app",
     "inkscape_file",
-    "inkscape_transform",
-    "",
     "inkscape_analysis",
     "inkscape_system",
     "PORTMANTEAU_TOOLS",

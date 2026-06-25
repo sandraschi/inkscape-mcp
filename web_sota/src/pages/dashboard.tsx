@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import API_BASE from "@/lib/api";
 import { useZoom } from "@/lib/use-zoom";
 import { useBackendStore } from "@/lib/store";
+import { isTauri } from "@/lib/is-tauri";
 
 interface ToolGroup {
   name: string;
@@ -104,23 +105,23 @@ export function Dashboard() {
   }, [err, attempt, load]);
 
   useEffect(() => {
+    if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
     (async () => {
-      try {
-        const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen<string>("backend-status", (event) => {
-          if (event.payload === "ready") {
-            setAttempt(0);
-            setRestarting(false);
-            void load();
-          }
-        });
-      } catch { /* not in Tauri */ }
+      const { listen } = await import("@tauri-apps/api/event");
+      unlisten = await listen<string>("backend-status", (event) => {
+        if (event.payload === "ready") {
+          setAttempt(0);
+          setRestarting(false);
+          void load();
+        }
+      });
     })();
     return () => { if (unlisten) unlisten(); };
   }, [load]);
 
   const restartBackend = useCallback(async () => {
+    if (!isTauri()) return;
     setRestarting(true);
     setErr(null);
     try {

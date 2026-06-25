@@ -66,9 +66,9 @@ Confirm output path is under an allowed directory. Combine with inkscape_file / 
         return """inkscape-mcp (FastMCP 3.1+)
 Tools: inkscape_file, inkscape_vector, inkscape_analysis, inkscape_system, list_local_models, generate_heraldry
 Optional (sampling): generate_svg, agentic_inkscape_workflow, intelligent_vector_processing, conversational_inkscape_assistant
-Transports: stdio (MCP_TRANSPORT=stdio), HTTP (MCP_TRANSPORT=http, MCP_PORT default 10847, path /mcp)
+Transports: stdio (MCP_TRANSPORT=stdio), HTTP (MCP_TRANSPORT=http, MCP_PORT default 11028, path /mcp)
 REST (when HTTP + fastapi extra): /api/health, /api/help, /api/logs, /api/chat (no local LLM), /api/generate-svg (Ollama)
-Web UI dev: Vite proxy to backend (see web_sota; fleet ports 10846/10847).
+Web UI dev: Vite proxy to backend (see web_sota; fleet ports 11028/11029).
 Prompts: prompt://inkscape/svg-file-workflow, vector-editing-workflow, analysis-workflow, sampling-agentic-workflow, heraldry-workflow
 Resources: resource://inkscape/capabilities, resource://inkscape/skills"""
 

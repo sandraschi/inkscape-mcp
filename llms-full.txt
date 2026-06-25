@@ -76,7 +76,7 @@ If sampling is unavailable, these tools return structured errors; use non-agenti
 |----------|------|
 | `MCP_TRANSPORT` | `stdio` (default for many clients) or `http` |
 | `MCP_HOST` | HTTP bind (default `127.0.0.1`) |
-| `MCP_PORT` | HTTP port (default **10847** in this project) |
+| `MCP_PORT` | HTTP port (default **11028** in this project) |
 | `MCP_PATH` | HTTP MCP path (default `/mcp`) |
 | `INKSCAPE_PATH` / config | Override Inkscape executable |
 | `INKSCAPE_MCP_CONFIG_PATH` | Optional YAML config path |
@@ -116,12 +116,12 @@ uv run inkscape-mcp
 ### HTTP (MCP + REST + dashboard backend)
 
 ```text
-uv run inkscape-mcp --mode http --port 10847
+uv run inkscape-mcp --mode http --port 11028
 ```
 
 ### Web dashboard (separate terminal, from `web_sota`)
 
-Follow project webapp docs; Vite dev server uses **10846** and proxies to **10847**.
+Follow project webapp docs; Vite dev server uses **11029** and proxies to **11028**.
 
 ### PyPI / uvx (consumers)
 
@@ -177,7 +177,7 @@ See also `cursor-mcp-config.json` and `glama.json` in the repo root.
 1. **Inkscape not found** — Install Inkscape; set `INKSCAPE_PATH` or PATH; run `inkscape --version` locally.
 2. **Permission / path denied** — Configure `allowed_directories` and use paths inside it.
 3. **Agentic tools fail** — Host does not support sampling; use `inkscape_*` tools manually.
-4. **HTTP / dashboard empty** — Start server with `--mode http` and matching `MCP_PORT`; start Vite on **10846**.
+4. **HTTP / dashboard empty** — Start server with `--mode http` and matching `MCP_PORT`; start Vite on **11029**.
 5. **MCPB out of date** — Run `just mcpb-pack` after code changes; reinstall bundle in Claude Desktop.
 
 ---

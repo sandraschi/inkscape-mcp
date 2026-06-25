@@ -247,7 +247,7 @@ export function Settings() {
             <code className="text-slate-300">OLLAMA_BASE_URL</code>,
           </p>
           <p>
-            <code className="text-slate-300">MCP_PORT</code> (default 10847 with
+            <code className="text-slate-300">MCP_PORT</code> (default 11028 with
             this repo&apos;s CLI), then restart the server. MCP clients (Cursor,
             Claude) use their own JSON config — see repo{" "}
             <code className="text-slate-300">docs/IDE_MCP.md</code>.

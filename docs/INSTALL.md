@@ -44,7 +44,7 @@ Use a published **`.mcpb`** or build one — [MCPB.md](MCPB.md).
 
 ## Optional web dashboard
 
-Ports **10846** / **10847** (see project webapp / `web_sota` docs). Not required for MCP.
+Ports **11028** / **11029** (see project webapp / `web_sota` docs). Not required for MCP.
 
 ## Next steps
 

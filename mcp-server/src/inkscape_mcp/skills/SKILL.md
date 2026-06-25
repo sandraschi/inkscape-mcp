@@ -61,6 +61,6 @@ Server/Inkscape status, help, diagnostics, version, extension listing.
 ---
 
 ## Environment
-- Transport: `MCP_TRANSPORT=stdio` for Claude Desktop, `MCP_TRANSPORT=http` + `MCP_PORT=10847` for webapp
+- Transport: `MCP_TRANSPORT=stdio` for Claude Desktop, `MCP_TRANSPORT=http` + `MCP_PORT=11028` for webapp
 - Inkscape not required for sampling-based tools; CLI tools degrade gracefully with a warning
 - Skills are loaded via `resource://inkscape/skills`

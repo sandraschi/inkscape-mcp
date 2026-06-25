@@ -39,7 +39,7 @@ export function Status() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Server status
           </h2>
-          <p className="text-slate-300">
+          <p className="text-slate-400">
             <code className="text-slate-300">GET /api/health</code> — Inkscape
             CLI, optional Ollama, API keys (no secrets shown).
           </p>

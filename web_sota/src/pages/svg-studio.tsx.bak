@@ -208,7 +208,7 @@ function HistoryThumb({
         />
         <div className="border-t border-slate-700 px-2 py-1">
           <p className="truncate text-xs text-slate-400">{item.prompt}</p>
-          <p className="text-xs text-slate-600">
+          <p className="text-[10px] text-slate-600">
             {item.style} · {item.dimensions}
           </p>
         </div>
@@ -502,7 +502,7 @@ export function SvgStudio() {
                     onChange={(e) => setMaxSteps(Number(e.target.value))}
                     className="w-full accent-blue-500"
                   />
-                  <p className="mt-1 text-xs text-slate-600">
+                  <p className="mt-1 text-[10px] text-slate-600">
                     More steps = more capability probing = richer SVG
                   </p>
                 </div>
@@ -536,7 +536,7 @@ export function SvgStudio() {
                 </>
               )}
             </span>
-            <span className="absolute bottom-1 right-3 text-xs text-white/40">
+            <span className="absolute bottom-1 right-3 text-[10px] text-white/40">
               Ctrl+Enter
             </span>
           </button>

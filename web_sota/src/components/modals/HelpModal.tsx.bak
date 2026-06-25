@@ -21,7 +21,7 @@ export function HelpModal({ open, onClose }: Props) {
             <X className="h-4 w-4" />
           </Dialog.Close>
 
-          <div className="mt-4 space-y-4 text-sm text-slate-200">
+          <div className="mt-4 space-y-4 text-sm text-slate-400">
             <section>
               <h3 className="mb-1 font-medium text-slate-200">What is Inkscape MCP?</h3>
               <p>AI-powered vector graphics server that exposes Inkscape through the Model Context Protocol. Use with Claude Desktop, Cursor, or any MCP client to create and edit SVG files.</p>

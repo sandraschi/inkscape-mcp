@@ -27,10 +27,10 @@ function Markdown({ path }: { path: string }) {
       .then(setMd)
       .catch((e) => setErr(e.message));
   }, [path]);
-  if (err) return <p className="text-yellow-400 text-sm">Failed to load: {err}</p>;
-  if (!md) return <p className="text-slate-500 text-sm">Loading...</p>;
+  if (err) return <p className="text-yellow-400">Failed to load: {err}</p>;
+  if (!md) return <p className="text-slate-400">Loading...</p>;
   return (
-    <div className="prose prose-invert max-w-none text-sm prose-headings:text-slate-100 prose-headings:font-semibold prose-h2:text-base prose-h2:mt-6 prose-h2:border-b prose-h2:border-slate-800 prose-h2:pb-1 prose-h3:text-sm prose-a:text-blue-400 prose-code:text-slate-200 prose-code:bg-slate-900 prose-code:px-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-800 prose-li:text-slate-300 prose-strong:text-slate-200">
+    <div className="max-w-none [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-slate-700 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-slate-100 [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:text-slate-200 [&_p]:text-base [&_p]:leading-relaxed [&_p]:mb-3 [&_ul]:text-slate-200 [&_ul]:space-y-1.5 [&_ul]:mb-4 [&_li>p]:mb-0 [&_ol]:text-slate-200 [&_ol]:space-y-1.5 [&_ol]:mb-4 [&_a]:text-blue-400 [&_a]:underline [&_a:hover]:text-blue-300 [&_code]:text-slate-100 [&_code]:bg-slate-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_pre]:bg-slate-900 [&_pre]:border [&_pre]:border-slate-700 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:mb-4 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-sm [&_pre_code]:text-slate-100 [&_strong]:text-white [&_strong]:font-semibold [&_table]:w-full [&_table]:text-slate-200 [&_table]:text-base [&_th]:text-left [&_th]:py-2.5 [&_th]:px-3 [&_th]:font-semibold [&_th]:text-slate-100 [&_th]:border-b [&_th]:border-slate-700 [&_td]:py-2.5 [&_td]:px-3 [&_td]:border-b [&_td]:border-slate-800 [&_tr:last-child>td]:border-b-0 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-600 [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:mb-4 [&_blockquote_p]:text-slate-300 [&_hr]:border-slate-700 [&_hr]:my-8">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>
     </div>
   );

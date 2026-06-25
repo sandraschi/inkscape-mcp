@@ -121,7 +121,7 @@ fn free_port(port: u16) -> bool {
             .stderr(Stdio::null())
             .status();
 
-        // ── Wait for port to be truly free (TIME_WAIT ~240s on Windows) ──
+        // ── Poll port until free (up to 240s) ──
         let poll_script = format!(
             "if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"
         );
@@ -137,13 +137,26 @@ fn free_port(port: u16) -> bool {
             if occupied == 0 {
                 return true;
             }
-            if i % 15 == 0 && i > 0 {
-                // Re-kill every 15s (new process may have claimed the port)
+            if i == 5 {
+                // Re-kill at 5s (first normal attempt may have failed)
                 let _ = Command::new("powershell.exe")
                     .args(["-NoProfile", "-Command", &img_kill])
                     .stdout(Stdio::null()).stderr(Stdio::null()).status();
                 let _ = Command::new("powershell.exe")
                     .args(["-NoProfile", "-Command", &port_kill])
+                    .stdout(Stdio::null()).stderr(Stdio::null()).status();
+            }
+            if i == 15 {
+                // Still occupied — try elevated kill (UAC prompt once)
+                let elevated = format!(
+                    "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
+                     '-NoProfile -Command \"Stop-Process -Name inkscape-mcp-backend -Force -ErrorAction SilentlyContinue; \
+                     taskkill /F /IM inkscape-mcp-backend.exe /T 2>nul; \
+                     Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
+                     ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"
+                );
+                let _ = Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", &elevated])
                     .stdout(Stdio::null()).stderr(Stdio::null()).status();
             }
             thread::sleep(Duration::from_secs(1));

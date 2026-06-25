@@ -121,3 +121,17 @@ e2e:
     Set-Location '{{justfile_directory()}}\web_sota'
     npx playwright test
 
+# ── Demo Capture ─────────────────────────────────────────────────────────
+
+# Capture screenshots of all webapp pages
+capture-screenshots:
+    pwsh -NoProfile -File '{{justfile_directory()}}\scripts\capture-demo.ps1' -Screenshots
+
+# Record video walkthrough of the webapp
+capture-video:
+    pwsh -NoProfile -File '{{justfile_directory()}}\scripts\capture-demo.ps1' -Video
+
+# Capture both screenshots and video
+capture: capture-screenshots capture-video
+    @echo Demo materials saved to docs/screenshots/
+

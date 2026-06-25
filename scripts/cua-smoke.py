@@ -115,27 +115,38 @@ def log_warn(msg: str):
 _CUA_CLIENT_OK = False  # Did we connect to pywinauto-mcp?
 
 def _init_cua_client():
-    """Try pywinauto-mcp HTTP API first, then direct imports, then flag unavailable."""
+    """Try pywinauto-mcp HTTP API first (has OCR), then direct pywinauto+pytesseract, or die."""
     global _CUA_CLIENT_OK
-    # Try HTTP API
+    # Try HTTP API (preferred — has bundled Tesseract OCR)
     try:
         r = urllib.request.urlopen("http://127.0.0.1:10789/api/v1/health", timeout=2)
         if r.status == 200:
-            log(f"pywinauto-mcp HTTP API reachable at :10789")
+            log("pywinauto-mcp HTTP API reachable at :10789")
             _CUA_CLIENT_OK = True
             return "http"
     except Exception:
         pass
-    # Try direct import
+    # Try direct pywinauto + pytesseract (OCR required for WebView bridge check)
     try:
         import pywinauto  # noqa: F401
-        log("pywinauto direct import OK")
-        _CUA_CLIENT_OK = True
-        return "direct"
     except ImportError:
-        pass
-    log("CUA client unavailable (install pywinauto or start pywinauto-mcp at :10789)")
-    return None
+        fatal("pywinauto not available. Install it (uv add pywinauto) or start pywinauto-mcp on port 10789.")
+        return None
+    try:
+        import pytesseract  # noqa: F401
+        # Verify Tesseract engine binary is reachable
+        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        pytesseract.get_tesseract_version()
+    except Exception:
+        fatal("pytesseract or Tesseract OCR engine not found.\n"
+              "Install: uv add pytesseract Pillow\n"
+              "Then install Tesseract: winget install TesseractOCR.Tesseract\n"
+              "Or start pywinauto-mcp on port 10789 (which bundles Tesseract).\n"
+              "CUA smoke test requires OCR for dashboard connection status verification.")
+        return None
+    log("pywinauto + pytesseract direct import OK")
+    _CUA_CLIENT_OK = True
+    return "direct"
 
 
 def _cua_call(tool: str, params: dict) -> dict | None:

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <style></style>
+  </defs>
+  <circle cx="400" cy="300" r="40" fill="#88ff44">
+  <animate attributeName="r" values="40;60.0;40" dur="1s" repeatCount="indefinite"
+    calcMode="spline" keySplines="0.33 0 0.66 1;0.33 0 0.66 1" keyTimes="0;0.5;1"/>
+  <animate attributeName="opacity" values="1;0.6;1" dur="1s" repeatCount="indefinite"/>
+</circle>
+</svg>

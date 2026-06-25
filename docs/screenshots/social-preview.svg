@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  
+  <!-- Terminal window -->
+  <rect x="60" y="60" width="540" height="280" rx="8" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  <rect x="60" y="60" width="540" height="32" rx="8" fill="#334155"/>
+  <circle cx="80" cy="76" r="6" fill="#ef4444"/>
+  <circle cx="100" cy="76" r="6" fill="#f59e0b"/>
+  <circle cx="120" cy="76" r="6" fill="#22c55e"/>
+  <text x="330" y="80" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="12">inkscape-mcp</text>
+  
+  <text x="80" y="120" fill="#22c55e" font-family="monospace" font-size="14">$ just serve</text>
+  <text x="80" y="145" fill="#94a3b8" font-family="monospace" font-size="14">Starting Inkscape MCP Server...</text>
+  <text x="80" y="170" fill="#3b82f6" font-family="monospace" font-size="14">Transport: HTTP</text>
+  <text x="80" y="195" fill="#94a3b8" font-family="monospace" font-size="14">Running on http://127.0.0.1:11028</text>
+  <text x="80" y="220" fill="#f59e0b" font-family="monospace" font-size="14">9 tools registered</text>
+  <text x="80" y="245" fill="#94a3b8" font-family="monospace" font-size="14">60+ operations across 9 categories</text>
+  <text x="80" y="270" fill="#a78bfa" font-family="monospace" font-size="14">Dashboard: http://127.0.0.1:11029</text>
+
+  <!-- Animation preview -->
+  <circle cx="900" cy="180" r="60" fill="none" stroke="#ff4488" stroke-width="4">
+    <animate attributeName="r" values="40;70;40" dur="1.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="900" cy="380" r="40" fill="none" stroke="#4488ff" stroke-width="4">
+    <animate attributeName="cx" values="750;1050;750" dur="3s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Title -->
+  <text x="670" y="100" fill="white" font-family="sans-serif" font-size="32" font-weight="bold">Inkscape MCP</text>
+  <text x="670" y="130" fill="#94a3b8" font-family="sans-serif" font-size="16">AI-powered vector graphics server</text>
+
+  <!-- Feature list -->
+  <rect x="670" y="260" width="10" height="10" rx="2" fill="#22c55e"/>
+  <text x="690" y="270" fill="#cbd5e1" font-family="sans-serif" font-size="14">Create, edit, animate SVG files</text>
+  <rect x="670" y="290" width="10" height="10" rx="2" fill="#3b82f6"/>
+  <text x="690" y="300" fill="#cbd5e1" font-family="sans-serif" font-size="14">Layer management, LPE effects</text>
+  <rect x="670" y="320" width="10" height="10" rx="2" fill="#f59e0b"/>
+  <text x="690" y="330" fill="#cbd5e1" font-family="sans-serif" font-size="14">Export to PNG, PDF, DXF</text>
+  <rect x="670" y="350" width="10" height="10" rx="2" fill="#a78bfa"/>
+  <text x="690" y="360" fill="#cbd5e1" font-family="sans-serif" font-size="14">React webapp dashboard</text>
+  <rect x="670" y="380" width="10" height="10" rx="2" fill="#f472b6"/>
+  <text x="690" y="390" fill="#cbd5e1" font-family="sans-serif" font-size="14">Tauri Windows desktop app</text>
+
+  <!-- Bottom bar -->
+  <rect x="60" y="550" width="1160" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="640" y="580" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="14">MCP Server · MCPB Bundle · Webapp · Tauri NSIS · 60+ Operations · MIT License</text>
+</svg>

@@ -15,10 +15,12 @@ TOOLS:
 from typing import Any
 
 from .analysis import inkscape_analysis
+from .animation import inkscape_animation
 from .fab_art_tools import inkscape_fab_art
 from .file_operations import inkscape_file
 from .fleet_tools import inkscape_fleet
 from .heraldry import register_heraldry_tools
+from .layer_operations import inkscape_layers
 from .llm_discovery import list_local_models
 from .render_tools import inkscape_render
 from .sim_art_tools import inkscape_sim_art
@@ -30,12 +32,14 @@ __all__ = [
     "inkscape_file",
     "inkscape_vector",
     "inkscape_analysis",
+    "inkscape_animation",
     "inkscape_render",
     "inkscape_validation",
     "inkscape_fleet",
     "inkscape_fab_art",
     "inkscape_sim_art",
     "inkscape_system",
+    "inkscape_layers",
     "register_heraldry_tools",
     "list_local_models",
 ]
@@ -55,10 +59,16 @@ PORTMANTEAU_TOOLS = [
         "operations": [
             "trace_image",
             "generate_barcode_qr",
+            "create_object",
             "create_mesh_gradient",
             "text_to_path",
+            "text_set_content",
+            "text_set_style",
+            "text_list_fonts",
             "construct_svg",
             "apply_boolean",
+            "list_lpes",
+            "apply_lpe",
             "path_inset_outset",
             "path_simplify",
             "path_clean",
@@ -68,6 +78,7 @@ PORTMANTEAU_TOOLS = [
             "optimize_svg",
             "scour_svg",
             "measure_object",
+            "inspect",
             "query_document",
             "count_nodes",
             "export_dxf",
@@ -75,6 +86,9 @@ PORTMANTEAU_TOOLS = [
             "fit_canvas_to_drawing",
             "render_preview",
             "generate_laser_dot",
+            "object_raise",
+            "object_lower",
+            "set_document_units",
         ],
     },
     {
@@ -131,10 +145,41 @@ PORTMANTEAU_TOOLS = [
         "operations": [
             "status",
             "execution_mode",
+            "hands_in_command",
             "help",
             "diagnostics",
             "version",
             "config",
+        ],
+    },
+    {
+        "name": "inkscape_layers",
+        "function": inkscape_layers,
+        "category": "layer_management",
+        "operations": [
+            "list",
+            "get",
+            "create",
+            "rename",
+            "hide",
+            "show",
+            "reorder",
+            "lock",
+            "unlock",
+        ],
+    },
+    {
+        "name": "inkscape_animation",
+        "function": inkscape_animation,
+        "category": "animation",
+        "operations": [
+            "list_presets",
+            "apply_preset",
+            "animate_element",
+            "animate_transform",
+            "animate_motion",
+            "animate_color",
+            "css_animation",
         ],
     },
 ]

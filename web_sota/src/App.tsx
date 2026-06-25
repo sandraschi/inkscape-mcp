@@ -1,8 +1,10 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Navigate,
   Route,
   BrowserRouter as Router,
   Routes,
+  useLocation,
 } from "react-router-dom";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Actions } from "@/pages/actions";
@@ -17,11 +19,18 @@ import { Settings } from "@/pages/settings";
 import { Status } from "@/pages/status";
 import { SvgStudio } from "@/pages/svg-studio";
 
-function App() {
+function AnimatedRoutes() {
+  const location = useLocation();
   return (
-    <Router>
-      <AppLayout>
-        <Routes>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.15 }}
+      >
+        <Routes location={location}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/status" element={<Status />} />
           <Route path="/help" element={<Help />} />
@@ -35,6 +44,16 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppLayout>
+        <AnimatedRoutes />
       </AppLayout>
     </Router>
   );

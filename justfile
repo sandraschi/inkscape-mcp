@@ -46,6 +46,14 @@ audit-deps:
 
 # ── Operation ─────────────────────────────────────────────────────────────────
 
+# Launch Inkscape MCP (HTTP mode)
+serve port="11028":
+    uv run inkscape-mcp --mode http --port {{port}}
+
+# Quick fmt alias (calls fix)
+fmt: fix
+    @echo fmt done
+
 # Quantitative snapshot of repo statistics
 stats:
     uv run python tools/repo_stats.py

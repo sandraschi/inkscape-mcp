@@ -177,11 +177,16 @@ class InkscapeMCPServer:
             from .utils.telemetry import register_metrics_routes
             from .utils.telemetry import start_metrics_server
 
+            logger.info("Calling init_metrics...")
             init_metrics()
+            logger.info("Calling install_tool_call_wrapper...")
             install_tool_call_wrapper(self.mcp)
+            logger.info("Calling register_metrics_routes...")
             register_metrics_routes(self.mcp)
+            logger.info("Calling start_metrics_server (if enabled)...")
             if metrics_enabled():
                 start_metrics_server()
+            logger.info("initialize() returning True")
 
             return True
 
@@ -666,11 +671,26 @@ async def main_async():
     try:
         server = InkscapeMCPServer(config_path=Path(args.config) if args.config else None)
         if await server.initialize():
+            logger.info("initialize() returned True — calling run_server_async...")
             # Set module-level app for ASGI compatibility
             import inkscape_mcp
 
             inkscape_mcp.app = server.mcp
+            # Strip main.py-only args (--mode) before passing to transport's parser
+            cleaned = []
+            skip = False
+            for a in sys.argv[1:]:
+                if a == "--mode":
+                    skip = True
+                elif skip and not a.startswith("--"):
+                    skip = False
+                else:
+                    skip = False
+                    cleaned.append(a)
+            sys.argv = [sys.argv[0]] + cleaned
+            logger.info("sys.argv cleaned, calling run_server_async...")
             await run_server_async(server.mcp, server_name="Inkscape MCP Server")
+            logger.info("run_server_async returned (unexpected)")
         else:
             return 1
     except KeyboardInterrupt:

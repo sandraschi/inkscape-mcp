@@ -220,6 +220,7 @@ Errors:
 
 import logging
 import time
+from pathlib import Path
 from typing import Any
 from typing import Literal
 
@@ -250,6 +251,7 @@ async def inkscape_system(
         "version",
         "config",
         "execution_mode",
+        "hands_in_command",
         "list_extensions",
         "execute_extension",
     ],
@@ -257,6 +259,7 @@ async def inkscape_system(
     _extension_params: dict[str, Any] | None = None,
     _input_file: str | None = None,
     _output_file: str | None = None,
+    action: str = "",
     cli_wrapper: Any = None,
     config: Any = None,
 ) -> dict[str, Any]:
@@ -321,6 +324,35 @@ async def inkscape_system(
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 
+        elif operation == "hands_in_command":
+            if not action:
+                return SystemResult(
+                    success=False, operation="hands_in_command",
+                    message="action parameter is required (e.g. 'select-all;object-flip-horizontally')",
+                    data={}, execution_time_ms=0, error="ValueError",
+                ).model_dump()
+
+            try:
+                # Attempt --active-window: send actions to a running Inkscape GUI
+                result = await cli_wrapper._execute_command(
+                    [str(config.inkscape_executable), "--active-window", "--actions", action],
+                    config.process_timeout,
+                )
+                return SystemResult(
+                    success=True, operation="hands_in_command",
+                    message=f"Sent action to active Inkscape window: {action[:120]}",
+                    data={"action": action, "response": result.strip()[:500]},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except Exception as exc:
+                return SystemResult(
+                    success=False, operation="hands_in_command",
+                    message=f"Hands-in command failed: {exc}. Is Inkscape GUI running?",
+                    data={"action": action,
+                          "hint": "Open Inkscape GUI first, then set INKSCAPE_GUI_WATCH=1"},
+                    execution_time_ms=0, error=str(exc),
+                ).model_dump()
+
         elif operation == "version":
             # Get version information
             return SystemResult(
@@ -359,17 +391,41 @@ async def inkscape_system(
             ).model_dump()
 
         elif operation == "list_extensions":
-            # Extension system disabled - plugins directory removed
+            # Scan Inkscape extensions directories for .inx files
+            extensions: list[dict[str, str]] = []
+            ext_dirs: list[str] = []
+            if config and config.inkscape_executable:
+                base = Path(str(config.inkscape_executable)).parent.parent
+                ext_dirs.append(str(base / "share" / "inkscape" / "extensions"))
+                ext_dirs.append(str(Path.home() / ".config" / "inkscape" / "extensions"))
+                ext_dirs.append(str(Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions"))
+            for d in ext_dirs:
+                dp = Path(d)
+                if dp.is_dir():
+                    for inx in sorted(dp.glob("*.inx")):
+                        try:
+                            txt = inx.read_text(encoding="utf-8", errors="replace")
+                            name = ""
+                            for line in txt.split("\n"):
+                                ll = line.strip()
+                                if ll.startswith("<_name>"):
+                                    name = ll.replace("<_name>", "").replace("</_name>", "").strip()
+                                elif ll.startswith("<name>"):
+                                    name = ll.replace("<name>", "").replace("</name>", "").strip()
+                                elif ll.startswith("<_effect"):
+                                    name = inx.stem
+                                elif ll.startswith("<id>"):
+                                    ext_id = ll.replace("<id>", "").replace("</id>", "").strip()
+                            if name:
+                                extensions.append({"id": ext_id or inx.stem, "name": name,
+                                                   "path": str(inx)})
+                        except Exception:
+                            pass
             return SystemResult(
-                success=True,
-                operation="list_extensions",
-                message="Extension system disabled - plugins directory removed",
-                data={
-                    "extensions": [],
-                    "total_count": 0,
-                    "categories": [],
-                    "note": "Extension system temporarily disabled",
-                },
+                success=True, operation="list_extensions",
+                message=f"Found {len(extensions)} extensions in {len(ext_dirs)} directories",
+                data={"extensions": extensions, "total_count": len(extensions),
+                      "source_dirs": ext_dirs},
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 

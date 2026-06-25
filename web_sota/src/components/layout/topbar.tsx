@@ -1,16 +1,20 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ExternalLink, HelpCircle, LayoutGrid } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { ExternalLink, HelpCircle, LayoutGrid, ScrollText } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { APPS_CATALOG } from "@/common/apps-catalog";
 import API_BASE from "@/lib/api";
 import { useBackendStore } from "@/lib/store";
+import { HelpModal } from "@/components/modals/HelpModal";
+import { LogModal } from "@/components/modals/LogModal";
 
 export function Topbar() {
   const online = useBackendStore((s) => s.online);
   const setOnline = useBackendStore((s) => s.setOnline);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   const check = useCallback(async () => {
     try {
@@ -63,6 +67,18 @@ export function Topbar() {
           {label}
         </div>
 
+        {/* Log viewer modal toggle */}
+        <button type="button" onClick={() => setLogsOpen(true)}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+          <ScrollText className="h-4 w-4" />
+        </button>
+
+        {/* Help modal toggle */}
+        <button type="button" onClick={() => setHelpOpen(true)}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+          <HelpCircle className="h-4 w-4" />
+        </button>
+
         {/* Global Apps Navigation */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
@@ -96,11 +112,10 @@ export function Topbar() {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
-
-        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-          <HelpCircle className="h-4 w-4" />
-        </button>
       </div>
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <LogModal open={logsOpen} onClose={() => setLogsOpen(false)} />
     </header>
   );
 }

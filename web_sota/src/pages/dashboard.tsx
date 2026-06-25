@@ -44,6 +44,10 @@ interface HealthPayload {
 
 const RETRY_DELAYS = [1, 2, 4, 8, 16];
 
+function retryDelay(attempt: number): number {
+  return attempt < RETRY_DELAYS.length ? RETRY_DELAYS[attempt] : 30;
+}
+
 const CATEGORY_ICONS: Record<string, typeof Activity> = {
   file_operations: Activity,
   vector_operations: Wand2,
@@ -92,12 +96,10 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!err) return;
-    if (attempt >= RETRY_DELAYS.length) return;
-    const delay = RETRY_DELAYS[attempt] * 1000;
     const timer = setTimeout(() => {
       setAttempt((a) => a + 1);
       void load();
-    }, delay);
+    }, retryDelay(attempt) * 1000);
     return () => clearTimeout(timer);
   }, [err, attempt, load]);
 
@@ -165,8 +167,8 @@ export function Dashboard() {
                 <span className={`relative flex h-2.5 w-2.5 ${err ? "bg-red-500" : h ? "bg-emerald-500" : "bg-gray-500"} rounded-full`}>
                   {!err && h && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
                 </span>
-                <span className={`${err ? "text-red-400" : h ? "text-emerald-400" : "text-gray-400"}`}>
-                  {err ? "Offline" : h ? "Connected" : "Connecting..."}
+                <span className={`${err ? "text-amber-400" : h ? "text-emerald-400" : "text-gray-400"}`}>
+                  {err ? "Connecting..." : h ? "Connected" : "Connecting..."}
                 </span>
               </div>
               {err ? (

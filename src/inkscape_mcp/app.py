@@ -34,6 +34,7 @@ try:
     from fastapi import Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
+    from starlette.responses import PlainTextResponse
     from starlette.routing import Mount
 
     FASTAPI_AVAILABLE = True
@@ -436,6 +437,22 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     @app.get("/api/help")
     async def api_help() -> dict:
         return _help_payload()
+
+    @app.get("/api/docs/{path:path}")
+    async def api_docs(path: str) -> PlainTextResponse:
+        """Serve markdown files from the docs/ directory for the webapp help page."""
+        # Security: only allow .md files, reject absolute paths and parent traversal
+        if not path.endswith(".md") or ".." in path or path.startswith("/"):
+            return PlainTextResponse("Not found", status_code=404)
+        # Try repo-root docs/ first, then repo root
+        for base in [Path(inkscape_exe).parent.parent if inkscape_exe else Path.cwd(), Path.cwd()]:
+            md_file = base / "docs" / path
+            if md_file.exists():
+                return PlainTextResponse(md_file.read_text(encoding="utf-8", errors="replace"))
+            md_file = base / path
+            if md_file.exists():
+                return PlainTextResponse(md_file.read_text(encoding="utf-8", errors="replace"))
+        return PlainTextResponse("Not found", status_code=404)
 
     @app.post("/api/chat")
     async def api_chat(request: Request) -> dict:

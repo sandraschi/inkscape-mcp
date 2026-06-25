@@ -1,35 +1,39 @@
-# Inkscape MCP
+# Inkscape MCP — AI-powered vector graphics
 
 <p align="center">
   <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
-  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
-  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://fastmcp.com"><img src="https://img.shields.io/badge/FastMCP-3.4-7c5cfc?style=flat-square" alt="FastMCP"></a>
+  <a href="https://github.com/sandraschi/inkscape-mcp/releases"><img src="https://img.shields.io/badge/NSIS%20installer-download-blue?style=flat-square&logo=windows" alt="NSIS"></a>
 </p>
 
-**MCP server for Inkscape:** agents call portmanteau tools (`inkscape_file`, `inkscape_vector`, `inkscape_analysis`, `inkscape_system`) that drive the **Inkscape CLI**. Built with **FastMCP 3.2.0+**.
+MCP server that exposes Inkscape's full vector graphics engine through the Model Context Protocol. Works as an **MCP server** (stdio/HTTP), an **MCPB bundle** for Claude Desktop, a **webapp dashboard** (React/Vite), and a **Tauri Windows desktop app** (NSIS installer).
 
-You need **Python 3.12+**, **[uv](https://docs.astral.sh/uv/)**, and **Inkscape** on the same machine.
+## Delivery Formats
 
-| Doc | What |
-|-----|------|
-| [docs/INSTALL.md](docs/INSTALL.md) | Clone  `uv sync`  run; PyPI / `uvx` |
-| [docs/INKSCAPE.md](docs/INKSCAPE.md) | Install Inkscape, PATH, CLI check |
-| [docs/IDE_MCP.md](docs/IDE_MCP.md) | Cursor, VS Code, Windsurf, Glama-style config |
-| [docs/MCPB.md](docs/MCPB.md) | Claude Desktop `.mcpb` bundle |
-| [docs/USAGE.md](docs/USAGE.md) | How to use the tools from an agent |
-| [docs/AI_SAMPLING.md](docs/AI_SAMPLING.md) | Agentic tools, `ctx.sample()`, Ollama env |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, transports, modules |
-| [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md) | Ecosystem comparison and differentiation |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Agent Lab phased improvement plan |
-| [llms.txt](llms.txt) / [llms-full.txt](llms-full.txt) | LLM index + full tool/env/run manifest (fleet) |
+| Format | How | Use case |
+|--------|-----|----------|
+| **MCP server** | `uv run inkscape-mcp` | Cursor, Claude Code, any MCP client |
+| **MCPB bundle** | `dist/inkscape-mcp-v2.6.0.mcpb` | Claude Desktop single-click install |
+| **Webapp** | `http://127.0.0.1:11029` | Dashboard, animation studio, layer manager, agent lab |
+| **Tauri NSIS app** | `Inkscape MCP_2.6.0_x64-setup.exe` | One-installer desktop app (embedded backend) |
 
-More: [Docs index](docs/README.md)  [API](docs/API.md)  [Features](docs/FEATURES.md)  [Troubleshooting](docs/TROUBLESHOOTING.md)  [Changelog](CHANGELOG.md)
+## What It Does
 
-[![CI/CD](https://img.shields.io/github/actions/workflow/status/sandraschi/inkscape-mcp/ci.yml)](https://github.com/sandraschi/inkscape-mcp/actions)
-[![PyPI](https://img.shields.io/pypi/v/inkscape-mcp)](https://pypi.org/project/inkscape-mcp/)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue)](https://www.python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+9 portmanteau tools, 17 MCP tools total, 60+ operations:
+
+| Tool | Operations |
+|------|-----------|
+| `inkscape_file` | load, save, convert, info, validate |
+| `inkscape_vector` | create shapes, text ops, path booleans, LPEs, inspect, trace, optimize, boolean, measure, export, render |
+| `inkscape_analysis` | statistics, validate, dimensions, objects, structure, quality |
+| `inkscape_render` | export_preview, export_multi_dpi, get_document_summary |
+| `inkscape_validation` | validate_svg, check_viewbox, audit_web_svg, stroke/fill, size limits |
+| `inkscape_layers` | list, create, rename, hide/show, lock/unlock, reorder |
+| `inkscape_animation` | SMIL presets (bounce, fade, slide, rotate, pulse, shake), element/transform/motion animation, CSS keyframes |
+| `inkscape_system` | status, diagnostics, hands-in command, extensions, config |
+| `inkscape_fleet` / `fab_art` / `sim_art` | cross-MCP handoffs (GIMP, Blender, Unity, Resonite) |
 
 ## Quick Start
 
@@ -39,37 +43,28 @@ cd inkscape-mcp
 just
 ```
 
-This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
+`just serve` — start the HTTP server  
+`just dev` — start webapp + backend  
+`just build-native` — build the NSIS Windows installer  
+`just cua-nsis-test` — CUA smoke test (requires pywinauto + pytesseract + Tesseract OCR)
 
-## Agent Lab (planned)
+## Docs
 
-Following the blender-mcp / gimp-mcp / unity3d-mcp playbook:
+| Doc | What |
+|-----|------|
+| `docs/INSTALL.md` | Installation guide |
+| `docs/USAGE.md` | How to use the tools |
+| `llms.txt` / `llms-full.txt` | LLM index + full manifest |
+| `CHANGELOG.md` | Release history |
 
-| Phase | Focus |
-|-------|--------|
-| **1** (2.1.0) | Agent vision exports, runtime guidance | **done** |
-| **2** (2.2.0) | Webapp `/agent-tools`, SVG validation | **done** |
-| **3** (2.3.0) | Fleet handoff (gimp, blender, unity) | **done** |
-| **4** (2.4.0) | Telemetry, Docker, smoke tests | **done** |
-| **5** (2.5.0) | Robotics fab art (DXF, laser, Gazebo schematics) | **done** |
-| **6** (2.6.0) | UI icon packs, icon sheets, SVG refine loop | **done** |
+## Infrastructure
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md).
-
-### Manual Setup
-
-If you don't have `just` installed:
-
-## 🛡️ Industrial Quality Stack
-
-This project adheres to **SOTA 14.1** industrial standards for high-fidelity agentic orchestration:
-
-- **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
-- **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
-- **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
-- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
-- **Security**: Automated audits via `bandit` and `safety`.
+- **Python**: FastMCP 3.4.2, dual transport (stdio + streamable HTTP)
+- **Webapp**: React 19 + Vite + TailwindCSS + Zustand + Framer Motion + Lucide
+- **Desktop**: Tauri 2.0 + NSIS installer (embedded PyInstaller backend)
+- **Quality**: Ruff lint, Biome, mypy, pytest, Playwright E2E, CUA-NSIS smoke test
+- **Ports**: Backend 11028, Frontend 11029
 
 ## License
 
-MIT  see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE.md).

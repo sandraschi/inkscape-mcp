@@ -12,14 +12,13 @@ $WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
 # Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
 $WebPort = 11029
 $BackendPort = 11028
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 $FleetStartPath = Join-Path $ProjectRoot "scripts\FleetStartMode.ps1"
 if (-not (Test-Path -LiteralPath $FleetStartPath)) {
     Write-Host "ERROR: Missing vendored launcher helper: $FleetStartPath" -ForegroundColor Red
     exit 1
 }
 . $FleetStartPath
-
-$ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 # 1. Kill any process squatting on the ports
 Write-Host "Checking for port squatters on $WebPort and $BackendPort..." -ForegroundColor Yellow

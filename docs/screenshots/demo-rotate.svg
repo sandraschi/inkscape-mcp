@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
      width="400" height="300" viewBox="0 0 400 300">
-  <defs>
-    <style></style>
-  </defs>
+  <rect width="400" height="300" fill="#1e293b"/>
   <g>
-  <animateTransform attributeName="transform" type="rotate" from="0 400 300" to="360 400 300" dur="#4488ffs" repeatCount="indefinite"/>
-  <circle cx="400" cy="300" r="30" fill="50"/>
-</g>
+    <animateTransform attributeName="transform" type="rotate" from="0 200 150" to="360 200 150" dur="3s" repeatCount="indefinite"/>
+    <rect x="170" y="50" width="60" height="40" rx="4" fill="#4488ff"/>
+  </g>
 </svg>

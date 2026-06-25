@@ -55,6 +55,7 @@ PORTMANTEAU_TOOLS = [
         "operations": [
             "trace_image",
             "generate_barcode_qr",
+            "create_object",
             "create_mesh_gradient",
             "text_to_path",
             "construct_svg",
@@ -75,6 +76,9 @@ PORTMANTEAU_TOOLS = [
             "fit_canvas_to_drawing",
             "render_preview",
             "generate_laser_dot",
+            "object_raise",
+            "object_lower",
+            "set_document_units",
         ],
     },
     {

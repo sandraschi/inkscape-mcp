@@ -318,6 +318,22 @@ def kill_stale():
          f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}"],
         capture_output=True, timeout=15)
     time.sleep(2)
+    # Final check — if port still occupied, elevate
+    r = subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         f"if (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue) {{ 1 }} else {{ 0 }}"],
+        capture_output=True, text=True, timeout=10)
+    if r.stdout.strip() == "1":
+        log("Port still occupied — trying elevated kill (UAC prompt)...")
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f"Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList "
+             f"'-NoProfile -Command \"Stop-Process -Name {PROCESS_NAMES[0]} -Force -ErrorAction SilentlyContinue; "
+             f"taskkill /F /IM {PROCESS_NAMES[0]}.exe /T 2>nul; "
+             f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
+             f"ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>nul }}\"'"],
+            capture_output=True, timeout=30)
+        time.sleep(3)
     log("Stale processes killed")
 
 

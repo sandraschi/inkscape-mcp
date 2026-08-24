@@ -64,3 +64,7 @@ AI agents create, edit, layer, animate, and export SVG files using Inkscape. Wor
 ## License
 
 MIT — see [LICENSE.md](LICENSE.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).

@@ -629,7 +629,7 @@ async def main_async():
 
     parser = argparse.ArgumentParser(description="Inkscape MCP Server")
     parser.add_argument("--config", type=str, help="Path to config file", default=None)
-    parser.add_argument("--mode", choices=["stdio", "http", "dual"], default="dual")
+    parser.add_argument("--mode", choices=["stdio", "http", "dual"], default="stdio")
     parser.add_argument(
         "--port",
         type=int,

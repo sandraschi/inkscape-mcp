@@ -11,16 +11,11 @@ default:
 
 # Execute Ruff SOTA v13.1 linting
 lint:
-    uv run ruff check .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome ci .
+    uv run ruff check .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome ci .
 
 # Execute Ruff SOTA v13.1 fix and formatting
 fix:
-    uv run ruff check . --fix --unsafe-fixes
-    uv run ruff format .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome check --write .
+    uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome check --write .
 
 # Execute pytest suite
 test:
@@ -99,25 +94,21 @@ pre-commit:
 
 # Build the PyInstaller backend .exe (step before Tauri build)
 build-sidecar:
-    Set-Location '{{justfile_directory()}}\native'
-    powershell.exe -NoProfile -File .\build.ps1
+    Set-Location '{{justfile_directory()}}\native'; powershell.exe -NoProfile -File .\build.ps1
 
 # Build the Tauri NSIS desktop installer (full pipeline)
 build-native:
-    Set-Location '{{justfile_directory()}}\native'
-    powershell.exe -NoProfile -File .\build.ps1
+    Set-Location '{{justfile_directory()}}\native'; powershell.exe -NoProfile -File .\build.ps1
 
 # --- Playwright E2E ---
 
 # Install Playwright browsers (one-time)
 e2e-install:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx playwright install chromium
+    Set-Location '{{justfile_directory()}}\web_sota'; npx playwright install chromium
 
 # Run Playwright E2E smoke tests (start backend first: just serve)
 e2e:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx playwright test
+    Set-Location '{{justfile_directory()}}\web_sota'; npx playwright test
 
 # --- Demo Capture ---
 

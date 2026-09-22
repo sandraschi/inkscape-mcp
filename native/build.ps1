@@ -7,12 +7,27 @@ $DevDir = "$PSScriptRoot\binaries"
 New-Item -ItemType Directory -Force -Path $ResourceDir, $DevDir | Out-Null
 
 # Step 0: Free backend port from stale processes (sandbox-safe: no Get-Process enumeration)
+# HARDENED 2026-09-17: was a blind Start-Sleep -Seconds 2, no verification the
+# port actually freed (TRAPS_AND_PITFALLS.md #36). Poll instead.
 Get-NetTCPConnection -LocalPort 11028 -ErrorAction SilentlyContinue | ForEach-Object {
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
-Start-Sleep -Seconds 2
+$portFreeWaitSec = 15
+$portFreeElapsed = 0
+while ($portFreeElapsed -lt $portFreeWaitSec) {
+    Start-Sleep -Milliseconds 500
+    $portFreeElapsed += 0.5
+    if (-not (Get-NetTCPConnection -LocalPort 11028 -ErrorAction SilentlyContinue)) { break }
+}
 
 Write-Host "=== ${RepoName} Tauri Release Build ===" -ForegroundColor Cyan
+
+# Naked `bun` inherits whatever PATH the invoking shell happened to have,
+# which can predate bun's installer PATH registration in an already-open
+# shell (BUG-045). Resolve a qualified path once instead.
+$bunExe = Join-Path $env:USERPROFILE ".bun\bin\bun.exe"
+if (-not (Test-Path $bunExe)) { $bunExe = (Get-Command bun -ErrorAction SilentlyContinue).Source }
+if (-not $bunExe) { throw "bun not found — install from https://bun.sh" }
 
 # Step 0: Verify API_BASE matches backend port (catches "Failed to fetch" before Tauri build)
 $apiFile = Join-Path $Root "web_sota\src\lib\api.ts"
@@ -34,7 +49,7 @@ foreach ($dir in $frontendDirs) {
     if (Test-Path "$frontend\package.json") {
         Write-Host "-> [1/4] Building frontend ($dir)..." -ForegroundColor Yellow
         Push-Location $frontend
-        bun install 2>$null
+        & $bunExe install 2>$null
 
         Write-Host "  tsc --noEmit..." -ForegroundColor Gray
         $tscOut = npx tsc --noEmit 2>&1
@@ -45,7 +60,7 @@ foreach ($dir in $frontendDirs) {
             throw "TypeScript compilation failed - fix all errors before building NSIS installer"
         }
 
-        bun run build
+        & $bunExe run build
         if ($LASTEXITCODE -ne 0) { throw "Frontend build failed" }
         Pop-Location
         break
@@ -84,6 +99,10 @@ if (Test-Path $specFile) {
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
 
     # Gate: smoke-test the frozen binary (catches ALL import crashes generically)
+    # HARDENED 2026-09-17: was a fixed 5s sleep then a single HasExited check -
+    # races against PyInstaller onefile cold-start, letting a broken binary read
+    # as "PASSED" (TRAPS_AND_PITFALLS.md #36a). Poll with a real timeout and
+    # require the port to actually open, not just "hasn't crashed yet".
     $frozenExe = "$Root\dist\${RepoName}-backend.exe"
     Write-Host "  Smoke-testing frozen binary..." -ForegroundColor Yellow
     $testPort = 11999  # ephemeral port to avoid collision
@@ -92,18 +111,33 @@ if (Test-Path $specFile) {
     $env:MCP_PORT = "$testPort"
     $env:MCP_HOST = "127.0.0.1"
     $testProc = Start-Process -FilePath $frozenExe -NoNewWindow -PassThru -RedirectStandardError "$Root\dist\pyi-crash.log"
-    Start-Sleep -Seconds 5
+    $maxWaitSec = 30
+    $pollMs = 500
+    $elapsedSec = 0
+    $portReady = $false
+    while ($elapsedSec -lt $maxWaitSec) {
+        Start-Sleep -Milliseconds $pollMs
+        $elapsedSec += $pollMs / 1000
+        if ($testProc.HasExited) { break }
+        $portReady = (Test-NetConnection -ComputerName 127.0.0.1 -Port $testPort -InformationLevel Quiet -WarningAction SilentlyContinue)
+        if ($portReady) { break }
+    }
     $env:MCP_PORT = $oldPort
     $env:MCP_HOST = $oldHost
     if ($testProc.HasExited) {
-        $crash = Get-Content "$Root\dist\pyi-crash.log" -Raw
-        throw "Frozen binary crashed on launch (exit $($testProc.ExitCode)):`n$crash"
+        $crash = Get-Content "$Root\dist\pyi-crash.log" -Raw -ErrorAction SilentlyContinue
+        throw "Frozen binary crashed on launch (exit $($testProc.ExitCode)) after ${elapsedSec}s:`n$crash"
+    }
+    if (-not $portReady) {
+        $testProc.Kill()
+        $testProc.Dispose()
+        throw "Frozen binary never opened port $testPort within ${maxWaitSec}s - hung or failed silently. Check $Root\dist\pyi-crash.log"
     }
     # Clean up test process
     $testProc.Kill()
     $testProc.Dispose()
     Remove-Item "$Root\dist\pyi-crash.log" -Force -ErrorAction SilentlyContinue
-    Write-Host "  Frozen binary smoke test PASSED" -ForegroundColor Green
+    Write-Host "  Frozen binary smoke test PASSED (port $testPort confirmed open after ${elapsedSec}s)" -ForegroundColor Green
 } else {
     Write-Host "  WARNING: spec file not found at $specFile - using existing backend exe if present" -ForegroundColor DarkYellow
 }

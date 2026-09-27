@@ -776,28 +776,58 @@ class InkscapeMCPServer:
                 readOnlyHint=False,
                 destructiveHint=False,
                 idempotentHint=True,
-                openWorldHint=False,
+                openWorldHint=True,
             ),
         )
-        async def inkscape_system(operation: InkscapeSystemOperation) -> dict[str, Any]:
+        async def inkscape_system(
+            operation: InkscapeSystemOperation,
+            extension_id: str = "",
+            query: str = "",
+            limit: int = 20,
+            name: str = "",
+            download_url: str = "",
+            verified: bool = False,
+            targets: list[str] | None = None,
+            allow_unverified: bool = False,
+        ) -> dict[str, Any]:
             """INKSCAPE_SYSTEM - Server/Inkscape status, help, diagnostics, version, extensions.
 
             PORTMANTEAU RATIONALE: Operational and introspection calls stay in one discoverable tool.
 
-            Operations: status, execution_mode, help, diagnostics, version, config, list_extensions, execute_extension, self_terminate.
+            Operations: status, execution_mode, help, diagnostics, version, config,
+            list_extensions, execute_extension (currently disabled), search_extensions,
+            install_extension, uninstall_extension, list_managed_extensions, self_terminate.
 
             Args:
-                operation: System subcommand (Literal). Extension execution may require extra
-                    parameters not exposed on this MCP wrapper - prefer list_extensions first.
+                operation: System subcommand (Literal).
+                extension_id: Target for install_extension/uninstall_extension - use the `id`
+                    field from a search_extensions result.
+                query: search_extensions text query (empty browses the top-checked list).
+                limit: Max search_extensions results.
+                name / download_url / verified / targets: Pass straight through from the
+                    search_extensions result you want to install_extension.
+                allow_unverified: install_extension refuses non-`verified` (Inkscape-reviewed)
+                    packages unless this is true - it downloads and unpacks third-party code
+                    that Inkscape will later execute, so verified is the safe default.
 
             Returns:
                 Dict with success, message, data, execution_time_ms, error.
 
             Errors:
                 Inkscape missing, extension disabled - message describes recovery (install PATH).
+                install_extension on an unverified package without allow_unverified returns a
+                PermissionError explaining why, not a silent install.
             """
             return await inkscape_system_tool(
                 operation=operation,
+                extension_id=extension_id or None,
+                query=query,
+                limit=limit,
+                name=name,
+                download_url=download_url,
+                verified=verified,
+                targets=targets,
+                allow_unverified=allow_unverified,
                 cli_wrapper=self.cli_wrapper,
                 config=self.config,
             )

@@ -205,11 +205,26 @@ def _env(key: str, default: str = "") -> str:
 
 
 def _ollama_base() -> str:
+    # Same priority as _ollama_model(): the endpoint saved against the active
+    # Ollama selection in AI Settings' Active LLM card wins over the
+    # server-wide override, so there is one place - not two disconnected
+    # ones - that actually controls which Ollama this server talks to.
+    active = llm_settings_store.load_settings()
+    if active.get("provider") == "ollama" and active.get("endpoint"):
+        return str(active["endpoint"]).rstrip("/")
     override = server_settings.load().get("ollama_base_url", "")
     return (override or _env("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
 
 
 def _ollama_model() -> str:
+    # The model the user actually picked in AI Settings' Active LLM card wins.
+    # generate_svg silently defaulting to a different, possibly-not-pulled
+    # model while the user has a real one selected and loaded is exactly how
+    # a hardcoded "qwen2.5-coder:latest" default 404s against Ollama even
+    # though Ollama itself is up and has 30+ other models pulled.
+    active = llm_settings_store.load_settings()
+    if active.get("provider") == "ollama" and active.get("model"):
+        return str(active["model"])
     override = server_settings.load().get("ollama_model", "")
     return override or _env("OLLAMA_MODEL", "qwen2.5-coder:latest")
 
@@ -540,16 +555,34 @@ async def _generate_svg(
         ]
         raw = None
         model_used = ""
+        cloud_errors: list[str] = []
+        tried_any = False
         for env_var, label, caller in cloud_fallbacks:
-            if _env(env_var):
+            if not _env(env_var):
+                continue
+            tried_any = True
+            try:
                 raw = await caller(user_p, _SVG_SYSTEM)
                 model_used = label
                 break
+            except Exception as cloud_err:
+                # A configured-but-broken provider (bad/rejected key, quota,
+                # outage) must not abort the whole chain - that was the bug
+                # here before: Gemini alone failing 403'd the entire request
+                # even though OpenAI/DeepSeek/Anthropic/OpenRouter keys were
+                # also configured and never got a turn.
+                logger.warning("%s fallback failed (%s), trying next", label, cloud_err)
+                cloud_errors.append(f"{label}: {cloud_err}")
         if raw is None:
+            if not tried_any:
+                raise ValueError(
+                    f"Ollama unreachable ({ollama_err}) and no cloud API keys configured. "
+                    "Check that Ollama is running (ollama serve), or set one of GEMINI_API_KEY, "
+                    "OPENAI_API_KEY, DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY."
+                ) from ollama_err
             raise ValueError(
-                f"Ollama unreachable ({ollama_err}) and no cloud API keys configured. "
-                "Check that Ollama is running (ollama serve), or set one of GEMINI_API_KEY, "
-                "OPENAI_API_KEY, DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY."
+                f"Ollama unreachable ({ollama_err}) and every configured cloud provider failed: "
+                + "; ".join(cloud_errors)
             ) from ollama_err
 
     svg = _extract_svg(raw)

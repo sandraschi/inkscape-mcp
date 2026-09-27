@@ -24,9 +24,12 @@ governed by an elected board and driven by a global volunteer contributor
 base — it's a regular participant in Google Summer of Code, ships UI
 translations into 100+ languages, and has spawned an ecosystem of its own:
 the [Inkscape Extensions](https://inkscape.org/gallery/=extension/) gallery
-(Python-based, the same `.inx`/`inkex` layer this MCP server's
-`inkscape_system.list_extensions` inspects), community-run tutorials and
-forums at inkscape.org, and years of conference talks (LGM — Libre Graphics
+(Python-based, on the `.inx`/`inkex` plugin API — **this MCP server does not
+integrate with the gallery itself**; `inkscape_system.list_extensions` only
+scans for `.inx` files already installed locally, and `execute_extension` is
+currently a stub that always returns "disabled", regardless of which
+extension you ask for), community-run tutorials and forums at inkscape.org,
+and years of conference talks (LGM — Libre Graphics
 Meeting) where its maintainers and the wider FOSS graphics community
 (GIMP, Blender, Krita) compare notes.
 

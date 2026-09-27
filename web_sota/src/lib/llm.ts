@@ -19,6 +19,10 @@ export interface ModelsResponse {
   provider: string;
   models: string[];
   source: ModelSource;
+  note?: string;
+  error?: string;
+  /** True when the names are curated stand-ins (no key) — never a success. */
+  key_missing?: boolean;
 }
 
 export interface OnboardingState {
@@ -127,6 +131,31 @@ export function fetchOnboarding(): Promise<OnboardingState> {
   return apiGet<OnboardingState>("/api/llm/onboarding");
 }
 
+export interface TestResult {
+  success: boolean;
+  /** True only for a live list. Curated-without-key is ok:false by design. */
+  ok: boolean;
+  provider: string;
+  models: string[];
+  source: ModelSource;
+  note?: string;
+  error?: string;
+}
+
+/**
+ * Validate a provider without saving anything. Pass the card's typed key
+ * (if any) — it travels in the POST body only and is never persisted.
+ * A Test that ignores the typed key reports curated names as success;
+ * that lie is BUG-042 (giskard-mcp 2026-09-21).
+ */
+export function testProvider(provider: string, apiKey?: string, endpoint?: string): Promise<TestResult> {
+  return apiPost<TestResult>("/api/llm/test", {
+    provider,
+    ...(apiKey ? { api_key: apiKey } : {}),
+    ...(endpoint ? { endpoint } : {}),
+  });
+}
+
 export interface LlmSwitchResult {
   evicted: string[];
   warmed: boolean;
@@ -180,6 +209,10 @@ export function saveLlmSettings(body: {
   endpoint?: string;
   model: string;
   api_key?: string;
+  /** false: attach api_key to `provider` without changing the active
+   * provider/model pair (BUG-043). Defaults true (backend-side) for the
+   * Settings page's own "make this the active pair" flow. */
+  select?: boolean;
 }): Promise<{
   success: boolean;
   key_saved?: boolean;

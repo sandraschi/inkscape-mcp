@@ -5,11 +5,11 @@ import { cn } from "@/common/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  fetchModels,
   installStatus,
   type ProviderInfo,
   saveLlmSettings,
   startInstall,
+  testProvider as runTest,
 } from "@/lib/llm";
 
 type Props = {
@@ -73,13 +73,14 @@ export function LlmProviderCards({
     if (!key) return;
     setCardMsg((m) => ({ ...m, [id]: "Saving…" }));
     try {
-      const { models } = await fetchModels(id).catch(() => ({
-        models: [] as string[],
-      }));
+      // No-auto-pick (BUG-030): saving a key must not select a model, and
+      // select:false (BUG-043) keeps this card's key from hijacking whatever
+      // provider/model is currently active elsewhere (e.g. Ollama).
       await saveLlmSettings({
         provider: id,
-        model: models[0] ?? "",
+        model: "",
         api_key: key,
+        select: false,
       });
       setKeyInputs((k) => ({ ...k, [id]: "" }));
       await onChanged(id);
@@ -111,13 +112,22 @@ export function LlmProviderCards({
   async function testProvider(id: string) {
     setCardMsg((m) => ({ ...m, [id]: "Testing…" }));
     try {
-      const m = await fetchModels(id);
-      setCardMsg((m2) => ({
-        ...m2,
-        [id]: m.models.length
-          ? `${m.models.length} models (${m.source})`
-          : `No models (${m.source})`,
-      }));
+      // Offer the card's typed key (if any): testing without it reports
+      // curated names as success while status stays unkeyed (BUG-042).
+      // Key travels in the POST body, never saved.
+      const typed = keyInputs[id]?.trim() || undefined;
+      const t = await runTest(id, typed);
+      if (t.ok) {
+        setCardMsg((m2) => ({
+          ...m2,
+          [id]: `Key valid — ${t.models.length} live model(s).${typed ? " Save key to keep it." : ""}`,
+        }));
+      } else {
+        setCardMsg((m2) => ({
+          ...m2,
+          [id]: t.note || t.error || "Not reachable — check the endpoint.",
+        }));
+      }
     } catch (e) {
       setCardMsg((m) => ({
         ...m,

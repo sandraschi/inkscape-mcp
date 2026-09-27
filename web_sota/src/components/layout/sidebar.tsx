@@ -1,5 +1,6 @@
 import {
   Activity,
+  Archive,
   Bot,
   BrainCircuit,
   ChevronLeft,
@@ -37,6 +38,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/actions", label: "Vector Actions", icon: Zap },
     { href: "/animation", label: "Animation", icon: Sparkles },
     { href: "/layers", label: "Layers", icon: Layers },
+    { href: "/depot", label: "Depot", icon: Archive },
     { href: "/logs", label: "Logs", icon: ScrollText },
     { href: "/chat", label: "Notes", icon: Bot },
     { href: "/skills", label: "Skills", icon: Sparkles },

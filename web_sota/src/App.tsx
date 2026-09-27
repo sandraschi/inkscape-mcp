@@ -15,6 +15,7 @@ import { ApiDocs } from "@/pages/api-docs";
 import { AppsPage as Apps } from "@/pages/apps";
 import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
+import { Depot } from "@/pages/depot";
 import { Help } from "@/pages/help";
 import { LayerManager } from "@/pages/layers";
 import Logs from "@/pages/logs";
@@ -43,6 +44,7 @@ function AnimatedRoutes() {
           <Route path="/actions" element={<Actions />} />
           <Route path="/animation" element={<AnimationStudio />} />
           <Route path="/layers" element={<LayerManager />} />
+          <Route path="/depot" element={<Depot />} />
           <Route path="/logs" element={<Logs />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/api-docs" element={<ApiDocs />} />

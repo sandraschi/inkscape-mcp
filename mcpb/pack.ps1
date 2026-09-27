@@ -1,4 +1,4 @@
-#Requires -Version 7
+#Requires -Version 5.1
 <#
 .SYNOPSIS
 Build this repo's .mcpb bundle for Claude Desktop.
@@ -75,27 +75,35 @@ $VerifyScript = Join-Path $McpbDir 'verify_pack.py'
 
 # Entry point comes from this repo's own manifest.json -- whatever it already
 # declares. manifest.json describes the BUNDLE (mcpb/ is what gets packed),
-# so entry_point resolves relative to mcpb/, not the repo root. Fixing a
-# wrong entry_point is a per-repo judgment call, out of scope for this
-# generic template; if it's wrong, the checks below will legitimately fail
-# and say so.
+# so entry_point resolves relative to mcpb/, not the repo root. The existence
+# check runs AFTER Step 1 (wipe + fresh-copy): on a clean checkout mcpb/src/
+# does not exist yet, so checking here would fail before the stage is built.
+# (Fixed 2026-09-27: check-before-create ordering bug.)
 $entryPointRel = $manifest.server.entry_point
 if (-not $entryPointRel) { throw 'manifest.json has no server.entry_point.' }
-$entryFile = Join-Path $McpbDir $entryPointRel
-if (-not (Test-Path $entryFile)) { throw "manifest.json entry_point resolves to a missing file: $entryFile" }
+
+function Assert-EntryPointStaged {
+    $entryFile = Join-Path $McpbDir $entryPointRel
+    if (-not (Test-Path $entryFile)) { throw "manifest.json entry_point resolves to a missing file: $entryFile" }
+    return $entryFile
+}
 
 # Two entry-point styles are both real fleet patterns (see
 # MCPB_PACKAGING_STANDARDS.md section 2.5): a module living under src/<pkg>/
 # (importable by dotted path), or a standalone bootstrap script elsewhere in
 # the bundle that does its own sys.path setup and imports the real package
 # (e.g. a run_server.py). Only the first case yields a clean relative path
-# under mcpb/src; detect which one we have from that.
-$entryRelToSrc = [System.IO.Path]::GetRelativePath($StageRoot, $entryFile)
-if ($entryRelToSrc.StartsWith('..')) {
-    # Standalone wrapper script - verify_pack.py runs it directly via runpy.
-    $entryModuleOrFile = $entryFile
-} else {
-    $entryModuleOrFile = ($entryRelToSrc -replace '\.py$', '') -replace '[\\/]', '.'
+# under mcpb/src; detect which one we have from that. Computed AFTER Step 1
+# (see Assert-EntryPointStaged ordering note above).
+function Get-EntryRelToSrc($entryFile) {
+    # 5.1-safe: [System.IO.Path]::GetRelativePath is .NET Core only and
+    # throws MethodNotFound on Framework 4.x. Both paths are absolute and
+    # the staged entry always lives under $StageRoot, so a prefix cut
+    # suffices (callers only test for a '..' escape).
+    if ($entryFile.StartsWith($StageRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $entryFile.Substring($StageRoot.Length).TrimStart('\', '/')
+    }
+    return '..'
 }
 
 Step 1 'Wipe + fresh-copy src -> mcpb/src (never a stale/hand-edited stage)'
@@ -104,6 +112,27 @@ if (-not (Test-Path $SrcPkg)) { throw "Copy source missing: $SrcPkg" }
 New-Item -ItemType Directory -Force -Path $StageRoot | Out-Null
 Copy-Item -Recurse -Force $SrcPkg $StagePkg
 Write-Host "  copied $SrcPkg -> $StagePkg"
+
+Step 1 counting as 'Assert staged entry point (must run after the copy)'
+$entryFile = Assert-EntryPointStaged
+$entryRelToSrc = Get-EntryRelToSrc $entryFile
+if ($entryRelToSrc.StartsWith('..')) {
+    # Standalone wrapper script - verify_pack.py runs it directly via runpy.
+    $entryModuleOrFile = $entryFile
+} else {
+    $entryModuleOrFile = ($entryRelToSrc -replace '\.py$', '') -replace '[\\/]', '.'
+}
+
+Step 1b 'Sync assets/prompts -> mcpb/assets/prompts (prompts are edited in assets/)'
+$SrcPrompts = Join-Path $RepoRoot 'assets\prompts'
+$StagePrompts = Join-Path $McpbDir 'assets\prompts'
+if (Test-Path $SrcPrompts) {
+    New-Item -ItemType Directory -Force -Path $StagePrompts | Out-Null
+    Copy-Item (Join-Path $SrcPrompts 'system.md') $StagePrompts -Force
+    Copy-Item (Join-Path $SrcPrompts 'user.md') $StagePrompts -Force
+    Copy-Item (Join-Path $SrcPrompts 'examples.json') $StagePrompts -Force
+    Write-Host '  synced assets/prompts -> mcpb/assets/prompts'
+}
 
 Step 2 'Strip pollution from the fresh stage'
 Get-ChildItem -Recurse -Path $StageRoot -Include '__pycache__' -Directory -ErrorAction SilentlyContinue |

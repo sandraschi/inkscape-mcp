@@ -299,7 +299,7 @@ async def _call_gemini(prompt: str, system: str) -> str:
         raise ValueError("GEMINI_API_KEY not set")
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={api_key}"
+        f"gemini-3.5-flash-lite:generateContent?key={api_key}"
     )
     payload = {
         "system_instruction": {"parts": [{"text": system}]},
@@ -327,7 +327,7 @@ async def _call_anthropic(prompt: str, system: str) -> str:
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5",
+                "model": "claude-haiku-4-5-20251001",
                 "max_tokens": 8192,
                 "system": system,
                 "messages": [{"role": "user", "content": prompt}],
@@ -349,7 +349,7 @@ async def _call_gemini_chat(messages: list[dict], model: str, api_key: str) -> s
     ]
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model or 'gemini-2.0-flash'}:generateContent?key={api_key}"
+        f"{model or 'gemini-3.5-flash-lite'}:generateContent?key={api_key}"
     )
     payload: dict[str, Any] = {"contents": contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
     if system:
@@ -377,7 +377,7 @@ async def _call_anthropic_chat(messages: list[dict], model: str, api_key: str) -
                 "content-type": "application/json",
             },
             json={
-                "model": model or "claude-haiku-4-5",
+                "model": model or "claude-haiku-4-5-20251001",
                 "max_tokens": 8192,
                 "system": system,
                 "messages": turns or [{"role": "user", "content": ""}],
@@ -386,6 +386,118 @@ async def _call_anthropic_chat(messages: list[dict], model: str, api_key: str) -
         r.raise_for_status()
     content = r.json().get("content", [])
     return "".join(c.get("text", "") for c in content if c.get("type") == "text")
+
+
+# OpenAI, DeepSeek, OpenRouter, and Meta's Model API are all OpenAI-compatible
+# /chat/completions - one shared implementation instead of four near-duplicates.
+async def _call_openai_compatible(prompt: str, system: str, *, base_url: str, api_key: str, model: str) -> str:
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        r = await client.post(
+            f"{base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 8192,
+                "temperature": 0.7,
+            },
+        )
+        r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
+
+async def _call_openai_compatible_chat(messages: list[dict], model: str, *, base_url: str, api_key: str) -> str:
+    """Multi-turn call for /api/chat (see _call_gemini_chat note) - unlike
+    Gemini/Anthropic, OpenAI-compatible APIs take system+user+assistant all
+    in one `messages` array, so no separate system extraction is needed."""
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        r = await client.post(
+            f"{base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [
+                    {"role": m["role"], "content": m["content"]}
+                    for m in messages
+                    if m.get("role") in ("system", "user", "assistant")
+                ],
+                "max_tokens": 8192,
+                "temperature": 0.7,
+            },
+        )
+        r.raise_for_status()
+    choices = r.json().get("choices", [])
+    return choices[0]["message"]["content"] if choices else ""
+
+
+async def _call_openai(prompt: str, system: str) -> str:
+    api_key = _env("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY not set")
+    return await _call_openai_compatible(
+        prompt, system, base_url="https://api.openai.com/v1", api_key=api_key, model="gpt-6-luna"
+    )
+
+
+async def _call_openai_chat(messages: list[dict], model: str, api_key: str) -> str:
+    return await _call_openai_compatible_chat(
+        messages, model or "gpt-6-luna", base_url="https://api.openai.com/v1", api_key=api_key
+    )
+
+
+async def _call_deepseek(prompt: str, system: str) -> str:
+    api_key = _env("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise ValueError("DEEPSEEK_API_KEY not set")
+    return await _call_openai_compatible(
+        prompt, system, base_url="https://api.deepseek.com", api_key=api_key, model="deepseek-flash"
+    )
+
+
+async def _call_deepseek_chat(messages: list[dict], model: str, api_key: str) -> str:
+    return await _call_openai_compatible_chat(
+        messages, model or "deepseek-flash", base_url="https://api.deepseek.com", api_key=api_key
+    )
+
+
+async def _call_openrouter(prompt: str, system: str) -> str:
+    api_key = _env("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not set")
+    return await _call_openai_compatible(
+        prompt, system, base_url="https://openrouter.ai/api/v1", api_key=api_key, model="openai/gpt-6-luna"
+    )
+
+
+async def _call_openrouter_chat(messages: list[dict], model: str, api_key: str) -> str:
+    return await _call_openai_compatible_chat(
+        messages, model or "openai/gpt-6-luna", base_url="https://openrouter.ai/api/v1", api_key=api_key
+    )
+
+
+async def _call_meta(prompt: str, system: str) -> str:
+    """Meta Model API (Muse Spark). Deliberately NOT part of the automatic
+    generate_svg fallback chain (see _generate_svg) - the cheap "-contributor"
+    model variants opt prompts/completions into Meta's training pipeline, a
+    consent decision that should never be made silently by an env var alone.
+    This function exists for the explicit, user-driven /api/chat path only,
+    where the model id (and its training-data implications) is visible and
+    chosen in AI Settings, not auto-selected."""
+    api_key = _env("META_API_KEY")
+    if not api_key:
+        raise ValueError("META_API_KEY not set")
+    return await _call_openai_compatible(
+        prompt, system, base_url="https://api.meta.ai/v1", api_key=api_key, model="muse-spark-1.3"
+    )
+
+
+async def _call_meta_chat(messages: list[dict], model: str, api_key: str) -> str:
+    return await _call_openai_compatible_chat(
+        messages, model or "muse-spark-1.3", base_url="https://api.meta.ai/v1", api_key=api_key
+    )
 
 
 # ── Primary generation pipeline ───────────────────────────────────────────────
@@ -405,25 +517,36 @@ async def _generate_svg(
 
     user_p = _user_prompt(description, style, w, h, quality)
 
-    # 1. Ollama (local - primary)
+    # 1. Ollama (local - primary, free)
     try:
         raw = await _call_ollama(user_p, _SVG_SYSTEM)
         model_used = f"ollama/{_ollama_model()}"
         logger.info("SVG generated via Ollama (%s)", _ollama_model())
     except Exception as ollama_err:
         logger.warning("Ollama unavailable (%s), trying cloud fallbacks", ollama_err)
-        # 2. Gemini fallback
-        if _env("GEMINI_API_KEY"):
-            raw = await _call_gemini(user_p, _SVG_SYSTEM)
-            model_used = "gemini-2.0-flash"
-        # 3. Anthropic fallback
-        elif _env("ANTHROPIC_API_KEY"):
-            raw = await _call_anthropic(user_p, _SVG_SYSTEM)
-            model_used = "claude-haiku-4-5"
-        else:
+        # 2. Cloud fallbacks, cheapest-first. Meta's Muse Spark is deliberately
+        # excluded here - see _call_meta's docstring on the contributor tier's
+        # training-data consent tradeoff, which must be an explicit user
+        # choice (AI Settings' /api/chat path), never an automatic fallback.
+        cloud_fallbacks = [
+            ("GEMINI_API_KEY", "gemini-3.5-flash-lite", _call_gemini),
+            ("OPENAI_API_KEY", "gpt-6-luna", _call_openai),
+            ("DEEPSEEK_API_KEY", "deepseek-flash", _call_deepseek),
+            ("ANTHROPIC_API_KEY", "claude-haiku-4-5-20251001", _call_anthropic),
+            ("OPENROUTER_API_KEY", "openai/gpt-6-luna (via OpenRouter)", _call_openrouter),
+        ]
+        raw = None
+        model_used = ""
+        for env_var, label, caller in cloud_fallbacks:
+            if _env(env_var):
+                raw = await caller(user_p, _SVG_SYSTEM)
+                model_used = label
+                break
+        if raw is None:
             raise ValueError(
                 f"Ollama unreachable ({ollama_err}) and no cloud API keys configured. "
-                "Check that Ollama is running: ollama serve"
+                "Check that Ollama is running (ollama serve), or set one of GEMINI_API_KEY, "
+                "OPENAI_API_KEY, DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY."
             ) from ollama_err
 
     svg = _extract_svg(raw)
@@ -837,14 +960,22 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 msgs.append({"role": h.get("role", "user"), "content": h.get("content", "")})
             msgs.append({"role": "user", "content": query})
 
-            if provider in ("gemini", "anthropic"):
+            _cloud_chat_callers = {
+                "gemini": _call_gemini_chat,
+                "anthropic": _call_anthropic_chat,
+                "openai": _call_openai_chat,
+                "deepseek": _call_deepseek_chat,
+                "openrouter": _call_openrouter_chat,
+                "meta": _call_meta_chat,
+            }
+            if provider in _cloud_chat_callers:
                 api_key = llm_settings_store.get_key(provider)
                 if not api_key:
                     yield f"data: {json.dumps({'type': _AgenticEvent.TEXT, 'content': f'No API key configured for {provider}. Add one in AI Settings.'})}\n\n"
                     yield f"data: {json.dumps({'type': _AgenticEvent.DONE})}\n\n"
                     return
                 try:
-                    caller = _call_gemini_chat if provider == "gemini" else _call_anthropic_chat
+                    caller = _cloud_chat_callers[provider]
                     text = await caller(msgs, model, api_key)
                 except Exception as exc:
                     text = f"{provider} request failed: {exc}"
@@ -942,12 +1073,26 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     _cloud_providers = {
         "gemini": {"label": "Gemini", "base_url": "https://generativelanguage.googleapis.com"},
         "anthropic": {"label": "Anthropic", "base_url": "https://api.anthropic.com"},
+        "openai": {"label": "OpenAI", "base_url": "https://api.openai.com"},
+        "deepseek": {"label": "DeepSeek", "base_url": "https://api.deepseek.com"},
+        "openrouter": {"label": "OpenRouter", "base_url": "https://openrouter.ai/api"},
+        "meta": {"label": "Meta (Muse Spark)", "base_url": "https://api.meta.ai"},
     }
-    # Curated fallback lists - these two providers have no cheap "list models"
+    # Curated fallback lists - these providers have no cheap "list models"
     # endpoint worth calling on every provider probe, unlike Ollama/LM Studio.
     _cloud_curated_models = {
-        "gemini": ["gemini-2.0-flash", "gemini-2.5-pro"],
-        "anthropic": ["claude-haiku-4-5", "claude-sonnet-4-5"],
+        "gemini": ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"],
+        "anthropic": ["claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-5-5"],
+        "openai": ["gpt-6-luna", "gpt-6-sol"],
+        "deepseek": ["deepseek-flash", "deepseek-v4-pro"],
+        "openrouter": ["openai/gpt-6-luna", "deepseek/deepseek-flash", "google/gemini-3.5-flash-lite"],
+        # "-contributor" is not a cosmetic suffix: selecting it opts your
+        # prompts/completions into Meta's training pipeline in exchange for
+        # ~10-20x lower cost (see _call_meta's docstring). Kept as the exact,
+        # unmodified API model id here - do not decorate this string, it is
+        # sent verbatim as the `model` field. Surface the tradeoff in the UI
+        # label, not in the id.
+        "meta": ["muse-spark-1.3", "muse-spark-1.3-contributor"],
     }
 
     async def _probe_ollama() -> tuple[bool, list[str]]:
@@ -1101,7 +1246,11 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         elif clouds_configured:
             recommendation = {"path": f"cloud:{clouds_configured[0]}", "reason": "A cloud key is already configured."}
         else:
-            recommendation = {"path": "cloud:gemini", "reason": "No local engine detected. Gemini has the cheapest instant path if you'd rather not install anything."}
+            recommendation = {
+                "path": "cloud:gemini",
+                "reason": "No local engine detected. Gemini, OpenAI (gpt-6-luna), and DeepSeek all have "
+                "cheap instant paths if you'd rather not install anything - pick whichever you already have a key for.",
+            }
         return {"locals": locals_, "clouds_configured": clouds_configured, "recommendation": recommendation}
 
     _install_state: dict[str, dict[str, Any]] = {}
@@ -1209,6 +1358,10 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 },
                 "gemini_key": bool(_env("GEMINI_API_KEY")),
                 "anthropic_key": bool(_env("ANTHROPIC_API_KEY")),
+                "openai_key": bool(_env("OPENAI_API_KEY")),
+                "deepseek_key": bool(_env("DEEPSEEK_API_KEY")),
+                "openrouter_key": bool(_env("OPENROUTER_API_KEY")),
+                "meta_key": bool(_env("META_API_KEY")),
             },
         }
 

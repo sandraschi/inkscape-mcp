@@ -1,4 +1,14 @@
 
+## [Unreleased] — 2026-09-28
+
+### Fixed
+- **Dead Gemini/Anthropic model IDs**: `gemini-2.0-flash` was retired by Google on 2026-06-01 (every call 404'd); `claude-haiku-4-5`/`claude-sonnet-4-5` were never valid Anthropic API model ids (missing date suffix / renamed). Updated to `gemini-3.5-flash-lite` and `claude-haiku-4-5-20251001`/`claude-sonnet-5`, verified against current vendor docs.
+
+### Added
+- **OpenAI, DeepSeek, OpenRouter, and Meta (Muse Spark) cloud LLM providers** — for users without a local GPU who need a cloud-token path. All three OpenAI-compatible providers (OpenAI, DeepSeek, OpenRouter) share one implementation (`_call_openai_compatible`/`_call_openai_compatible_chat` in `app.py`). `/api/generate-svg`'s automatic Ollama-down fallback now tries Gemini, OpenAI (`gpt-6-luna`), DeepSeek (`deepseek-flash`), Anthropic, then OpenRouter, in that order (cheapest-first, whichever key is configured). `/api/chat` and AI Settings gain all four as explicitly-selectable providers.
+  - **Meta is deliberately excluded from the automatic fallback.** Its cheap `-contributor` model variants (`muse-spark-1.3-contributor`, ~10-20x cheaper) opt your prompts and completions into Meta's training pipeline — a consent decision that must be an explicit, visible user choice (AI Settings), never something an env var silently triggers. See `_call_meta`'s docstring.
+  - New env vars: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`, `META_API_KEY` (documented in `.env.example`).
+
 ## [Unreleased] — 2026-09-27
 
 ### Fixed

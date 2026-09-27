@@ -1,8 +1,62 @@
 # Inkscape — the SVG editor behind inkscape-mcp
 
-Inkscape is a free, open-source vector graphics editor. It uses SVG (Scalable Vector Graphics) as its native format. Think of it as a free alternative to Adobe Illustrator or CorelDRAW.
+Inkscape is a free, open-source vector graphics editor that uses SVG (Scalable
+Vector Graphics) as its native format — a free alternative to Adobe
+Illustrator or CorelDRAW, and the actual engine every tool in this MCP server
+drives.
 
-The MCP server shells out to Inkscape's CLI (`inkscape --actions`) for every vector operation. If Inkscape is missing or not on PATH, most tools return "Inkscape not found" warnings.
+## Where it comes from
+
+Inkscape started in 2003 as a fork of [Sodipodi](https://en.wikipedia.org/wiki/Sodipodi)
+(itself based on Raph Levien's GNOME illustration app, Gill), begun by four
+Sodipodi developers — Bryce Harrington, MenTaLguY, Nathan Hurst, and Ted
+Gould — who wanted a redesigned interface and stricter SVG-standard
+compliance. It's licensed under the GPL 2.0-or-later, and has been fiscally
+sponsored by the [Software Freedom Conservancy](https://sfconservancy.org/)
+since 2006 — the nonprofit that handles Inkscape's funds, legal support, and
+administrative infrastructure so the project itself stays a volunteer-run,
+non-commercial effort rather than a company's product.
+
+## Community and ecosystem
+
+Development happens in the open on [Inkscape's GitLab](https://gitlab.com/inkscape/inkscape),
+governed by an elected board and driven by a global volunteer contributor
+base — it's a regular participant in Google Summer of Code, ships UI
+translations into 100+ languages, and has spawned an ecosystem of its own:
+the [Inkscape Extensions](https://inkscape.org/gallery/=extension/) gallery
+(Python-based, the same `.inx`/`inkex` layer this MCP server's
+`inkscape_system.list_extensions` inspects), community-run tutorials and
+forums at inkscape.org, and years of conference talks (LGM — Libre Graphics
+Meeting) where its maintainers and the wider FOSS graphics community
+(GIMP, Blender, Krita) compare notes.
+
+## What Inkscape can do (beyond what this MCP wraps)
+
+This server drives a large slice of Inkscape headlessly (see Feature
+Coverage below), but Inkscape itself is a full interactive editor with a lot
+this MCP intentionally doesn't touch:
+- Node/bezier path editing, the Pen and Calligraphy tools, and a Spray/Tiled
+  Clones system for pattern-based duplication
+- Gradient and mesh-gradient editors, a Filter Gallery (blur, glow, texture,
+  and other raster-style SVG filter effects), and a pattern editor
+- Live Path Effects (LPEs) — non-destructive geometry effects (spiro, power
+  stroke, roughen, envelope, and more) that stay editable after applying
+- An XML editor for hand-editing the SVG DOM directly, plus an accessible,
+  filterable font browser and an SVG font editor
+- Text on a path, flowed text in a shape, and a symbols library for reusable
+  assets
+- Native PDF and EPS import/export (with LaTeX-friendly text extraction),
+  bitmap tracing (potrace-based), and raster-to-vector Shape Builder editing
+- A full Python extension API for scripting new effects, importers, and
+  exporters — the same API this MCP's own tools ultimately build on
+
+## How this MCP server uses it
+
+The MCP server shells out to Inkscape's CLI (`inkscape --actions`) for every
+vector operation that needs Inkscape itself (some operations, like SVG
+primitive creation, are pure Python and never touch the binary at all — see
+[TOOLS.md](TOOLS.md)). If Inkscape is missing or not on PATH, those tools
+return "Inkscape not found" warnings.
 
 ---
 

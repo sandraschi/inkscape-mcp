@@ -1,6 +1,10 @@
 
 ## [Unreleased] — 2026-09-28
 
+### Fixed
+- **`generate-svg` 500 error**: the cloud-fallback loop raised uncaught on the first configured-but-broken provider instead of trying the next one, and `_ollama_model()`/`_ollama_base()` ignored the model/endpoint the user actually selected in AI Settings, defaulting to a hardcoded `qwen2.5-coder:latest` this Ollama install never pulled. Now tries every configured cloud provider before failing (clean 400, not 500), and prefers the user's actual AI Settings selection.
+- **Settings page's duplicate "Optional Ollama" card**: removed - it duplicated AI Settings' live Active LLM card and had drifted into a second, disconnected settings store. All AI/LLM configuration now lives only on AI Settings.
+
 ### Added
 - **`inkscape_system` extension gallery integration**: `search_extensions`, `install_extension`, `uninstall_extension`, `list_managed_extensions` - real search/install against inkscape.org's online gallery (previously `list_extensions` only scanned locally-installed `.inx` files). Built from the actual canonical client's source (`gitlab.com/inkscape/extras/extension-manager`), not guessed. Verified/reviewed packages install by default; zip-slip extraction protection verified against a real malicious payload. Also fixed `inkscape_system`'s MCP wrapper, which exposed only `operation` and no other parameter at all.
 - **`inkscape_vector` gradients, patterns, XML editing, text-on-path, flow-text, symbols**: `create_gradient`, `create_pattern`, `get_attributes`/`set_attributes`, `text_on_path`, `flow_text`, `create_symbol`/`use_symbol` - closes most of the gap between what this MCP wraps and Inkscape's own feature set. Pure SVG DOM edits (no Inkscape process needed), verified by rendering a real multi-feature test document through the actual Inkscape binary. Interactive-only tools (node/bezier editing, Calligraphy, Spray/Tiled Clones, Shape Builder) deliberately left unimplemented - documented why in `docs/INKSCAPE.md`.

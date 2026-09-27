@@ -6,10 +6,12 @@
 - **`InkscapeVectorOperation` enum**: was missing `create_object`, `text_set_content`, `text_set_style`, `text_list_fonts`, `list_lpes`, `apply_lpe`, `inspect` - these operations existed in the implementation but failed schema validation before reaching it.
 - **`inkscape_layers` and `inkscape_animation` were never registered** on the stdio/Claude Desktop entry point (`main.py`) despite being fully implemented and documented in the README - both tools are now registered.
 - **HTTP/ASGI transport tool drift**: `inkscape_mcp.server:app` used a separate, older registration path (`register_all_tools`) missing `inkscape_fleet`/`inkscape_fab_art`. It now delegates to the same registration as the stdio entry point, so both transports expose the identical tool set.
+- **`--no-remote-resources` CLI flag**: passed on every `_execute_actions`/`_execute_verbs` call in `cli_wrapper.py`, but not a real Inkscape 1.4.4 option - every operation that shells out via `--actions` (object_raise/lower, text_to_path, apply_boolean, path ops, trace_image, render_preview, export_dxf, and more) failed outright on the currently-supported Inkscape version. Removed.
 
 ### Added
 - **`bulk_restyle` operation** (`inkscape_vector`): restyle every element matching a CSS-like selector (`tag`, `.class`, `#id`) in one call, instead of one object-id at a time.
 - **`apply_filter` operation** (`inkscape_vector`): define and apply an SVG `<filter>` (blur, drop_shadow, glow) to matching elements - Inkscape 1.4 shipped a Filter Gallery UI with no equivalent MCP operation until now.
+- **Depot page** (webapp): editable demo workflows (multi-step tool-call sequences) with a Run button, plus a gallery of the SVG/PNG assets each run produces. SQLite-backed (`services/depot_store.py`), REST at `/api/depot/*` (`services/depot_routes.py`), reuses `app.py`'s existing `_call_mcp_tool` for execution instead of a second dispatch path. See `docs/DEPOT_WORKFLOW_PLAN.md`.
 
 See `reports/wrappee-drift-inkscape-mcp-2026-09-27.md` for the audit that found these.
 

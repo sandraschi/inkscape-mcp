@@ -36,6 +36,14 @@
 | `object_lower` | Lower Z-order |
 | `bulk_restyle` | Restyle every element matching a CSS-like selector in one call |
 | `apply_filter` | Apply an SVG filter (blur, drop_shadow, glow) to matching elements |
+| `create_gradient` | Define a linear/radial gradient in `<defs>`, returns a ready `fill` value |
+| `create_pattern` | Define a tiling pattern in `<defs>` from raw SVG tile content |
+| `get_attributes` | Read every attribute + parsed style of one element (XML editor - read) |
+| `set_attributes` | Set attributes/style on one element by id (XML editor - write) |
+| `text_on_path` | Attach text to an existing path via `<textPath>` |
+| `flow_text` | Flow text inside an existing shape via CSS `shape-inside` |
+| `create_symbol` | Define a reusable `<symbol>` from raw SVG content |
+| `use_symbol` | Instantiate a symbol via `<use>` |
 | `measure_object` | Get object bounding box |
 | `query_document` | Get document stats + object list |
 | `count_nodes` | Count path nodes |

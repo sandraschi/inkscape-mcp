@@ -37,25 +37,47 @@ and years of conference talks (LGM — Libre Graphics
 Meeting) where its maintainers and the wider FOSS graphics community
 (GIMP, Blender, Krita) compare notes.
 
-## What Inkscape can do (beyond what this MCP wraps)
+## What Inkscape can do — and how much of it this MCP now reaches
 
-This server drives a large slice of Inkscape headlessly (see Feature
-Coverage below), but Inkscape itself is a full interactive editor with a lot
-this MCP intentionally doesn't touch:
-- Node/bezier path editing, the Pen and Calligraphy tools, and a Spray/Tiled
-  Clones system for pattern-based duplication
-- Gradient and mesh-gradient editors, a Filter Gallery (blur, glow, texture,
-  and other raster-style SVG filter effects), and a pattern editor
-- Live Path Effects (LPEs) — non-destructive geometry effects (spiro, power
-  stroke, roughen, envelope, and more) that stay editable after applying
-- An XML editor for hand-editing the SVG DOM directly, plus an accessible,
-  filterable font browser and an SVG font editor
-- Text on a path, flowed text in a shape, and a symbols library for reusable
-  assets
-- Native PDF and EPS import/export (with LaTeX-friendly text extraction),
-  bitmap tracing (potrace-based), and raster-to-vector Shape Builder editing
-- A full Python extension API for scripting new effects, importers, and
-  exporters — the same API this MCP's own tools ultimately build on
+Inkscape is a full interactive editor; a one-shot CLI/MCP call can't replicate
+everything a mouse-and-dialog workflow can. Most of the list below is now
+directly reachable through `inkscape_vector`/`inkscape_system` as pure SVG
+DOM edits (no Inkscape process needed for these - they write the same
+`<linearGradient>`, `<pattern>`, `<textPath>`, `shape-inside`, and `<symbol>`
+markup Inkscape's own GUI produces, verified by rendering the result through
+the real Inkscape binary):
+
+- **Gradients and patterns** — `create_gradient` (linear/radial, arbitrary
+  stops) and `create_pattern` (tiling, from raw SVG tile content) each return
+  a ready `fill` value. Mesh gradients specifically: `create_mesh_gradient`.
+- **Filter Gallery equivalents** — `apply_filter` (blur, drop_shadow, glow).
+- **Live Path Effects (LPEs)** — `list_lpes` / `apply_lpe`: spiro, power
+  stroke, roughen, envelope, bend, and more, non-destructively.
+- **XML editor equivalent** — `get_attributes` / `set_attributes`: read or
+  write any attribute (or `style.<prop>`) on any element by id.
+- **Text on a path** and **flowed text in a shape** — `text_on_path`
+  (`<textPath>`) and `flow_text` (CSS `shape-inside`, the same mechanism
+  Inkscape's own "Flow into frame" produces).
+- **Symbols library** — `create_symbol` / `use_symbol` (`<symbol>`/`<use>`).
+- **PDF/EPS import-export** (`inkscape_file.convert`) and **bitmap tracing**
+  (`trace_image`, potrace-based) were already covered.
+
+Genuinely not implemented, and not planned as one-shot operations because
+they're inherently interactive with no meaningful static equivalent:
+- **Node/bezier path editing** and the **Pen tool** — live, click-by-click
+  point manipulation; `apply_lpe`/`path_simplify`/boolean ops cover the
+  non-interactive geometry transforms that would otherwise need this.
+- **Calligraphy tool** and **Spray/Tiled Clones** — pressure/stroke-dynamics
+  and live click-to-place duplication; there's no fixed "correct" one-shot
+  output to generate.
+- **Shape Builder** — a live click-to-combine-or-erase tool; the same result
+  is reachable non-interactively via `apply_boolean`.
+- **Font browser / SVG font editor** — SVG fonts are a largely-deprecated
+  legacy format; `text_list_fonts` already covers listing installed system
+  fonts for `text_set_style`/`create_object`.
+- **Python extension *authoring* API** — writing new Inkscape extensions is
+  a different job from this MCP's (see the extension *gallery* integration
+  above, which is about using existing extensions, not writing new ones).
 
 ## How this MCP server uses it
 
@@ -214,8 +236,13 @@ Inkscape 1.0–1.1 used `--verb` instead of `--actions`. The MCP server requires
 | LPEs | ✅ Full | 15 LPEs: bend, roughen, spiro, envelope, etc. |
 | Animation | ✅ Full | SMIL presets + CSS + element/transform/motion |
 | Live GUI control | ✅ Partial | `hands_in_command` via `--active-window` |
-| Filters | ❌ Not direct | 100+ SVG filters — use via LPEs or SVG attributes |
-| Extensions system | ✅ Partial | List .inx files; execution gated |
+| Filters | ✅ Partial | `apply_filter`: blur, drop_shadow, glow (not the full 100+ built-in gallery) |
+| Gradients / patterns | ✅ Full | `create_gradient` (linear/radial), `create_mesh_gradient`, `create_pattern` |
+| XML editing | ✅ Full | `get_attributes` / `set_attributes` by element id |
+| Text on path / flowed text | ✅ Full | `text_on_path`, `flow_text` |
+| Symbols | ✅ Full | `create_symbol` / `use_symbol` |
+| Extensions (local) | ✅ Partial | List .inx files; execution gated (see extension gallery below for install) |
+| Extension gallery | ✅ Full | `search_extensions` / `install_extension` / `uninstall_extension` |
 | Export formats | ✅ Full | PNG, PDF, EPS, SVG, DXF |
 
 ---

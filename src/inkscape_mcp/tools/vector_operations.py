@@ -333,11 +333,14 @@ Errors:
 import math
 import re
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 from typing import Literal
 
 from pydantic import BaseModel
+
+SVG_URI = "http://www.w3.org/2000/svg"
 
 
 class VectorOperationResult(BaseModel):
@@ -385,6 +388,7 @@ async def inkscape_vector(
         "object_raise",
         "object_lower",
         "set_document_units",
+        "bulk_restyle",
     ],
     input_path: str = "",
     output_path: str = "",
@@ -394,6 +398,7 @@ async def inkscape_vector(
     operation_type: str = "",
     cli_wrapper: Any = None,
     config: Any = None,
+    selector: str = "",
     # Optional per-operation params (FastMCP 3.x rejects **kwargs on tools,
     # so these are explicit; each applies only to the operation that uses it).
     barcode_data: str = "",
@@ -509,6 +514,14 @@ async def inkscape_vector(
 
         elif operation == "set_document_units":
             return await _set_document_units(input_path, output_path, units, cli_wrapper, config)
+
+        elif operation == "bulk_restyle":
+            return await _bulk_restyle(input_path, output_path, selector, params or {})
+
+        elif operation == "apply_filter":
+            return await _apply_filter(
+                input_path, output_path, selector, object_id, params or {}
+            )
 
         elif operation == "create_object":
             return await _create_object(
@@ -1327,6 +1340,323 @@ async def _set_document_units(
             operation="set_document_units",
             message=f"Document units setting failed: {e}",
             data={"requested_units": units},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+def _local_tag(el: ET.Element) -> str:
+    """Element tag without the SVG namespace prefix."""
+    tag = el.tag
+    return tag.split("}", 1)[1] if "}" in tag else tag
+
+
+def _matches_simple_selector(el: ET.Element, selector: str) -> bool:
+    """Match one simple selector: `*`, `tag`, `.class`, `#id`, or `tag.class`/`tag#id`.
+
+    Deliberately a safe subset (no descendant/attribute/pseudo selectors) - same
+    scope limitation grumpydevorg/inkscape-mcps documents for its `dom_set` tool.
+    """
+    selector = selector.strip()
+    if not selector or selector == "*":
+        return True
+
+    tag_part = selector
+    id_part = ""
+    class_part = ""
+    if "#" in tag_part:
+        tag_part, id_part = tag_part.split("#", 1)
+    if "." in tag_part:
+        tag_part, class_part = tag_part.split(".", 1)
+    elif "." in id_part:
+        id_part, class_part = id_part.split(".", 1)
+
+    if tag_part and _local_tag(el) != tag_part:
+        return False
+    if id_part and el.get("id") != id_part:
+        return False
+    if class_part:
+        classes = el.get("class", "").split()
+        if class_part not in classes:
+            return False
+    return True
+
+
+def _selector_matches(el: ET.Element, selector_list: str) -> bool:
+    """Comma-separated list of simple selectors - matches if any one matches."""
+    return any(_matches_simple_selector(el, s) for s in selector_list.split(","))
+
+
+def _apply_style_params(el: ET.Element, params: dict[str, Any]) -> None:
+    """Apply a params dict to one element: `style.<prop>` merges into the style
+    attribute (parsed as `prop:value;...`), anything else sets a plain XML attribute.
+    """
+    style_updates = {}
+    plain_updates = {}
+    for key, value in params.items():
+        if key.startswith("style."):
+            style_updates[key[len("style.") :]] = value
+        else:
+            plain_updates[key] = value
+
+    if style_updates:
+        existing = el.get("style", "")
+        style_map = {}
+        for decl in existing.split(";"):
+            decl = decl.strip()
+            if not decl or ":" not in decl:
+                continue
+            prop, _, val = decl.partition(":")
+            style_map[prop.strip()] = val.strip()
+        style_map.update({k: str(v) for k, v in style_updates.items()})
+        el.set("style", ";".join(f"{k}:{v}" for k, v in style_map.items()))
+
+    for key, value in plain_updates.items():
+        el.set(key, str(value))
+
+
+async def _bulk_restyle(
+    input_path: str, output_path: str, selector: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply attribute/style changes to every element matching a CSS-like selector.
+
+    Pure DOM edit (no Inkscape CLI shell-out) - direct XML read/modify/write via
+    ElementTree, mirroring the pattern already used in validation_tools.py and
+    sim_art_tools.py.
+    """
+    try:
+        if not selector.strip():
+            return VectorOperationResult(
+                success=False,
+                operation="bulk_restyle",
+                message="bulk_restyle requires a non-empty selector",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+        if not params:
+            return VectorOperationResult(
+                success=False,
+                operation="bulk_restyle",
+                message="bulk_restyle requires a non-empty params dict (attrs or style.<prop>)",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+
+        matched_ids = []
+        for el in root.iter():
+            if el is root:
+                continue
+            if _selector_matches(el, selector):
+                _apply_style_params(el, params)
+                matched_ids.append(el.get("id") or f"<{_local_tag(el)}>")
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="bulk_restyle",
+            message=f"Restyled {len(matched_ids)} element(s) matching '{selector}'",
+            data={
+                "selector": selector,
+                "params": params,
+                "matched_count": len(matched_ids),
+                "matched_ids": matched_ids,
+                "output_path": dest,
+            },
+            execution_time_ms=0,
+        ).model_dump()
+
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="bulk_restyle",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="bulk_restyle",
+            message=f"bulk_restyle failed: {e}",
+            data={"selector": selector},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+_FILTER_PRIMITIVE_TAGS = {
+    "defs",
+    "filter",
+    "feGaussianBlur",
+    "feDropShadow",
+    "feFlood",
+    "feComposite",
+    "feMerge",
+    "feMergeNode",
+    "feOffset",
+}
+
+
+def _build_filter_element(filter_id: str, kind: str, params: dict[str, Any]) -> ET.Element:
+    """Build an SVG <filter> def for a supported kind: blur, drop_shadow, glow.
+
+    Fills the gap noted in reports/wrappee-drift-inkscape-mcp-2026-09-27.md -
+    Inkscape 1.4 shipped a Filter Gallery UI but this repo had no filter-effects op.
+    """
+    filt = ET.Element(f"{{{SVG_URI}}}filter", {"id": filter_id})
+
+    if kind == "blur":
+        std = str(params.get("std_deviation", 3))
+        ET.SubElement(filt, f"{{{SVG_URI}}}feGaussianBlur", {"stdDeviation": std})
+
+    elif kind == "drop_shadow":
+        ET.SubElement(
+            filt,
+            f"{{{SVG_URI}}}feDropShadow",
+            {
+                "dx": str(params.get("dx", 2)),
+                "dy": str(params.get("dy", 2)),
+                "stdDeviation": str(params.get("std_deviation", 3)),
+                "flood-color": str(params.get("color", "#000000")),
+                "flood-opacity": str(params.get("opacity", 0.5)),
+            },
+        )
+
+    elif kind == "glow":
+        std = str(params.get("std_deviation", 4))
+        color = params.get("color", "")
+        blur_in = "SourceGraphic"
+        if color:
+            ET.SubElement(
+                filt,
+                f"{{{SVG_URI}}}feFlood",
+                {"flood-color": str(color), "result": "flood"},
+            )
+            ET.SubElement(
+                filt,
+                f"{{{SVG_URI}}}feComposite",
+                {"in": "flood", "in2": "SourceGraphic", "operator": "in", "result": "colored"},
+            )
+            blur_in = "colored"
+        ET.SubElement(
+            filt,
+            f"{{{SVG_URI}}}feGaussianBlur",
+            {"in": blur_in, "stdDeviation": std, "result": "blurred"},
+        )
+        merge = ET.SubElement(filt, f"{{{SVG_URI}}}feMerge")
+        ET.SubElement(merge, f"{{{SVG_URI}}}feMergeNode", {"in": "blurred"})
+        ET.SubElement(merge, f"{{{SVG_URI}}}feMergeNode", {"in": "SourceGraphic"})
+
+    else:
+        raise ValueError(f"Unknown filter kind '{kind}' - expected blur, drop_shadow, or glow")
+
+    return filt
+
+
+async def _apply_filter(
+    input_path: str,
+    output_path: str,
+    selector: str,
+    object_id: str,
+    params: dict[str, Any],
+) -> dict[str, Any]:
+    """Define an SVG filter (blur/drop_shadow/glow) and apply it to matching elements."""
+    kind = str(params.get("kind", ""))
+    try:
+        if kind not in ("blur", "drop_shadow", "glow"):
+            return VectorOperationResult(
+                success=False,
+                operation="apply_filter",
+                message="params.kind must be one of: blur, drop_shadow, glow",
+                data={"kind": kind},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+        if not selector.strip() and not object_id.strip():
+            return VectorOperationResult(
+                success=False,
+                operation="apply_filter",
+                message="apply_filter requires a selector or object_id to target elements",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+
+        matched: list[ET.Element] = []
+        for el in root.iter():
+            if el is root or _local_tag(el) in _FILTER_PRIMITIVE_TAGS:
+                continue
+            if object_id and el.get("id") == object_id:
+                matched.append(el)
+            elif selector and _selector_matches(el, selector):
+                matched.append(el)
+
+        if not matched:
+            return VectorOperationResult(
+                success=False,
+                operation="apply_filter",
+                message=f"No elements matched selector={selector!r} object_id={object_id!r}",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        filter_id = str(params.get("filter_id") or f"filter_{kind}_{int(time.time() * 1000) % 100000}")
+        defs = root.find(f"{{{SVG_URI}}}defs")
+        if defs is None:
+            defs = ET.SubElement(root, f"{{{SVG_URI}}}defs")
+        defs.append(_build_filter_element(filter_id, kind, params))
+
+        matched_ids = []
+        for el in matched:
+            el.set("filter", f"url(#{filter_id})")
+            matched_ids.append(el.get("id") or f"<{_local_tag(el)}>")
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="apply_filter",
+            message=f"Applied {kind} filter '{filter_id}' to {len(matched_ids)} element(s)",
+            data={
+                "kind": kind,
+                "filter_id": filter_id,
+                "matched_count": len(matched_ids),
+                "matched_ids": matched_ids,
+                "output_path": dest,
+            },
+            execution_time_ms=0,
+        ).model_dump()
+
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="apply_filter",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="apply_filter",
+            message=f"apply_filter failed: {e}",
+            data={"kind": kind},
             execution_time_ms=0,
             error=str(e),
         ).model_dump()

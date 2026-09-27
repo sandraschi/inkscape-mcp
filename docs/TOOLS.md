@@ -34,6 +34,8 @@
 | `object_to_path` | Convert shapes to paths |
 | `object_raise` | Raise Z-order |
 | `object_lower` | Lower Z-order |
+| `bulk_restyle` | Restyle every element matching a CSS-like selector in one call |
+| `apply_filter` | Apply an SVG filter (blur, drop_shadow, glow) to matching elements |
 | `measure_object` | Get object bounding box |
 | `query_document` | Get document stats + object list |
 | `count_nodes` | Count path nodes |

@@ -1,5 +1,18 @@
 
-## [Unreleased] — 2026-07-14
+## [Unreleased] — 2026-09-27
+
+### Fixed
+- **`inkscape_vector` parameter surface**: the MCP schema only exposed `operation`/`input_path`/`output_path`, silently dropping all per-operation params (`shape`, `x`, `y`, `fill`, `lpe_id`, `text`, etc.) needed by most of its 30+ operations. `create_object`, `apply_lpe`, `text_set_content`/`text_set_style`, and others are now actually reachable.
+- **`InkscapeVectorOperation` enum**: was missing `create_object`, `text_set_content`, `text_set_style`, `text_list_fonts`, `list_lpes`, `apply_lpe`, `inspect` - these operations existed in the implementation but failed schema validation before reaching it.
+- **`inkscape_layers` and `inkscape_animation` were never registered** on the stdio/Claude Desktop entry point (`main.py`) despite being fully implemented and documented in the README - both tools are now registered.
+- **HTTP/ASGI transport tool drift**: `inkscape_mcp.server:app` used a separate, older registration path (`register_all_tools`) missing `inkscape_fleet`/`inkscape_fab_art`. It now delegates to the same registration as the stdio entry point, so both transports expose the identical tool set.
+
+### Added
+- **`bulk_restyle` operation** (`inkscape_vector`): restyle every element matching a CSS-like selector (`tag`, `.class`, `#id`) in one call, instead of one object-id at a time.
+- **`apply_filter` operation** (`inkscape_vector`): define and apply an SVG `<filter>` (blur, drop_shadow, glow) to matching elements - Inkscape 1.4 shipped a Filter Gallery UI with no equivalent MCP operation until now.
+
+See `reports/wrappee-drift-inkscape-mcp-2026-09-27.md` for the audit that found these.
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

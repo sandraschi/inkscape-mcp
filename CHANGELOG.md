@@ -7,7 +7,13 @@
 ### Added
 - **OpenAI, DeepSeek, OpenRouter, and Meta (Muse Spark) cloud LLM providers** — for users without a local GPU who need a cloud-token path. All three OpenAI-compatible providers (OpenAI, DeepSeek, OpenRouter) share one implementation (`_call_openai_compatible`/`_call_openai_compatible_chat` in `app.py`). `/api/generate-svg`'s automatic Ollama-down fallback now tries Gemini, OpenAI (`gpt-6-luna`), DeepSeek (`deepseek-flash`), Anthropic, then OpenRouter, in that order (cheapest-first, whichever key is configured). `/api/chat` and AI Settings gain all four as explicitly-selectable providers.
   - **Meta is deliberately excluded from the automatic fallback.** Its cheap `-contributor` model variants (`muse-spark-1.3-contributor`, ~10-20x cheaper) opt your prompts and completions into Meta's training pipeline — a consent decision that must be an explicit, visible user choice (AI Settings), never something an env var silently triggers. See `_call_meta`'s docstring.
-  - New env vars: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`, `META_API_KEY` (documented in `.env.example`).
+  - New env vars: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`, `MODEL_API_KEY` (documented in `.env.example`).
+
+### Fixed (fleet template compliance)
+- **`GET /api/llm/models` never went live**: always returned the curated stand-in list with no `key_missing` flag - the exact "Test lies" shape `mcp-central-docs/templates/llm`'s BUG-042 note warns about. Now probes each vendor's real model-list endpoint when keyed.
+- **Missing `POST /api/llm/test`**: the fleet contract (`templates/llm/INTEGRATION.md`) requires it; added, validates a typed-but-unsaved key without persisting it.
+- **`POST /api/settings/llm` hijacked the active provider/model pair on any key save** (BUG-043) - saving a key from any cloud card overwrote whatever provider you were actually using. Added `select: bool = True`; card key-saves now pass `select: false`.
+- **`LlmProviderCards.tsx` had drifted from the canonical template**: auto-selected `models[0]` on key save (BUG-030, "never auto-pick") and its Test button reported curated names as success with no key configured (BUG-042). Synced with the template's behavior, keeping this repo's dark-theme styling.
 
 ## [Unreleased] — 2026-09-27
 

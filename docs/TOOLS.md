@@ -92,7 +92,12 @@
 | `hands_in_command` | Send --actions to running Inkscape GUI |
 | `version` | Server version info |
 | `config` | View current config |
-| `list_extensions` | Scan for .inx extension files |
+| `list_extensions` | Scan for locally-installed .inx extension files |
+| `execute_extension` | Run an installed extension (currently disabled - always fails) |
+| `search_extensions` | Search inkscape.org's live online extension gallery |
+| `install_extension` | Download + install a gallery extension (verified-only by default) |
+| `uninstall_extension` | Remove an extension this server installed |
+| `list_managed_extensions` | List extensions installed via this server |
 
 ## inkscape_render — Agent Vision
 

@@ -1,6 +1,7 @@
-import { Info, RefreshCw, Server, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, RefreshCw, Server, Settings2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiGet, apiPost } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +10,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import API_BASE from "@/lib/api";
+
+interface ServerSettingField {
+  value: string;
+  source: string;
+  note?: string;
+}
+
+interface ServerSettingsPayload {
+  inkscape_path: ServerSettingField;
+  ollama_base_url: ServerSettingField;
+  ollama_model: ServerSettingField;
+  mcp_port: ServerSettingField;
+}
 
 interface HealthPayload {
   status?: string;
@@ -34,6 +49,10 @@ interface HealthPayload {
 export function Settings() {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [serverSettings, setServerSettings] = useState<ServerSettingsPayload | null>(null);
+  const [form, setForm] = useState({ inkscape_path: "", ollama_base_url: "", ollama_model: "", mcp_port: "" });
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   const load = async () => {
     setError(null);
@@ -51,9 +70,67 @@ export function Settings() {
     }
   };
 
+  const loadServerSettings = useCallback(async () => {
+    try {
+      const s = await apiGet<ServerSettingsPayload>("/api/settings/server");
+      setServerSettings(s);
+      setForm({
+        inkscape_path: s.inkscape_path.value,
+        ollama_base_url: s.ollama_base_url.value,
+        ollama_model: s.ollama_model.value,
+        mcp_port: s.mcp_port.value,
+      });
+    } catch {
+      /* keep previous state */
+    }
+  }, []);
+
   useEffect(() => {
     void load();
-  }, []);
+    void loadServerSettings();
+  }, [loadServerSettings]);
+
+  const saveServerSettings = useCallback(async () => {
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      // Only send fields that actually changed - sending all four every time
+      // would re-pin already-correct values as "saved" overrides (blocking
+      // e.g. future Inkscape auto-detection) and fire mcp_port's
+      // restart_required on every save regardless of whether it changed.
+      const changed: Record<string, string> = {};
+      if (serverSettings) {
+        for (const key of Object.keys(form) as Array<keyof typeof form>) {
+          if (form[key] !== serverSettings[key].value) changed[key] = form[key];
+        }
+      } else {
+        Object.assign(changed, form);
+      }
+      if (Object.keys(changed).length === 0) {
+        setSaveMsg("Nothing changed.");
+        return;
+      }
+      const res = await apiPost<{ success: boolean; error?: string; restart_required?: boolean }>(
+        "/api/settings/server",
+        changed,
+      );
+      if (!res.success) {
+        setSaveMsg(res.error || "Save failed.");
+      } else {
+        setSaveMsg(
+          res.restart_required
+            ? "Saved. MCP_PORT takes effect on next restart — this page is served on the current port."
+            : "Saved and applied immediately.",
+        );
+        await loadServerSettings();
+        await load();
+      }
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }, [form, loadServerSettings]);
 
   const ink = health?.providers?.inkscape;
   const oll = health?.providers?.ollama;
@@ -66,8 +143,9 @@ export function Settings() {
             Settings
           </h2>
           <p className="text-slate-300">
-            Read-only snapshot from the running server. Change Inkscape or
-            Ollama via environment and restart.
+            Process/Inkscape/LLM-provider panels below are a read-only
+            snapshot. Inkscape path and Ollama endpoint/model are editable
+            here and apply immediately.
           </p>
         </div>
         <Button
@@ -181,21 +259,87 @@ export function Settings() {
       <Card className="border-slate-800 bg-slate-950/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <Info className="h-5 w-5 text-slate-300" />
-            Configure outside this UI
+            <Settings2 className="h-5 w-5 text-blue-400" />
+            Server Configuration
           </CardTitle>
+          <CardDescription className="text-slate-300">
+            Inkscape path and Ollama endpoint/model apply immediately, no
+            restart. MCP clients (Cursor, Claude) use their own JSON config —
+            see repo <code className="text-slate-300">docs/IDE_MCP.md</code>.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-slate-200">
-          <p>
-            Set <code className="text-slate-300">INKSCAPE_PATH</code>,{" "}
-            <code className="text-slate-300">OLLAMA_BASE_URL</code>,
-          </p>
-          <p>
-            <code className="text-slate-300">MCP_PORT</code> (default 11028 with
-            this repo&apos;s CLI), then restart the server. MCP clients (Cursor,
-            Claude) use their own JSON config — see repo{" "}
-            <code className="text-slate-300">docs/IDE_MCP.md</code>.
-          </p>
+        <CardContent className="space-y-3 text-sm">
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400" htmlFor="set-inkscape-path">
+              Inkscape executable path
+            </label>
+            <Input
+              id="set-inkscape-path"
+              value={form.inkscape_path}
+              onChange={(e) => setForm((f) => ({ ...f, inkscape_path: e.target.value }))}
+              placeholder="C:\Program Files\Inkscape\bin\inkscape.exe"
+              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
+            />
+            {serverSettings && (
+              <p className="text-xs text-slate-500">source: {serverSettings.inkscape_path.source}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400" htmlFor="set-ollama-url">
+              Ollama base URL
+            </label>
+            <Input
+              id="set-ollama-url"
+              value={form.ollama_base_url}
+              onChange={(e) => setForm((f) => ({ ...f, ollama_base_url: e.target.value }))}
+              placeholder="http://localhost:11434"
+              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
+            />
+            {serverSettings && (
+              <p className="text-xs text-slate-500">source: {serverSettings.ollama_base_url.source}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400" htmlFor="set-ollama-model">
+              Ollama default model
+            </label>
+            <Input
+              id="set-ollama-model"
+              value={form.ollama_model}
+              onChange={(e) => setForm((f) => ({ ...f, ollama_model: e.target.value }))}
+              placeholder="qwen2.5-coder:latest"
+              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
+            />
+            {serverSettings && (
+              <p className="text-xs text-slate-500">source: {serverSettings.ollama_model.source}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400" htmlFor="set-mcp-port">
+              MCP HTTP port
+            </label>
+            <Input
+              id="set-mcp-port"
+              value={form.mcp_port}
+              onChange={(e) => setForm((f) => ({ ...f, mcp_port: e.target.value }))}
+              placeholder="11027"
+              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200 max-w-32"
+            />
+            <p className="text-xs text-slate-500">
+              {serverSettings?.mcp_port.note ?? "Takes effect on next restart."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              onClick={saveServerSettings}
+              disabled={saving}
+              className="bg-blue-600 text-white hover:bg-blue-500"
+            >
+              {saving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+              Save
+            </Button>
+            {saveMsg && <span className="text-xs text-slate-400">{saveMsg}</span>}
+          </div>
         </CardContent>
       </Card>
     </div>

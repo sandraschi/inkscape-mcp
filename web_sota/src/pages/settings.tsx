@@ -1,5 +1,6 @@
-import { Info, RefreshCw, Server } from "lucide-react";
+import { Info, RefreshCw, Server, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,18 +31,9 @@ interface HealthPayload {
   };
 }
 
-interface LlmProvider {
-  id: string;
-  label: string;
-  base_url: string;
-  models: string[];
-  needs_key: boolean;
-}
-
 export function Settings() {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [llmProviders, setLlmProviders] = useState<LlmProvider[]>([]);
 
   const load = async () => {
     setError(null);
@@ -59,21 +51,8 @@ export function Settings() {
     }
   };
 
-  const loadProviders = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/llm/providers`);
-      if (res.ok) {
-        const d = await res.json();
-        setLlmProviders(d.providers || []);
-      }
-    } catch {
-      // ignore
-    }
-  };
-
   useEffect(() => {
     void load();
-    void loadProviders();
   }, []);
 
   const ink = health?.providers?.inkscape;
@@ -180,57 +159,22 @@ export function Settings() {
 
       <Card className="border-slate-800 bg-slate-950/50">
         <CardHeader>
-          <CardTitle className="text-white">LLM Providers</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Sparkles className="h-5 w-5 text-blue-400" />
+            LLM Providers
+          </CardTitle>
           <CardDescription className="text-slate-300">
-            Dynamically discovered from{" "}
-            <code className="text-slate-300">/api/llm/providers</code>
+            Selecting a provider/model, entering API keys, and testing keys
+            live all moved to their own page — this one stays a read-only
+            server snapshot.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-300">
-          {llmProviders.length === 0 && (
-            <p className="text-slate-400">
-              No providers discovered. Start Ollama or LM Studio.
-            </p>
-          )}
-          {llmProviders.map((p) => (
-            <div
-              key={p.id}
-              className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 space-y-1"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-200">{p.label}</span>
-                <span
-                  className={
-                    p.models.length
-                      ? "text-emerald-400 text-sm"
-                      : "text-slate-600 text-sm"
-                  }
-                >
-                  {p.models.length
-                    ? `${p.models.length} model${p.models.length > 1 ? "s" : ""}`
-                    : "unreachable"}
-                </span>
-              </div>
-              <code className="block text-sm text-slate-400">{p.base_url}</code>
-              {p.models.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {p.models.slice(0, 10).map((m) => (
-                    <span
-                      key={m}
-                      className="text-sm bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded"
-                    >
-                      {m}
-                    </span>
-                  ))}
-                  {p.models.length > 10 && (
-                    <span className="text-sm text-slate-600">
-                      +{p.models.length - 10} more
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+        <CardContent>
+          <Link to="/ai-settings">
+            <Button className="bg-blue-600 text-white hover:bg-blue-500">
+              Open AI Settings
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 

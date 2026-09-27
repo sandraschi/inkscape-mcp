@@ -31,12 +31,6 @@ interface HealthPayload {
   server?: string;
   version?: string;
   providers?: {
-    ollama?: {
-      available?: boolean;
-      base_url?: string;
-      model?: string;
-      models?: string[];
-    };
     inkscape?: {
       available?: boolean;
       path?: string | null;
@@ -50,7 +44,7 @@ export function Settings() {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [serverSettings, setServerSettings] = useState<ServerSettingsPayload | null>(null);
-  const [form, setForm] = useState({ inkscape_path: "", ollama_base_url: "", ollama_model: "", mcp_port: "" });
+  const [form, setForm] = useState({ inkscape_path: "", mcp_port: "" });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
@@ -76,8 +70,6 @@ export function Settings() {
       setServerSettings(s);
       setForm({
         inkscape_path: s.inkscape_path.value,
-        ollama_base_url: s.ollama_base_url.value,
-        ollama_model: s.ollama_model.value,
         mcp_port: s.mcp_port.value,
       });
     } catch {
@@ -133,7 +125,6 @@ export function Settings() {
   }, [form, loadServerSettings]);
 
   const ink = health?.providers?.inkscape;
-  const oll = health?.providers?.ollama;
 
   return (
     <div className="space-y-6" data-testid="settings-page">
@@ -143,9 +134,8 @@ export function Settings() {
             Settings
           </h2>
           <p className="text-slate-300">
-            Process/Inkscape/LLM-provider panels below are a read-only
-            snapshot. Inkscape path and Ollama endpoint/model are editable
-            here and apply immediately.
+            Server-level config (Inkscape path, MCP port). All AI/LLM
+            provider settings live on AI Settings, not here.
           </p>
         </div>
         <Button
@@ -196,55 +186,13 @@ export function Settings() {
 
       <Card className="border-slate-800 bg-slate-950/50">
         <CardHeader>
-          <CardTitle className="text-white">
-            Optional Ollama (REST / generate-svg)
-          </CardTitle>
-          <CardDescription className="text-slate-300">
-            Not required for MCP tool use. Listed models come from{" "}
-            <code className="text-slate-300">/api/health</code> probing Ollama.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-slate-300">
-          <div>
-            <span className="text-slate-400">Reachable: </span>
-            {oll?.available ? "yes" : "no"}
-          </div>
-          <div>
-            <span className="text-slate-400">Base URL: </span>
-            <code className="text-slate-200">{oll?.base_url ?? "—"}</code>
-          </div>
-          <div>
-            <span className="text-slate-400">Default model env: </span>
-            <code className="text-slate-200">{oll?.model ?? "—"}</code>
-          </div>
-          <div>
-            <span className="text-slate-400">Models (tags): </span>
-            {oll?.models && oll.models.length > 0 ? (
-              <ul className="mt-1 list-inside list-disc font-mono text-sm text-slate-300">
-                {oll.models.slice(0, 20).map((m) => (
-                  <li key={m}>{m}</li>
-                ))}
-                {oll.models.length > 20 && <li>…</li>}
-              </ul>
-            ) : (
-              <span className="text-slate-400">
-                none (Ollama not running or not installed)
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-slate-800 bg-slate-950/50">
-        <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Sparkles className="h-5 w-5 text-blue-400" />
-            LLM Providers
+            AI / LLM Providers
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Selecting a provider/model, entering API keys, and testing keys
-            live all moved to their own page — this one stays a read-only
-            server snapshot.
+            Ollama, cloud providers, model selection, API keys, and testing
+            all live on AI Settings - nothing AI-related is duplicated here.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -263,8 +211,8 @@ export function Settings() {
             Server Configuration
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Inkscape path and Ollama endpoint/model apply immediately, no
-            restart. MCP clients (Cursor, Claude) use their own JSON config —
+            Inkscape path applies immediately, no restart (MCP port needs
+            one). MCP clients (Cursor, Claude) use their own JSON config —
             see repo <code className="text-slate-300">docs/IDE_MCP.md</code>.
           </CardDescription>
         </CardHeader>
@@ -282,36 +230,6 @@ export function Settings() {
             />
             {serverSettings && (
               <p className="text-xs text-slate-500">source: {serverSettings.inkscape_path.source}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-slate-400" htmlFor="set-ollama-url">
-              Ollama base URL
-            </label>
-            <Input
-              id="set-ollama-url"
-              value={form.ollama_base_url}
-              onChange={(e) => setForm((f) => ({ ...f, ollama_base_url: e.target.value }))}
-              placeholder="http://localhost:11434"
-              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
-            />
-            {serverSettings && (
-              <p className="text-xs text-slate-500">source: {serverSettings.ollama_base_url.source}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-slate-400" htmlFor="set-ollama-model">
-              Ollama default model
-            </label>
-            <Input
-              id="set-ollama-model"
-              value={form.ollama_model}
-              onChange={(e) => setForm((f) => ({ ...f, ollama_model: e.target.value }))}
-              placeholder="qwen2.5-coder:latest"
-              className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
-            />
-            {serverSettings && (
-              <p className="text-xs text-slate-500">source: {serverSettings.ollama_model.source}</p>
             )}
           </div>
           <div className="space-y-1">

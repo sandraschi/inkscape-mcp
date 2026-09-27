@@ -31,8 +31,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: "/", label: "Overview", icon: LayoutDashboard },
-    { href: "/status", label: "Status", icon: Server },
-    { href: "/help", label: "Help", icon: CircleHelp },
     { href: "/agent-tools", label: "Agent Lab", icon: FlaskConical },
     { href: "/svg-studio", label: "SVG Studio", icon: Wand2 },
     { href: "/actions", label: "Vector Actions", icon: Zap },
@@ -40,12 +38,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/layers", label: "Layers", icon: Layers },
     { href: "/depot", label: "Depot", icon: Archive },
     { href: "/logs", label: "Logs", icon: ScrollText },
-    { href: "/chat", label: "Notes", icon: Bot },
+    { href: "/chat", label: "Chat", icon: Bot },
     { href: "/skills", label: "Skills", icon: Sparkles },
     { href: "/apps", label: "Apps", icon: Grid3X3 },
     { href: "/api-docs", label: "API Docs", icon: Code2 },
     { href: "/settings", label: "Settings", icon: Settings },
     { href: "/ai-settings", label: "AI Settings", icon: BrainCircuit },
+    { href: "/status", label: "Status", icon: Server },
+    { href: "/help", label: "Help", icon: CircleHelp },
   ];
 
   return (

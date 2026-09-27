@@ -118,9 +118,18 @@ class InkscapeMCPServer:
             if not self._validate_configuration():
                 return False
 
-            # Initialize Inkscape detector
+            # Initialize Inkscape detector - a user-saved override (Settings
+            # page -> /api/settings/server) wins over auto-detection when it
+            # points at a file that still exists.
             self.inkscape_detector = InkscapeDetector()
-            inkscape_path = self.inkscape_detector.detect_inkscape_installation()
+            from .services import server_settings
+
+            override = server_settings.load().get("inkscape_path", "")
+            if override and Path(override).exists():
+                inkscape_path = override
+                logger.info(f"Using saved Inkscape path override: {inkscape_path}")
+            else:
+                inkscape_path = self.inkscape_detector.detect_inkscape_installation()
 
             if inkscape_path:
                 logger.info(f"Found Inkscape at: {inkscape_path}")

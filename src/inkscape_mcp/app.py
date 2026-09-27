@@ -34,6 +34,7 @@ from typing import Any
 
 from .services import llm_engine
 from .services import llm_settings_store
+from .services import server_settings
 
 try:
     import httpx
@@ -204,11 +205,13 @@ def _env(key: str, default: str = "") -> str:
 
 
 def _ollama_base() -> str:
-    return _env("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+    override = server_settings.load().get("ollama_base_url", "")
+    return (override or _env("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
 
 
 def _ollama_model() -> str:
-    return _env("OLLAMA_MODEL", "qwen2.5-coder:latest")
+    override = server_settings.load().get("ollama_model", "")
+    return override or _env("OLLAMA_MODEL", "qwen2.5-coder:latest")
 
 
 def _save_dir() -> Path:
@@ -1382,6 +1385,75 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     async def delete_llm_key(provider: str) -> dict:
         llm_settings_store.clear_key(provider)
         return {"success": True}
+
+    @app.get("/api/settings/server")
+    async def get_server_settings() -> dict:
+        """Effective values for the handful of things Settings' old
+        "Configure outside this UI" card told users to hand-edit an env var
+        for. `source` says where each value actually came from, so the UI
+        can show e.g. "env" vs "saved override" vs "default"."""
+        saved = server_settings.load()
+
+        inkscape_path = (config.inkscape_executable if config else None) or ""
+        inkscape_source = "saved" if saved.get("inkscape_path") else ("detected" if inkscape_path else "none")
+
+        ollama_url_env = _env("OLLAMA_BASE_URL", "")
+        ollama_source = "saved" if saved.get("ollama_base_url") else ("env" if ollama_url_env else "default")
+
+        ollama_model_env = _env("OLLAMA_MODEL", "")
+        ollama_model_source = "saved" if saved.get("ollama_model") else ("env" if ollama_model_env else "default")
+
+        port_env = _env("MCP_PORT", "")
+        return {
+            "inkscape_path": {"value": inkscape_path, "source": inkscape_source},
+            "ollama_base_url": {"value": _ollama_base(), "source": ollama_source},
+            "ollama_model": {"value": _ollama_model(), "source": ollama_model_source},
+            "mcp_port": {
+                "value": saved.get("mcp_port") or port_env or "11027",
+                "source": "saved" if saved.get("mcp_port") else ("env" if port_env else "default"),
+                "note": "Takes effect on next restart - this page is itself served on the current port.",
+            },
+        }
+
+    @app.post("/api/settings/server")
+    async def save_server_settings(request: Request):
+        """inkscape_path/ollama_base_url/ollama_model take effect immediately
+        (mutating the live, shared InkscapeConfig / read fresh by
+        _ollama_base/_ollama_model on every call). mcp_port is saved for the
+        next start only - restart_required is always true for it."""
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+
+        inkscape_path = str(payload.get("inkscape_path") or "").strip()
+        if inkscape_path:
+            if not Path(inkscape_path).exists():
+                return JSONResponse(
+                    {"success": False, "error": f"File not found: {inkscape_path}"}, status_code=400
+                )
+            if config is not None:
+                config.inkscape_executable = inkscape_path
+
+        fields: dict[str, Any] = {}
+        if "inkscape_path" in payload:
+            fields["inkscape_path"] = inkscape_path or None
+        if "ollama_base_url" in payload:
+            fields["ollama_base_url"] = str(payload.get("ollama_base_url") or "").strip() or None
+        if "ollama_model" in payload:
+            fields["ollama_model"] = str(payload.get("ollama_model") or "").strip() or None
+        if "mcp_port" in payload:
+            raw_port = payload.get("mcp_port")
+            fields["mcp_port"] = str(int(raw_port)) if raw_port else None
+
+        saved = server_settings.save(**fields)
+        return {
+            "success": True,
+            "saved": saved,
+            "restart_required": "mcp_port" in fields and fields["mcp_port"] is not None,
+        }
 
     @app.get("/api/llm/onboarding")
     async def llm_onboarding() -> dict:

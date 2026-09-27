@@ -389,6 +389,15 @@ async def inkscape_vector(
         "object_lower",
         "set_document_units",
         "bulk_restyle",
+        "apply_filter",
+        "create_gradient",
+        "create_pattern",
+        "get_attributes",
+        "set_attributes",
+        "text_on_path",
+        "flow_text",
+        "create_symbol",
+        "use_symbol",
     ],
     input_path: str = "",
     output_path: str = "",
@@ -396,6 +405,7 @@ async def inkscape_vector(
     object_ids: list[str] | None = None,
     select_all: bool = False,
     operation_type: str = "",
+    ref_id: str = "",
     cli_wrapper: Any = None,
     config: Any = None,
     selector: str = "",
@@ -522,6 +532,32 @@ async def inkscape_vector(
             return await _apply_filter(
                 input_path, output_path, selector, object_id, params or {}
             )
+
+        elif operation == "create_gradient":
+            return await _create_gradient(input_path, output_path, object_id, params or {})
+
+        elif operation == "create_pattern":
+            return await _create_pattern(input_path, output_path, object_id, params or {})
+
+        elif operation == "get_attributes":
+            return await _get_attributes(input_path, object_id)
+
+        elif operation == "set_attributes":
+            result = await _bulk_restyle(input_path, output_path, f"#{object_id}", params or {})
+            result["operation"] = "set_attributes"
+            return result
+
+        elif operation == "text_on_path":
+            return await _text_on_path(input_path, output_path, ref_id, object_id, params or {})
+
+        elif operation == "flow_text":
+            return await _flow_text(input_path, output_path, ref_id, object_id, params or {})
+
+        elif operation == "create_symbol":
+            return await _create_symbol(input_path, output_path, object_id, params or {})
+
+        elif operation == "use_symbol":
+            return await _use_symbol(input_path, output_path, ref_id, object_id, params or {})
 
         elif operation == "create_object":
             return await _create_object(
@@ -1657,6 +1693,538 @@ async def _apply_filter(
             operation="apply_filter",
             message=f"apply_filter failed: {e}",
             data={"kind": kind},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+def _get_or_create_defs(root: ET.Element) -> ET.Element:
+    defs = root.find(f"{{{SVG_URI}}}defs")
+    if defs is None:
+        defs = ET.SubElement(root, f"{{{SVG_URI}}}defs")
+    return defs
+
+
+def _find_by_id(root: ET.Element, object_id: str) -> ET.Element | None:
+    for el in root.iter():
+        if el.get("id") == object_id:
+            return el
+    return None
+
+
+def _gen_id(prefix: str) -> str:
+    return f"{prefix}_{int(time.time() * 1000) % 1000000}"
+
+
+async def _create_gradient(
+    input_path: str, output_path: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Define a linear or radial gradient in <defs>. Returns a `fill` value
+    (url(#id)) ready to hand to create_object/set_attributes/bulk_restyle -
+    this never applies the gradient itself, keeping one clean way to paint
+    any element instead of a second fill-setting path."""
+    try:
+        stops = params.get("stops") or []
+        if not stops:
+            return VectorOperationResult(
+                success=False,
+                operation="create_gradient",
+                message="params.stops is required: [{offset, color, opacity?}, ...]",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        gradient_type = params.get("type", "linear")
+        gradient_id = object_id or _gen_id(f"{gradient_type}Gradient")
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        defs = _get_or_create_defs(root)
+
+        if gradient_type == "radial":
+            grad = ET.SubElement(
+                defs,
+                f"{{{SVG_URI}}}radialGradient",
+                {
+                    "id": gradient_id,
+                    "cx": str(params.get("cx", "50%")),
+                    "cy": str(params.get("cy", "50%")),
+                    "r": str(params.get("r", "50%")),
+                },
+            )
+        else:
+            grad = ET.SubElement(
+                defs,
+                f"{{{SVG_URI}}}linearGradient",
+                {
+                    "id": gradient_id,
+                    "x1": str(params.get("x1", "0%")),
+                    "y1": str(params.get("y1", "0%")),
+                    "x2": str(params.get("x2", "100%")),
+                    "y2": str(params.get("y2", "0%")),
+                },
+            )
+        for stop in stops:
+            ET.SubElement(
+                grad,
+                f"{{{SVG_URI}}}stop",
+                {
+                    "offset": str(stop.get("offset", 0)),
+                    "stop-color": str(stop.get("color", "#000000")),
+                    "stop-opacity": str(stop.get("opacity", 1)),
+                },
+            )
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="create_gradient",
+            message=f"Created {gradient_type} gradient '{gradient_id}' with {len(stops)} stop(s)",
+            data={"id": gradient_id, "fill": f"url(#{gradient_id})", "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="create_gradient",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="create_gradient",
+            message=f"create_gradient failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _create_pattern(
+    input_path: str, output_path: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Define a tiling <pattern> in <defs> from a raw SVG child fragment
+    (params.content) - returns a `fill` value (url(#id)) like create_gradient."""
+    try:
+        content = params.get("content", "")
+        if not content:
+            return VectorOperationResult(
+                success=False,
+                operation="create_pattern",
+                message="params.content is required (raw SVG markup for one tile, e.g. '<circle cx=\"5\" cy=\"5\" r=\"4\" fill=\"red\"/>')",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        pattern_id = object_id or _gen_id("pattern")
+        width = params.get("width", 10)
+        height = params.get("height", 10)
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        defs = _get_or_create_defs(root)
+
+        pattern = ET.SubElement(
+            defs,
+            f"{{{SVG_URI}}}pattern",
+            {
+                "id": pattern_id,
+                "width": str(width),
+                "height": str(height),
+                "patternUnits": "userSpaceOnUse",
+            },
+        )
+        try:
+            tile = ET.fromstring(f"<g xmlns=\"{SVG_URI}\">{content}</g>")
+        except ET.ParseError as e:
+            raise ValueError(f"params.content is not valid SVG markup: {e}") from e
+        for child in tile:
+            pattern.append(child)
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="create_pattern",
+            message=f"Created pattern '{pattern_id}' ({width}x{height} tile)",
+            data={"id": pattern_id, "fill": f"url(#{pattern_id})", "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="create_pattern",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="create_pattern",
+            message=f"create_pattern failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _get_attributes(input_path: str, object_id: str) -> dict[str, Any]:
+    """Read every attribute (plus style, parsed as a dict) of one element -
+    the read side of the XML-editor pair with set_attributes."""
+    try:
+        if not object_id:
+            return VectorOperationResult(
+                success=False,
+                operation="get_attributes",
+                message="object_id is required",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        el = _find_by_id(root, object_id)
+        if el is None:
+            return VectorOperationResult(
+                success=False,
+                operation="get_attributes",
+                message=f"No element with id '{object_id}'",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        style_map = {}
+        for decl in el.get("style", "").split(";"):
+            decl = decl.strip()
+            if decl and ":" in decl:
+                prop, _, val = decl.partition(":")
+                style_map[prop.strip()] = val.strip()
+
+        return VectorOperationResult(
+            success=True,
+            operation="get_attributes",
+            message=f"Read {len(el.attrib)} attribute(s) from '{object_id}'",
+            data={"id": object_id, "tag": _local_tag(el), "attributes": dict(el.attrib), "style": style_map},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="get_attributes",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="get_attributes",
+            message=f"get_attributes failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _text_on_path(
+    input_path: str, output_path: str, path_id: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Create a <text><textPath href="#path_id">...</textPath></text> element
+    bound to an existing path - real Inkscape "put text on path" behavior."""
+    try:
+        if not path_id:
+            return VectorOperationResult(
+                success=False,
+                operation="text_on_path",
+                message="ref_id is required: the id of an existing path to attach text to",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        ET.register_namespace("", SVG_URI)
+        ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        if _find_by_id(root, path_id) is None:
+            return VectorOperationResult(
+                success=False,
+                operation="text_on_path",
+                message=f"No path with id '{path_id}' - create it first",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        text_id = object_id or _gen_id("text_on_path")
+        style_bits = []
+        if params.get("font_family"):
+            style_bits.append(f"font-family:{params['font_family']}")
+        if params.get("font_size"):
+            style_bits.append(f"font-size:{params['font_size']}px")
+        if params.get("fill"):
+            style_bits.append(f"fill:{params['fill']}")
+
+        text_el = ET.SubElement(root, f"{{{SVG_URI}}}text", {"id": text_id})
+        if style_bits:
+            text_el.set("style", ";".join(style_bits))
+        text_path_attrs = {"{http://www.w3.org/1999/xlink}href": f"#{path_id}"}
+        if params.get("start_offset") is not None:
+            text_path_attrs["startOffset"] = str(params["start_offset"])
+        text_path_el = ET.SubElement(text_el, f"{{{SVG_URI}}}textPath", text_path_attrs)
+        text_path_el.text = str(params.get("content", ""))
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="text_on_path",
+            message=f"Created text '{text_id}' on path '{path_id}'",
+            data={"id": text_id, "path_id": path_id, "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="text_on_path",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="text_on_path",
+            message=f"text_on_path failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _flow_text(
+    input_path: str, output_path: str, shape_id: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Flow text inside an existing shape via CSS Shapes `shape-inside` -
+    the same mechanism Inkscape's own "Flow into frame" produces."""
+    try:
+        if not shape_id:
+            return VectorOperationResult(
+                success=False,
+                operation="flow_text",
+                message="ref_id is required: the id of an existing shape to flow text into",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        if _find_by_id(root, shape_id) is None:
+            return VectorOperationResult(
+                success=False,
+                operation="flow_text",
+                message=f"No shape with id '{shape_id}' - create it first",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        text_id = object_id or _gen_id("flow_text")
+        style_bits = [f"shape-inside:url(#{shape_id})"]
+        if params.get("font_family"):
+            style_bits.append(f"font-family:{params['font_family']}")
+        if params.get("font_size"):
+            style_bits.append(f"font-size:{params['font_size']}px")
+        if params.get("fill"):
+            style_bits.append(f"fill:{params['fill']}")
+
+        text_el = ET.SubElement(
+            root, f"{{{SVG_URI}}}text", {"id": text_id, "style": ";".join(style_bits)}
+        )
+        text_el.text = str(params.get("content", ""))
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="flow_text",
+            message=f"Created text '{text_id}' flowed into shape '{shape_id}'",
+            data={"id": text_id, "shape_id": shape_id, "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="flow_text",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="flow_text",
+            message=f"flow_text failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _create_symbol(
+    input_path: str, output_path: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Wrap a raw SVG fragment (params.content) into a reusable <symbol> in
+    <defs> - the pair with use_symbol."""
+    try:
+        content = params.get("content", "")
+        if not content:
+            return VectorOperationResult(
+                success=False,
+                operation="create_symbol",
+                message="params.content is required (raw SVG markup for the reusable asset)",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        symbol_id = object_id or _gen_id("symbol")
+
+        ET.register_namespace("", SVG_URI)
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        defs = _get_or_create_defs(root)
+
+        symbol_attrs = {"id": symbol_id}
+        if params.get("viewBox"):
+            symbol_attrs["viewBox"] = str(params["viewBox"])
+        symbol = ET.SubElement(defs, f"{{{SVG_URI}}}symbol", symbol_attrs)
+        try:
+            fragment = ET.fromstring(f"<g xmlns=\"{SVG_URI}\">{content}</g>")
+        except ET.ParseError as e:
+            raise ValueError(f"params.content is not valid SVG markup: {e}") from e
+        for child in fragment:
+            symbol.append(child)
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="create_symbol",
+            message=f"Created symbol '{symbol_id}'",
+            data={"id": symbol_id, "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="create_symbol",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="create_symbol",
+            message=f"create_symbol failed: {e}",
+            data={},
+            execution_time_ms=0,
+            error=str(e),
+        ).model_dump()
+
+
+async def _use_symbol(
+    input_path: str, output_path: str, symbol_id: str, object_id: str, params: dict[str, Any]
+) -> dict[str, Any]:
+    """Instantiate a previously create_symbol'd (or any existing) symbol via
+    <use href="#symbol_id">."""
+    try:
+        if not symbol_id:
+            return VectorOperationResult(
+                success=False,
+                operation="use_symbol",
+                message="ref_id is required: the id of an existing <symbol> to instantiate",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        ET.register_namespace("", SVG_URI)
+        ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+        tree = ET.parse(input_path)
+        root = tree.getroot()
+        if _find_by_id(root, symbol_id) is None:
+            return VectorOperationResult(
+                success=False,
+                operation="use_symbol",
+                message=f"No element with id '{symbol_id}' - create_symbol first",
+                data={},
+                execution_time_ms=0,
+                error="ValueError",
+            ).model_dump()
+
+        use_id = object_id or _gen_id("use")
+        use_attrs = {
+            "id": use_id,
+            "{http://www.w3.org/1999/xlink}href": f"#{symbol_id}",
+            "x": str(params.get("x", 0)),
+            "y": str(params.get("y", 0)),
+        }
+        if params.get("width") is not None:
+            use_attrs["width"] = str(params["width"])
+        if params.get("height") is not None:
+            use_attrs["height"] = str(params["height"])
+        ET.SubElement(root, f"{{{SVG_URI}}}use", use_attrs)
+
+        dest = output_path or input_path
+        tree.write(dest, xml_declaration=False, default_namespace=None)
+
+        return VectorOperationResult(
+            success=True,
+            operation="use_symbol",
+            message=f"Instantiated symbol '{symbol_id}' as '{use_id}'",
+            data={"id": use_id, "symbol_id": symbol_id, "output_path": dest},
+            execution_time_ms=0,
+        ).model_dump()
+    except FileNotFoundError:
+        return VectorOperationResult(
+            success=False,
+            operation="use_symbol",
+            message=f"File not found: {input_path}",
+            data={},
+            execution_time_ms=0,
+            error="FileNotFoundError",
+        ).model_dump()
+    except Exception as e:
+        return VectorOperationResult(
+            success=False,
+            operation="use_symbol",
+            message=f"use_symbol failed: {e}",
+            data={},
             execution_time_ms=0,
             error=str(e),
         ).model_dump()

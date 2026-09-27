@@ -298,6 +298,7 @@ class InkscapeMCPServer:
             fill: str = "",
             text_anchor: str = "",
             selector: str = "",
+            ref_id: str = "",
         ) -> dict[str, Any]:
             """INKSCAPE_VECTOR - Vector editing, booleans, trace, QR/barcode, path ops, previews.
 
@@ -307,7 +308,8 @@ class InkscapeMCPServer:
             text_set_style, trace_image, generate_barcode_qr, path_simplify, optimize_svg,
             scour_svg, render_preview, query_document, measure_object, export_dxf,
             layers_to_files, object_raise/lower, set_document_units, bulk_restyle,
-            apply_filter, and others (see Literal).
+            apply_filter, create_gradient, create_pattern, get_attributes, set_attributes,
+            text_on_path, flow_text, create_symbol, use_symbol, and others (see Literal).
 
             Args:
                 operation: Subcommand; must match InkscapeVectorOperation.
@@ -329,7 +331,26 @@ class InkscapeMCPServer:
                     keys are plain XML attrs, or `style.<prop>` to merge into the style attr.
                     Also used with `params` to define an SVG filter for apply_filter (id,
                     kind: blur/drop_shadow/glow, and kind-specific values like std_deviation,
-                    dx/dy/color for drop_shadow).
+                    dx/dy/color for drop_shadow). Also the target for set_attributes (edits
+                    the single element with this id - the XML-editor pair with get_attributes,
+                    which only needs object_id).
+                ref_id: The existing element this op refers to - a path for text_on_path, a
+                    shape for flow_text, a symbol for use_symbol.
+                object_id (for create_gradient/create_pattern/create_symbol/use_symbol/
+                    text_on_path/flow_text): optional explicit id for the new element
+                    (auto-generated if empty). create_gradient/create_pattern return a
+                    `fill` value (`url(#id)`) ready to pass as `params.fill` to create_object,
+                    or as a `set_attributes`/`bulk_restyle` params key, elsewhere.
+                params (per new operation):
+                    - create_gradient: `type` (linear/radial), `stops` (required - list of
+                      {offset, color, opacity?}), plus x1/y1/x2/y2 (linear) or cx/cy/r (radial).
+                    - create_pattern: `content` (required - raw SVG markup for one tile),
+                      `width`, `height`.
+                    - set_attributes: plain XML attrs, or `style.<prop>` (same as bulk_restyle).
+                    - text_on_path / flow_text: `content` (text), `font_family`, `font_size`,
+                      `fill`; text_on_path also takes `start_offset`.
+                    - create_symbol: `content` (required - raw SVG markup), `viewBox`.
+                    - use_symbol: `x`, `y`, `width`, `height`.
 
             Returns:
                 Dict with success, message, data or structured results, execution_time_ms, error.
@@ -367,6 +388,7 @@ class InkscapeMCPServer:
                 fill=fill,
                 text_anchor=text_anchor,
                 selector=selector,
+                ref_id=ref_id,
                 cli_wrapper=self.cli_wrapper,
                 config=self.config,
             )

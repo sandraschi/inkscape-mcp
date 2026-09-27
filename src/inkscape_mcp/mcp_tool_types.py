@@ -51,6 +51,14 @@ InkscapeVectorOperation = Literal[
     "set_document_units",
     "bulk_restyle",
     "apply_filter",
+    "create_gradient",
+    "create_pattern",
+    "get_attributes",
+    "set_attributes",
+    "text_on_path",
+    "flow_text",
+    "create_symbol",
+    "use_symbol",
 ]
 
 InkscapeAnalysisOperation = Literal[

@@ -1,11 +1,11 @@
-# Per-repo fleet start config for inkscape-mcp
+﻿# Per-repo fleet start config for inkscape-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'inkscape-mcp'
     BackendPort  = 11028
     FrontendPort = 11029
     HealthPath   = '/api/health'
-    WebRoot      = 'D:\Dev\repos\inkscape-mcp\web_sota'
+    WebRoot      = 'web_sota'
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'inkscape_mcp.server:app'

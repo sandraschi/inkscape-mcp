@@ -486,9 +486,9 @@ async def _call_meta(prompt: str, system: str) -> str:
     This function exists for the explicit, user-driven /api/chat path only,
     where the model id (and its training-data implications) is visible and
     chosen in AI Settings, not auto-selected."""
-    api_key = _env("META_API_KEY")
+    api_key = _env("MODEL_API_KEY")
     if not api_key:
-        raise ValueError("META_API_KEY not set")
+        raise ValueError("MODEL_API_KEY not set")
     return await _call_openai_compatible(
         prompt, system, base_url="https://api.meta.ai/v1", api_key=api_key, model="muse-spark-1.3"
     )
@@ -1070,16 +1070,54 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         )
 
     # ── /api/llm/* (SETTINGS_LLM.md contract: local + cloud, no-auto-pick) ────
+    # models_path/tag_style let _live_cloud_models probe each vendor's real
+    # model-list endpoint instead of only ever returning the curated stand-in
+    # (mcp-central-docs/templates/llm: GET /llm/models must return `live` when
+    # keyed, `curated` + key_missing when not - inkscape-mcp had drifted to
+    # curated-always with no key_missing flag, which is exactly the BUG-042
+    # "Test lies" shape the template calls out).
     _cloud_providers = {
-        "gemini": {"label": "Gemini", "base_url": "https://generativelanguage.googleapis.com"},
-        "anthropic": {"label": "Anthropic", "base_url": "https://api.anthropic.com"},
-        "openai": {"label": "OpenAI", "base_url": "https://api.openai.com"},
-        "deepseek": {"label": "DeepSeek", "base_url": "https://api.deepseek.com"},
-        "openrouter": {"label": "OpenRouter", "base_url": "https://openrouter.ai/api"},
-        "meta": {"label": "Meta (Muse Spark)", "base_url": "https://api.meta.ai"},
+        "gemini": {
+            "label": "Gemini",
+            "base_url": "https://generativelanguage.googleapis.com",
+            "models_path": "/v1beta/models",
+            "tag_style": "gemini",
+        },
+        "anthropic": {
+            "label": "Anthropic",
+            "base_url": "https://api.anthropic.com",
+            "models_path": "/v1/models",
+            "tag_style": "anthropic",
+        },
+        "openai": {
+            "label": "OpenAI",
+            "base_url": "https://api.openai.com",
+            "models_path": "/v1/models",
+            "tag_style": "openai",
+        },
+        "deepseek": {
+            "label": "DeepSeek",
+            "base_url": "https://api.deepseek.com",
+            "models_path": "/models",
+            "tag_style": "openai",
+        },
+        "openrouter": {
+            "label": "OpenRouter",
+            "base_url": "https://openrouter.ai/api",
+            "models_path": "/v1/models",
+            "tag_style": "openai",
+        },
+        # MODEL_API_KEY matches Meta's own documented env var name for the
+        # Model API, not a fleet-internal choice - see llm_settings_store.KEY_ENV.
+        "meta": {
+            "label": "Meta (Muse Spark)",
+            "base_url": "https://api.meta.ai",
+            "models_path": "/v1/models",
+            "tag_style": "openai",
+        },
     }
-    # Curated fallback lists - these providers have no cheap "list models"
-    # endpoint worth calling on every provider probe, unlike Ollama/LM Studio.
+    # Curated fallback lists - shown unkeyed (key_missing=True) and used if a
+    # keyed live probe fails.
     _cloud_curated_models = {
         "gemini": ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"],
         "anthropic": ["claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-5-5"],
@@ -1094,6 +1132,83 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         # label, not in the id.
         "meta": ["muse-spark-1.3", "muse-spark-1.3-contributor"],
     }
+
+    def _cloud_auth(provider_id: str, api_key: str) -> dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if provider_id == "anthropic":
+            headers["x-api-key"] = api_key
+            headers["anthropic-version"] = "2023-06-01"
+        elif provider_id == "openrouter":
+            headers["Authorization"] = f"Bearer {api_key}"
+            headers["HTTP-Referer"] = "http://127.0.0.1:11027/"
+            headers["X-Title"] = "inkscape-mcp"
+        elif provider_id != "gemini":
+            headers["Authorization"] = f"Bearer {api_key}"
+        return headers
+
+    def _parse_model_list(tag_style: str, payload: Any) -> list[str]:
+        if not isinstance(payload, dict):
+            return []
+        if tag_style == "gemini":
+            models = payload.get("models") or []
+            return [
+                m["name"].removeprefix("models/")
+                for m in models
+                if isinstance(m, dict) and m.get("name")
+            ]
+        data = payload.get("data") or []
+        return [m.get("id", "") for m in data if isinstance(m, dict) and m.get("id")]
+
+    async def _live_cloud_models(provider_id: str, api_key: str) -> dict[str, Any]:
+        """Model list with source flag - live when keyed and reachable, else
+        curated + key_missing=True. api_key overrides the stored/env key for
+        this call only (never persisted) so Test can validate a typed key."""
+        row = _cloud_providers[provider_id]
+        key = (api_key or "").strip() or llm_settings_store.get_key(provider_id) or ""
+        if not key:
+            return {
+                "provider": provider_id,
+                "models": list(_cloud_curated_models.get(provider_id, [])),
+                "source": "curated",
+                "key_missing": True,
+                "note": "Save a key for the live list. Curated names still work once keyed.",
+            }
+        url = row["base_url"] + row["models_path"]
+        if provider_id == "gemini":
+            url += f"?key={key}"
+        headers = _cloud_auth(provider_id, key)
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                r = await client.get(url, headers=headers)
+                r.raise_for_status()
+                models = _parse_model_list(row["tag_style"], r.json())
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
+            error = (
+                f"{row['label']} rejected the key (HTTP {status}) - check the key, then Save and Test again."
+                if status in (401, 403)
+                else f"{row['label']} HTTP {status}."
+            )
+            return {
+                "provider": provider_id,
+                "models": list(_cloud_curated_models.get(provider_id, [])),
+                "source": "curated",
+                "error": error,
+            }
+        except Exception as exc:
+            logger.warning("live model list for %s failed (%s); curated fallback", provider_id, exc)
+            return {
+                "provider": provider_id,
+                "models": list(_cloud_curated_models.get(provider_id, [])),
+                "source": "curated",
+            }
+        if not models:
+            return {
+                "provider": provider_id,
+                "models": list(_cloud_curated_models.get(provider_id, [])),
+                "source": "curated",
+            }
+        return {"provider": provider_id, "models": models, "source": "live"}
 
     async def _probe_ollama() -> tuple[bool, list[str]]:
         try:
@@ -1166,8 +1281,40 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         if provider == "lmstudio":
             _, models = await _probe_lmstudio()
             return {"provider": provider, "models": models, "source": "live" if models else "none"}
-        curated = _cloud_curated_models.get(provider, [])
-        return {"provider": provider, "models": curated, "source": "curated" if curated else "none"}
+        if provider not in _cloud_providers:
+            return {"provider": provider, "models": [], "source": "none"}
+        return await _live_cloud_models(provider, "")
+
+    @app.post("/api/llm/test")
+    async def llm_test(request: Request):
+        """Validate a provider without saving anything (mcp-central-docs
+        templates/llm/INTEGRATION.md contract). `ok` is true only for a live
+        list - curated names without a key come back ok:false + key_missing
+        so the UI never reports an unkeyed provider as a successful test
+        (BUG-042: giskard-mcp 2026-09-21, "N models found" for no key)."""
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        provider = str(payload.get("provider") or "")
+        api_key = str(payload.get("api_key") or "")
+
+        if provider in ("ollama", "lmstudio"):
+            _, models = await (_probe_ollama() if provider == "ollama" else _probe_lmstudio())
+            return {
+                "success": True,
+                "ok": bool(models),
+                "provider": provider,
+                "models": models,
+                "source": "live" if models else "none",
+            }
+        if provider not in _cloud_providers:
+            return JSONResponse({"success": False, "error": f"Unknown provider '{provider}'"}, status_code=400)
+        result = await _live_cloud_models(provider, api_key)
+        ok = result.get("source") == "live" and len(result.get("models", [])) > 0
+        return {"success": True, "ok": ok, **result}
 
     @app.get("/api/llm/gpus")
     async def llm_gpus() -> dict:
@@ -1206,10 +1353,14 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         model = str(payload.get("model") or "").strip()
         endpoint = payload.get("endpoint")
         api_key = payload.get("api_key")
+        # BUG-043 (giskard-mcp 2026-09-21): a card's "Save key" must attach the
+        # key to its own provider without hijacking whatever provider/model is
+        # currently active. Default true keeps the explicit "pick this as my
+        # active pair" flow (Settings' active-pair row) working unchanged.
+        select = payload.get("select", True)
         if not provider:
             return JSONResponse({"success": False, "error": "provider required"}, status_code=400)
 
-        llm_settings_store.save_settings(provider, endpoint, model)
         key_saved = False
         if api_key:
             llm_settings_store.save_key(provider, str(api_key))
@@ -1218,11 +1369,13 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         result: dict[str, Any] = {"success": True}
         if key_saved:
             result["key_saved"] = True
-        # Save switches VRAM, not just config (SETTINGS_LLM.md rule 4) - only
-        # meaningful for the local Ollama engine.
-        if provider == "ollama":
-            switch = await llm_engine.switch_ollama_model(model, endpoint or _ollama_base())
-            result["switch"] = switch
+        if select:
+            llm_settings_store.save_settings(provider, endpoint, model)
+            # Save switches VRAM, not just config (SETTINGS_LLM.md rule 4) -
+            # only meaningful for the local Ollama engine.
+            if provider == "ollama":
+                switch = await llm_engine.switch_ollama_model(model, endpoint or _ollama_base())
+                result["switch"] = switch
         return result
 
     @app.delete("/api/settings/llm/key")
@@ -1361,7 +1514,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 "openai_key": bool(_env("OPENAI_API_KEY")),
                 "deepseek_key": bool(_env("DEEPSEEK_API_KEY")),
                 "openrouter_key": bool(_env("OPENROUTER_API_KEY")),
-                "meta_key": bool(_env("META_API_KEY")),
+                "meta_key": bool(_env("MODEL_API_KEY")),
             },
         }
 

@@ -29,7 +29,7 @@ KEY_ENV: dict[str, str] = {
     "openai": "OPENAI_API_KEY",
     "deepseek": "DEEPSEEK_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
-    "meta": "META_API_KEY",
+    "meta": "MODEL_API_KEY",
 }
 
 

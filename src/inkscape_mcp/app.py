@@ -700,6 +700,15 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     register_apps_routes(_apps_router)
     app.include_router(_apps_router)
 
+    from .services.depot_routes import register_depot_routes
+
+    async def _depot_call_tool(tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+        return await _call_mcp_tool(mcp, tool_name, params)
+
+    _depot_router = APIRouter(prefix="/api")
+    register_depot_routes(_depot_router, _depot_call_tool)
+    app.include_router(_depot_router)
+
     @app.get("/api/logs")
     async def api_logs(
         limit: int = 400,

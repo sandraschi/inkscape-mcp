@@ -19,10 +19,17 @@ InkscapeFileOperation = Literal[
 InkscapeVectorOperation = Literal[
     "trace_image",
     "generate_barcode_qr",
+    "create_object",
     "create_mesh_gradient",
     "text_to_path",
+    "text_set_content",
+    "text_set_style",
+    "text_list_fonts",
     "construct_svg",
     "apply_boolean",
+    "list_lpes",
+    "apply_lpe",
+    "inspect",
     "path_inset_outset",
     "path_simplify",
     "path_clean",
@@ -42,6 +49,8 @@ InkscapeVectorOperation = Literal[
     "object_raise",
     "object_lower",
     "set_document_units",
+    "bulk_restyle",
+    "apply_filter",
 ]
 
 InkscapeAnalysisOperation = Literal[
@@ -107,4 +116,26 @@ InkscapeFabArtOperation = Literal[
     "gazebo_schematic",
     "stage_for_robotics",
     "run_fab_pipeline",
+]
+
+InkscapeLayerOperation = Literal[
+    "list",
+    "get",
+    "create",
+    "rename",
+    "hide",
+    "show",
+    "reorder",
+    "lock",
+    "unlock",
+]
+
+InkscapeAnimationOperation = Literal[
+    "list_presets",
+    "apply_preset",
+    "animate_element",
+    "animate_transform",
+    "animate_motion",
+    "animate_color",
+    "css_animation",
 ]

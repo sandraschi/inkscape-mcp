@@ -208,7 +208,15 @@ def get_tool_metadata():
 
 
 def register_all_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
-    """Register all portmanteau tools with the MCP server."""
+    """Register all portmanteau tools with the MCP server.
+
+    Legacy - only server.InkscapeMcpServer calls this, and that class is
+    itself superseded by main.InkscapeMCPServer (see its docstring). This
+    list has drifted from main.py's registration (e.g. missing
+    inkscape_fleet/inkscape_fab_art) and passes each tool's full function
+    object through generic `mcp.tool()(fn)` instead of main.py's explicit,
+    per-param wrappers. Do not add new tools here; add them to main.py.
+    """
     # Register core portmanteau tools
     for tool_info in PORTMANTEAU_TOOLS:
         mcp.tool()(tool_info["function"])

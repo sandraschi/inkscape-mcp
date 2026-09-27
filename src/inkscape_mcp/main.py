@@ -23,9 +23,11 @@ from .config import load_config
 from .inkscape_detector import InkscapeDetector
 from .logging_config import setup_logging
 from .mcp_tool_types import InkscapeAnalysisOperation
+from .mcp_tool_types import InkscapeAnimationOperation
 from .mcp_tool_types import InkscapeFabArtOperation
 from .mcp_tool_types import InkscapeFileOperation
 from .mcp_tool_types import InkscapeFleetOperation
+from .mcp_tool_types import InkscapeLayerOperation
 from .mcp_tool_types import InkscapeRenderOperation
 from .mcp_tool_types import InkscapeSimArtOperation
 from .mcp_tool_types import InkscapeSystemOperation
@@ -33,9 +35,11 @@ from .mcp_tool_types import InkscapeValidationOperation
 from .mcp_tool_types import InkscapeVectorOperation
 from .prompts_resources import register_prompts_and_resources
 from .tools import inkscape_analysis as inkscape_analysis_tool
+from .tools import inkscape_animation as inkscape_animation_tool
 from .tools import inkscape_fab_art as inkscape_fab_art_tool
 from .tools import inkscape_file as inkscape_file_tool
 from .tools import inkscape_fleet as inkscape_fleet_tool
+from .tools import inkscape_layers as inkscape_layers_tool
 from .tools import inkscape_render as inkscape_render_tool
 from .tools import inkscape_sim_art as inkscape_sim_art_tool
 from .tools import inkscape_system as inkscape_system_tool
@@ -260,19 +264,63 @@ class InkscapeMCPServer:
             operation: InkscapeVectorOperation,
             input_path: str = "",
             output_path: str = "",
+            object_id: str = "",
+            object_ids: list[str] | None = None,
+            select_all: bool = False,
+            operation_type: str = "",
+            barcode_data: str = "",
+            preset_id: str = "",
+            x: int = 300,
+            y: int = 200,
+            threshold: float = 1.0,
+            dpi: int = 96,
+            units: str = "px",
+            shape: str = "rect",
+            params: dict[str, Any] | None = None,
+            element_type: str = "",
+            direction: str = "inset",
+            amount: float = 2.0,
+            output_dir: str = "",
+            lpe_id: str = "",
+            text: str = "",
+            font_family: str = "",
+            font_size: float = 0,
+            font_weight: str = "",
+            fill: str = "",
+            text_anchor: str = "",
+            selector: str = "",
         ) -> dict[str, Any]:
             """INKSCAPE_VECTOR - Vector editing, booleans, trace, QR/barcode, path ops, previews.
 
             PORTMANTEAU RATIONALE: Inkscape exposes many CLI actions; grouping avoids tool explosion.
 
-            Operations include: trace_image, generate_barcode_qr, apply_boolean, path_simplify,
-            optimize_svg, scour_svg, render_preview, query_document, measure_object, export_dxf,
-            layers_to_files, object_raise/lower, set_document_units, and others (see Literal).
+            Operations include: create_object, apply_boolean, apply_lpe, text_set_content,
+            text_set_style, trace_image, generate_barcode_qr, path_simplify, optimize_svg,
+            scour_svg, render_preview, query_document, measure_object, export_dxf,
+            layers_to_files, object_raise/lower, set_document_units, bulk_restyle,
+            apply_filter, and others (see Literal).
 
             Args:
                 operation: Subcommand; must match InkscapeVectorOperation.
-                input_path: Primary document path (some ops may use output-only paths in kwargs).
+                input_path: Primary document path (most ops).
                 output_path: Output file when the operation writes a file.
+                object_id / object_ids / select_all: Target selection for object-scoped ops.
+                operation_type: Boolean op kind (union/diff/intersection/exclusion) for apply_boolean.
+                shape / params: Primitive kind + geometry/style dict for create_object.
+                x / y / dpi / units / threshold: Placement/rendering params for create_object,
+                    trace_image, render_preview.
+                barcode_data / preset_id: Inputs for generate_barcode_qr / construct_svg.
+                lpe_id: Live Path Effect id for apply_lpe (see list_lpes for available ids).
+                text / font_family / font_size / font_weight / fill / text_anchor: Text styling
+                    for text_set_content / text_set_style.
+                element_type / direction / amount / output_dir: Misc per-operation params
+                    (construct_svg, path_inset_outset, layers_to_files).
+                selector: CSS-like selector (`tag`, `.class`, `#id`, `tag.class`, comma-separated
+                    for multiple; no descendant/attribute selectors) for bulk_restyle - params
+                    keys are plain XML attrs, or `style.<prop>` to merge into the style attr.
+                    Also used with `params` to define an SVG filter for apply_filter (id,
+                    kind: blur/drop_shadow/glow, and kind-specific values like std_deviation,
+                    dx/dy/color for drop_shadow).
 
             Returns:
                 Dict with success, message, data or structured results, execution_time_ms, error.
@@ -285,6 +333,31 @@ class InkscapeMCPServer:
                 operation=operation,
                 input_path=input_path,
                 output_path=output_path,
+                object_id=object_id,
+                object_ids=object_ids,
+                select_all=select_all,
+                operation_type=operation_type,
+                barcode_data=barcode_data,
+                preset_id=preset_id,
+                x=x,
+                y=y,
+                threshold=threshold,
+                dpi=dpi,
+                units=units,
+                shape=shape,
+                params=params,
+                element_type=element_type,
+                direction=direction,
+                amount=amount,
+                output_dir=output_dir,
+                lpe_id=lpe_id,
+                text=text,
+                font_family=font_family,
+                font_size=font_size,
+                font_weight=font_weight,
+                fill=fill,
+                text_anchor=text_anchor,
+                selector=selector,
                 cli_wrapper=self.cli_wrapper,
                 config=self.config,
             )
@@ -508,6 +581,142 @@ class InkscapeMCPServer:
                 readOnlyHint=False,
                 destructiveHint=False,
                 idempotentHint=False,
+                openWorldHint=False,
+            ),
+        )
+        async def inkscape_layers(
+            operation: InkscapeLayerOperation,
+            input_path: str = "",
+            output_path: str = "",
+            layer_id: str = "",
+            label: str = "",
+            new_label: str = "",
+            position: int = 0,
+        ) -> dict[str, Any]:
+            """INKSCAPE_LAYERS - Layer management: list, create, rename, hide/show, lock/unlock, reorder.
+
+            PORTMANTEAU RATIONALE: Layer bookkeeping is one discoverable tool instead of nine.
+
+            Operations: list, get, create, rename, hide, show, reorder, lock, unlock.
+
+            Args:
+                operation: Subcommand; must match InkscapeLayerOperation.
+                input_path: SVG document to read/modify.
+                output_path: Destination for the modified SVG (defaults to input_path when empty).
+                layer_id: Target layer for get/rename/hide/show/reorder/lock/unlock.
+                label: Layer label for create.
+                new_label: Replacement label for rename.
+                position: Target index for reorder.
+
+            Returns:
+                Dict with success, operation, message, data (layers list or affected layer), error.
+
+            Errors:
+                Missing/invalid input_path, unknown layer_id - message lists available layer ids.
+            """
+            return await inkscape_layers_tool(
+                operation=operation,
+                input_path=input_path,
+                output_path=output_path,
+                layer_id=layer_id,
+                label=label,
+                new_label=new_label,
+                position=position,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
+                idempotentHint=False,
+                openWorldHint=False,
+            ),
+        )
+        async def inkscape_animation(
+            operation: InkscapeAnimationOperation,
+            output_path: str = "",
+            input_path: str = "",
+            target_id: str = "",
+            attribute: str = "",
+            values: str = "",
+            key_times: str = "",
+            key_splines: str = "",
+            duration: float = 1.0,
+            repeat: str = "indefinite",
+            fill_mode: str = "freeze",
+            preset_name: str = "",
+            shape: str = "rect",
+            color_from: str = "",
+            color_to: str = "",
+            animation_name: str = "",
+            css_keyframes: str = "",
+            x: float = 400,
+            y: float = 300,
+            r: float = 50,
+            fill: str = "#4488ff",
+            width: int = 800,
+            height: int = 600,
+        ) -> dict[str, Any]:
+            """INKSCAPE_ANIMATION - SMIL/CSS animation: presets (bounce, fade, slide, rotate,
+            pulse, shake) plus raw animate/animateTransform/animateMotion/animateColor and
+            CSS @keyframes generation.
+
+            PORTMANTEAU RATIONALE: One tool for every animation authoring path instead of
+            five near-duplicate ones.
+
+            Operations: list_presets, apply_preset, animate_element, animate_transform,
+            animate_motion, animate_color, css_animation.
+
+            Args:
+                operation: Subcommand; must match InkscapeAnimationOperation.
+                output_path: Destination SVG (created for apply_preset/css_animation when
+                    input_path is empty; otherwise the modified copy of input_path).
+                input_path: Existing SVG to animate (animate_element/transform/motion/color).
+                target_id / attribute / values / key_times / key_splines: SMIL animate params.
+                duration / repeat / fill_mode: Timing shared by most animation ops.
+                preset_name / shape / x / y / r / fill / width / height: apply_preset inputs
+                    (also used to synthesize a standalone shape when input_path is empty).
+                color_from / color_to: animate_color endpoints.
+                animation_name / css_keyframes: css_animation inputs.
+
+            Returns:
+                Dict with success, operation, message, data (svg_content/output_path), error.
+
+            Errors:
+                Unknown preset_name - use list_presets first; missing target_id for
+                animate_element/transform/motion/color.
+            """
+            return await inkscape_animation_tool(
+                operation=operation,
+                output_path=output_path,
+                input_path=input_path,
+                target_id=target_id,
+                attribute=attribute,
+                values=values,
+                key_times=key_times,
+                key_splines=key_splines,
+                duration=duration,
+                repeat=repeat,
+                fill_mode=fill_mode,
+                preset_name=preset_name,
+                shape=shape,
+                color_from=color_from,
+                color_to=color_to,
+                animation_name=animation_name,
+                css_keyframes=css_keyframes,
+                x=x,
+                y=y,
+                r=r,
+                fill=fill,
+                width=width,
+                height=height,
+            )
+
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
+                idempotentHint=False,
                 openWorldHint=True,
             ),
         )
@@ -647,6 +856,8 @@ class InkscapeMCPServer:
             "inkscape_validation": inkscape_validation,
             "inkscape_fleet": inkscape_fleet,
             "inkscape_fab_art": inkscape_fab_art,
+            "inkscape_layers": inkscape_layers,
+            "inkscape_animation": inkscape_animation,
             "inkscape_sim_art": inkscape_sim_art,
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,

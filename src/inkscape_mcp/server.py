@@ -16,20 +16,29 @@ from .config import InkscapeConfig
 logger = logging.getLogger(__name__)
 
 
-# Module-level app for ASGI compatibility. The FastMCP instance is created
-# inside InkscapeMcpServer (needs config + CLI wrapper), so expose a lazy ASGI
-# proxy for uvicorn: on first request it constructs the server and delegates to
-# mcp.http_app() (the raw FastMCP object is NOT ASGI-callable in FastMCP 3.x).
+# Module-level app for ASGI compatibility. On first request this constructs
+# main.InkscapeMCPServer - the actively-maintained registration path (full
+# tool set + full per-operation params) - and delegates to mcp.http_app()
+# (the raw FastMCP object is NOT ASGI-callable in FastMCP 3.x). This used to
+# build the InkscapeMcpServer below via the legacy register_all_tools() path,
+# which had drifted from main.py's registration and was silently missing
+# inkscape_fleet/inkscape_fab_art on the HTTP transport - see
+# reports/wrappee-drift-inkscape-mcp-2026-09-27.md.
 class _LazyASGI:
     _inner = None
 
-    def _ensure(self):
+    async def _ensure(self):
         if _LazyASGI._inner is None:
-            _LazyASGI._inner = InkscapeMcpServer().mcp.http_app()
+            from .main import InkscapeMCPServer
+
+            srv = InkscapeMCPServer()
+            await srv.initialize()
+            _LazyASGI._inner = srv.mcp.http_app()
         return _LazyASGI._inner
 
     async def __call__(self, scope: dict, receive, send) -> None:
-        await self._ensure()(scope, receive, send)
+        inner = await self._ensure()
+        await inner(scope, receive, send)
 
 
 app = _LazyASGI()
@@ -39,9 +48,12 @@ CORE_PLUGINS: list = []
 
 class InkscapeMcpServer:
     """
-    Main Inkscape MCP Server class.
+    Legacy Inkscape MCP Server class - superseded by main.InkscapeMCPServer.
 
-    Handles tool registration, Inkscape CLI integration, and lifecycle management.
+    The ASGI app above no longer uses this class (see _LazyASGI). Kept only
+    for backward compatibility with direct imports of `inkscape_mcp.InkscapeMcpServer`;
+    its tool registration (register_all_tools) predates several tools/params
+    and is not kept in sync with main.py. Prefer main.InkscapeMCPServer.
     """
 
     def __init__(self, config: InkscapeConfig | None = None):

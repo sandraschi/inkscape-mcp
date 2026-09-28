@@ -943,7 +943,7 @@ async def main_async():
     parser.add_argument(
         "--port",
         type=int,
-        default=11027,
+        default=11028,
         help="HTTP port when dual/http transport is used (fleet webapp backend; Vite proxies /mcp and /api here)",
     )
     parser.add_argument("--host", default="0.0.0.0")

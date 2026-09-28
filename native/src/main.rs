@@ -23,7 +23,7 @@ fn spawn_headless_backend() {
         let workdir = path.parent().map(|p| p.to_path_buf()).unwrap_or_default();
         eprintln!("Headless mode: spawning backend at {} from {}", path.display(), workdir.display());
         let mut cmd = std::process::Command::new(&path);
-        cmd.env("MCP_PORT", "11027")
+        cmd.env("MCP_PORT", "11028")
             .env("MCP_HOST", "127.0.0.1")
             .env("PYTHONUNBUFFERED", "1")
             .env("INKSCAPE_TAURI", "1");

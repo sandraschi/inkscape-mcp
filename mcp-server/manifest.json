@@ -1,8 +1,8 @@
 {
   "manifest_version": "0.2",
   "name": "inkscape-mcp",
-  "version": "2.0.0b0",
-  "description": "MCP server for Inkscape CLI-backed SVG and vector workflows (FastMCP 3.1+). Portmanteau tools: file, vector, analysis, system; optional sampling/agentic tools when dependencies are installed.",
+  "version": "2.6.0",
+  "description": "Headless Inkscape SVG automation via FastMCP: create/edit vector graphics, layers, animation, LPEs, gradients/patterns, XML editing, text-on-path, filters, and fleet handoff to GIMP/Blender/Unity/Resonite. Includes online extension-gallery search/install and AI-assisted SVG generation.",
   "author": {
     "name": "Sandra Schipal"
   },
@@ -50,27 +50,75 @@
   "tools": [
     {
       "name": "inkscape_file",
-      "description": "File operations: load, convert, info, validate, list_formats (save may be limited; check server)"
+      "description": "File operations: load, convert, info, validate, list_formats"
     },
     {
       "name": "inkscape_vector",
-      "description": "Vector operations: trace_image, boolean, path_simplify, render_preview, QR/barcode, query/measure, etc."
+      "description": "Vector editing: primitives, booleans, LPEs, gradients/patterns, XML get/set-attributes, text-on-path, flow-text, symbols, trace, QR/barcode, filters (blur/drop_shadow/glow), bulk restyle by CSS-like selector"
+    },
+    {
+      "name": "inkscape_layers",
+      "description": "Layer management: list, create, rename, hide/show, lock/unlock, reorder"
+    },
+    {
+      "name": "inkscape_animation",
+      "description": "SMIL/CSS animation: presets (bounce, fade, slide, rotate, pulse, shake) plus raw animate/transform/motion/color"
     },
     {
       "name": "inkscape_analysis",
-      "description": "Document analysis: statistics, validate, dimensions"
+      "description": "Document analysis: statistics, validate, dimensions, structure, quality"
+    },
+    {
+      "name": "inkscape_render",
+      "description": "Agent-vision PNG exports and document summaries for vision-loop workflows"
+    },
+    {
+      "name": "inkscape_validation",
+      "description": "SVG QA checks: viewBox, stroke/fill, size limits, web-export best practices"
+    },
+    {
+      "name": "inkscape_fleet",
+      "description": "Cross-repo handoff: push renders to GIMP, stage SVGs for Blender, export Unity sprites"
+    },
+    {
+      "name": "inkscape_fab_art",
+      "description": "DXF/laser fab paths and Gazebo robotics schematic staging"
+    },
+    {
+      "name": "inkscape_sim_art",
+      "description": "Icon packs, sprite sheets, and Resonite/VRChat UI asset staging"
     },
     {
       "name": "inkscape_system",
-      "description": "System: status, version, diagnostics, help, config, extensions"
+      "description": "Server/Inkscape status, diagnostics, version, config, and online extension-gallery search/install/uninstall"
     },
     {
-      "name": "list_local_models",
-      "description": "List local LLM endpoints (Ollama / LM Studio) when available"
+      "name": "generate_svg",
+      "description": "Natural-language SVG generation via client LLM sampling, with Inkscape post-processing"
     },
     {
       "name": "generate_heraldry",
-      "description": "Heraldic SVG generation (e.g. trumponia); optional post-processing via other tools"
+      "description": "Heraldic coat-of-arms SVG generation from preset compositions"
+    },
+    {
+      "name": "list_local_models",
+      "description": "Discover local Ollama / LM Studio model IDs"
+    },
+    {
+      "name": "llm_ops",
+      "description": "Manage the local LLM engine: list/switch/unload models, VRAM telemetry"
+    },
+    {
+      "name": "agentic_inkscape_workflow",
+      "description": "Autonomous multi-step Inkscape workflows via client-side LLM sampling"
+    },
+    {
+      "name": "conversational_inkscape_assistant",
+      "description": "Conversational multi-step assistant over the vector-editing tool surface"
+    },
+    {
+      "name": "intelligent_vector_processing",
+      "description": "Batch SVG/vector processing driven by client-side LLM sampling"
     }
   ]
 }

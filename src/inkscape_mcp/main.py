@@ -962,21 +962,30 @@ async def main_async():
     # Bridge this CLI to transport env.
     # If MCP_TRANSPORT is already set externally (e.g. Claude Desktop config env),
     # honour it - only apply the argparser value when --mode was explicitly passed.
+    #
+    # effective_mode is the single source of truth for BOTH the MCP_TRANSPORT
+    # env var below AND transport_args further down - they used to be set
+    # independently (env from this block, transport_args straight from the
+    # raw args.mode, whose argparse default is "dual"), so launching with no
+    # --mode flag and no MCP_TRANSPORT env (exactly how a packaged .mcpb's
+    # manifest.json launches this: `python -m inkscape_mcp.main`, no flags)
+    # always produced transport_args.http=True/stdio=False regardless of what
+    # this block computed - an HTTP-only server that can never speak MCP
+    # stdio to Claude Desktop, discovered by actually launching the packed
+    # bundle the way its own manifest describes.
     explicit_mode = "--mode" in sys.argv
     if explicit_mode:
         os.environ["MCP_PORT"] = str(args.port)
-        if args.mode == "stdio":
-            os.environ["MCP_TRANSPORT"] = "stdio"
-        elif args.mode == "http":
-            os.environ["MCP_TRANSPORT"] = "http"
-        else:
-            os.environ["MCP_TRANSPORT"] = "http"
+        effective_mode = args.mode
     else:
         # No --mode arg - respect whatever MCP_TRANSPORT is already set to.
-        # Fall back to http only if nothing is set at all.
-        if not os.environ.get("MCP_TRANSPORT"):
-            os.environ["MCP_TRANSPORT"] = "stdio"
+        # Fall back to stdio (Claude Desktop's launch model) only if nothing
+        # is set at all.
+        effective_mode = os.environ.get("MCP_TRANSPORT") or "stdio"
+        if effective_mode not in ("stdio", "http", "dual"):
+            effective_mode = "stdio"
         os.environ.setdefault("MCP_PORT", str(args.port))
+    os.environ["MCP_TRANSPORT"] = "stdio" if effective_mode == "stdio" else "http"
 
     try:
         server = InkscapeMCPServer(config_path=Path(args.config) if args.config else None)
@@ -988,11 +997,11 @@ async def main_async():
             # Build transport Namespace from already-parsed main.py args
             # instead of stripping sys.argv (which breaks --mode stdio).
             transport_args = argparse.Namespace(
-                stdio=args.mode == "stdio",
-                http=args.mode in ("http", "dual"),
+                stdio=effective_mode == "stdio",
+                http=effective_mode in ("http", "dual"),
                 sse=False,
                 host=None,
-                port=args.port if args.mode != "stdio" else None,
+                port=args.port if effective_mode != "stdio" else None,
                 path=None,
                 debug=args.log_level.upper() == "DEBUG",
             )

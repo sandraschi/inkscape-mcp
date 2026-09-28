@@ -46,6 +46,14 @@ def main() -> int:
     if sync.returncode != 0:
         return sync.returncode
 
+    # MCPB_PACKAGING_STANDARDS.md "Pack-root .mcpbignore gotcha": mcpb pack
+    # reads .mcpbignore from the pack root (mcp-server/), not the repo root -
+    # without this copy it silently ignores nothing and ships whatever the
+    # sync step dragged in.
+    root_ignore = repo / ".mcpbignore"
+    if root_ignore.is_file():
+        shutil.copy2(root_ignore, mcp_root / ".mcpbignore")
+
     version = _read_version(pyproject)
     out_name = f"inkscape-mcp-v{version}.mcpb"
     dist_dir.mkdir(parents=True, exist_ok=True)

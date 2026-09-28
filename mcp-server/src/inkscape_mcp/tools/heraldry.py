@@ -126,7 +126,7 @@ def register_heraldry_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
         output_path: str | None = None,
         _ctx: Any = None,
     ) -> dict[str, Any]:
-        """GENERATE_HERALDRY — Emit heraldic SVG assets (preset compositions).
+        """GENERATE_HERALDRY - Emit heraldic SVG assets (preset compositions).
 
         PORTMANTEAU RATIONALE: Single entry point for heraldry; `operation` selects preset.
 
@@ -139,7 +139,7 @@ def register_heraldry_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
             Dict with success, operation, message, data, execution_time_ms.
 
         Errors:
-            Write failures or missing temp directory — see message.
+            Write failures or missing temp directory - see message.
         """
         if not output_path:
             output_path = str(Path(config.temp_directory) / f"heraldry_{operation}.svg")

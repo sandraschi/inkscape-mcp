@@ -51,7 +51,9 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         temp_directory = str(work_dir)
 
     presets = await inkscape_fab_art("list_presets")
-    steps.append({"name": "offline_list_presets", "success": bool(presets.get("success")), "detail": presets})
+    steps.append(
+        {"name": "offline_list_presets", "success": bool(presets.get("success")), "detail": presets}
+    )
 
     laser = await inkscape_fab_art(
         "batch_laser_dots",
@@ -60,7 +62,9 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         cli_wrapper=mock_wrapper,
         config=_Cfg(),
     )
-    steps.append({"name": "offline_batch_laser_dots", "success": bool(laser.get("success")), "detail": laser})
+    steps.append(
+        {"name": "offline_batch_laser_dots", "success": bool(laser.get("success")), "detail": laser}
+    )
 
     dxf = await inkscape_fab_art(
         "batch_dxf_export",
@@ -72,21 +76,26 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
     dxf_dir = fab_out / "dxf"
     dxf_dir.mkdir(parents=True, exist_ok=True)
     (dxf_dir / "bracket_cut.dxf").write_text("mock dxf", encoding="utf-8")
-    steps.append({"name": "offline_batch_dxf_export", "success": bool(dxf.get("success")), "detail": dxf})
+    steps.append(
+        {"name": "offline_batch_dxf_export", "success": bool(dxf.get("success")), "detail": dxf}
+    )
 
     schematic_png = fab_out / "schematic.png"
     schematic_png.write_bytes(b"\x89PNG\r\n\x1a\n")
-    with patch(
-        "inkscape_mcp.tools.fab_art_tools.inkscape_render",
-        new=AsyncMock(
-            return_value={
-                "success": True,
-                "data": {"output_path": str(schematic_png), "dpi": 192},
-            }
+    with (
+        patch(
+            "inkscape_mcp.tools.fab_art_tools.inkscape_render",
+            new=AsyncMock(
+                return_value={
+                    "success": True,
+                    "data": {"output_path": str(schematic_png), "dpi": 192},
+                }
+            ),
         ),
-    ), patch(
-        "inkscape_mcp.tools.fab_art_tools.check_http_health",
-        new=AsyncMock(return_value=False),
+        patch(
+            "inkscape_mcp.tools.fab_art_tools.check_http_health",
+            new=AsyncMock(return_value=False),
+        ),
     ):
         schematic = await inkscape_fab_art(
             "gazebo_schematic",
@@ -96,7 +105,13 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
             cli_wrapper=mock_wrapper,
             config=_Cfg(),
         )
-    steps.append({"name": "offline_gazebo_schematic", "success": bool(schematic.get("success")), "detail": schematic})
+    steps.append(
+        {
+            "name": "offline_gazebo_schematic",
+            "success": bool(schematic.get("success")),
+            "detail": schematic,
+        }
+    )
 
     with patch(
         "inkscape_mcp.tools.fab_art_tools.check_http_health",
@@ -109,10 +124,22 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
             cli_wrapper=mock_wrapper,
             config=_Cfg(),
         )
-    steps.append({"name": "offline_stage_for_robotics", "success": bool(staged.get("success")), "detail": staged})
+    steps.append(
+        {
+            "name": "offline_stage_for_robotics",
+            "success": bool(staged.get("success")),
+            "detail": staged,
+        }
+    )
 
     sim_presets = await inkscape_sim_art("list_presets")
-    steps.append({"name": "offline_sim_list_presets", "success": bool(sim_presets.get("success")), "detail": sim_presets})
+    steps.append(
+        {
+            "name": "offline_sim_list_presets",
+            "success": bool(sim_presets.get("success")),
+            "detail": sim_presets,
+        }
+    )
 
     pack = await inkscape_sim_art(
         "svg_pack_batch",
@@ -121,7 +148,9 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         template_id="ui_icon_64",
         validate=True,
     )
-    steps.append({"name": "offline_svg_pack_batch", "success": bool(pack.get("success")), "detail": pack})
+    steps.append(
+        {"name": "offline_svg_pack_batch", "success": bool(pack.get("success")), "detail": pack}
+    )
 
     sheet_path = sim_out / "icon_sheet.svg"
     sheet = await inkscape_sim_art(
@@ -133,7 +162,9 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         margin_px=4,
         bleed_px=2,
     )
-    steps.append({"name": "offline_build_icon_sheet", "success": bool(sheet.get("success")), "detail": sheet})
+    steps.append(
+        {"name": "offline_build_icon_sheet", "success": bool(sheet.get("success")), "detail": sheet}
+    )
 
     audit = await inkscape_validation("audit_svg_pack", str(sim_out / "pack"))
     steps.append(
@@ -149,7 +180,13 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         input_dir=str(sim_out / "pack"),
         goal="Fleet UI icon QA",
     )
-    steps.append({"name": "offline_ai_svg_refine_loop", "success": bool(refine.get("success")), "detail": refine})
+    steps.append(
+        {
+            "name": "offline_ai_svg_refine_loop",
+            "success": bool(refine.get("success")),
+            "detail": refine,
+        }
+    )
 
     resonite = await inkscape_sim_art(
         "stage_resonite_ui",
@@ -157,7 +194,13 @@ async def run_offline_smoke(*, work_dir: Path) -> dict[str, object]:
         output_path=str(sheet_path),
         staging_dir=str(work_dir / "resonite_stage"),
     )
-    steps.append({"name": "offline_stage_resonite_ui", "success": bool(resonite.get("success")), "detail": resonite})
+    steps.append(
+        {
+            "name": "offline_stage_resonite_ui",
+            "success": bool(resonite.get("success")),
+            "detail": resonite,
+        }
+    )
 
     return {
         "success": all(bool(s.get("success")) for s in steps),

@@ -182,9 +182,6 @@ class InkscapeCliWrapper:
         # Build command arguments with HEADLESS MODE (prevents GUI flashes)
         cmd_args = [self.config.inkscape_executable, "--batch-process"]
 
-        # Prevent hanging on missing external resources
-        cmd_args.append("--no-remote-resources")
-
         # Add verbs
         for verb in verbs:
             cmd_args.extend(["--verb", verb])
@@ -227,9 +224,6 @@ class InkscapeCliWrapper:
 
         # Use --batch-process for headless operation (prevents GUI flashes)
         cmd_args.append("--batch-process")
-
-        # Prevent hanging on missing external resources
-        cmd_args.append("--no-remote-resources")
 
         # Construct the actions string
         actions_str = ";".join(actions)
@@ -336,6 +330,10 @@ class InkscapeCliWrapper:
             raise InkscapeExecutionError(
                 f"Inkscape executable not found: {self.config.inkscape_executable}"
             ) from None
+        except InkscapeCliError:
+            # Already a well-formed InkscapeTimeoutError/InkscapeExecutionError raised above -
+            # let it propagate as-is instead of re-wrapping it into InkscapeExecutionError.
+            raise
         except Exception as e:
             raise InkscapeExecutionError(f"Command execution failed: {e}") from e
 

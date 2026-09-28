@@ -1,10 +1,10 @@
 """
-Inkscape Shell Mode Wrapper — persistent Inkscape process for fast multi-step operations.
+Inkscape Shell Mode Wrapper - persistent Inkscape process for fast multi-step operations.
 
 Inkscape 1.x supports `inkscape --shell` which opens an interactive action REPL.
-Instead of spawning a fresh process per operation (500–1500ms overhead each),
+Instead of spawning a fresh process per operation (500-1500ms overhead each),
 the ShellModeWrapper keeps ONE Inkscape process alive and feeds it action strings
-line-by-line — dropping per-operation cost to ~20–80ms.
+line-by-line - dropping per-operation cost to ~20-80ms.
 
 Protocol:
     - Input:  one action string per line, e.g. "file-open:/tmp/foo.svg\\n"
@@ -144,7 +144,9 @@ class ShellModeWrapper:
         try:
             response = await asyncio.wait_for(self._read_until_prompt(), timeout=self._timeout)
         except TimeoutError as te:
-            raise ShellModeError(f"Inkscape shell timed out ({self._timeout}s) on: {command!r}") from te
+            raise ShellModeError(
+                f"Inkscape shell timed out ({self._timeout}s) on: {command!r}"
+            ) from te
         logger.debug("Shell ← %r", response[:120])
         return response
 
@@ -225,7 +227,7 @@ class ShellModeWrapper:
             if not chunk:
                 raise ShellModeError("Inkscape shell process closed unexpectedly")
             buf.extend(chunk)
-            # The shell prints "> " or just ">" — look for a lone > at end of buffer
+            # The shell prints "> " or just ">" - look for a lone > at end of buffer
             if buf.rstrip(b" \t\r\n").endswith(b">"):
                 break
         # Strip the trailing prompt and decode
@@ -293,7 +295,7 @@ class ShellModePool:
                     self._wrapper = w
                     self._idx = i
                     return w
-            # All crashed — restart one
+            # All crashed - restart one
             w = ShellModeWrapper(self._pool._exe)
             await w.start()
             self._pool._wrappers[0] = w

@@ -27,15 +27,15 @@ def register_prefabs(mcp: FastMCP) -> None:
         from fastmcp.prefab import prefab
     except ImportError:
         import logging
+
         logging.getLogger(__name__).warning(
-            "prefab-ui not installed — Prefab UI unavailable. "
-            "Run: uv add 'prefab-ui>=0.14.0'"
+            "prefab-ui not installed - Prefab UI unavailable. Run: uv add 'prefab-ui>=0.14.0'"
         )
         return
 
     @prefab(mcp, tool="generate_svg")
     def generate_svg_prefab():
-        """GenerativeUI panel for generate_svg — rendered in supporting clients."""
+        """GenerativeUI panel for generate_svg - rendered in supporting clients."""
         return Column(
             children=[
                 Text(value="SVG generator", style={"fontWeight": "500", "fontSize": "14px"}),
@@ -91,7 +91,14 @@ def register_prefabs(mcp: FastMCP) -> None:
                 Dropdown(
                     param="operation",
                     label="Operation",
-                    options=["status", "version", "diagnostics", "help", "config", "list_extensions"],
+                    options=[
+                        "status",
+                        "version",
+                        "diagnostics",
+                        "help",
+                        "config",
+                        "list_extensions",
+                    ],
                     default="status",
                 ),
                 Button(label="Run", action="submit"),

@@ -106,7 +106,9 @@ async def inkscape_fleet(
             return FleetResult(
                 success=bool(gimp_result.get("success")),
                 operation=operation,
-                message="GIMP raster validation complete" if gimp_result.get("success") else "GIMP handoff failed",
+                message="GIMP raster validation complete"
+                if gimp_result.get("success")
+                else "GIMP handoff failed",
                 data=gimp_result,
                 execution_time_ms=(time.time() - start) * 1000,
                 error="" if gimp_result.get("success") else str(gimp_result.get("error", "")),
@@ -173,7 +175,9 @@ async def inkscape_fleet(
             return FleetResult(
                 success=bool(result.get("success")),
                 operation=operation,
-                message="Layer atlas export complete" if result.get("success") else "Atlas export failed",
+                message="Layer atlas export complete"
+                if result.get("success")
+                else "Atlas export failed",
                 data=result if isinstance(result, dict) else {"result": result},
                 execution_time_ms=(time.time() - start) * 1000,
                 error="" if result.get("success") else str(result.get("error", "")),

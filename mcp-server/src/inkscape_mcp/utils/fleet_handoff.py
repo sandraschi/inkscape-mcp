@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 from pathlib import Path
@@ -148,7 +149,7 @@ async def push_sprite_to_unity(
     try:
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / src.name
-        shutil.copy2(src, dest)
+        await asyncio.to_thread(shutil.copy2, src, dest)
     except OSError as exc:
         logger.exception("Unity sprite copy failed")
         return {"success": False, "error": str(exc)}

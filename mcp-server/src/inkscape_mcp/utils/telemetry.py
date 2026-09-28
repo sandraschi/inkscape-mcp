@@ -156,7 +156,9 @@ def install_tool_call_wrapper(app: Any) -> None:
 
     original = app.call_tool
 
-    async def wrapped_call_tool(name: str, arguments: dict[str, Any] | None = None, **kwargs: Any) -> Any:
+    async def wrapped_call_tool(
+        name: str, arguments: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         with ToolMetricsContext(name) as ctx:
             try:
                 return await original(name, arguments or {}, **kwargs)

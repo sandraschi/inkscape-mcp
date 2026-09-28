@@ -1,4 +1,4 @@
-"""Inkscape MCP Tools — FastMCP 3.1+ portmanteau surface.
+"""Inkscape MCP Tools - FastMCP 3.1+ portmanteau surface.
 
 Consolidated tools for vector graphics operations with reduced cognitive load and better discoverability.
 
@@ -11,6 +11,7 @@ TOOLS:
 - inkscape_analysis: Document analysis (quality, statistics, validate, objects, dimensions, structure)
 - inkscape_system: System operations (status, help, diagnostics, version, config)
 """
+
 import logging
 from typing import Any
 
@@ -22,6 +23,7 @@ from .fleet_tools import inkscape_fleet
 from .heraldry import register_heraldry_tools
 from .layer_operations import inkscape_layers
 from .llm_discovery import list_local_models
+from .llm_discovery import llm_ops
 from .render_tools import inkscape_render
 from .sim_art_tools import inkscape_sim_art
 from .system import inkscape_system
@@ -42,13 +44,14 @@ __all__ = [
     "inkscape_layers",
     "register_heraldry_tools",
     "list_local_models",
+    "llm_ops",
 ]
 
 logger = logging.getLogger("inkscape-mcp.tools")
 
 
 def _error_response(error: str, error_type: str = "general", **kwargs) -> dict:
-    """Auto-logging error response — traceback logged before returning to caller."""
+    """Auto-logging error response - traceback logged before returning to caller."""
     logger.exception("Tool error: %s [%s]", error, error_type)
     return {"success": False, "error": error, "error_type": error_type, **kwargs}
 
@@ -205,7 +208,15 @@ def get_tool_metadata():
 
 
 def register_all_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
-    """Register all portmanteau tools with the MCP server."""
+    """Register all portmanteau tools with the MCP server.
+
+    Legacy - only server.InkscapeMcpServer calls this, and that class is
+    itself superseded by main.InkscapeMCPServer (see its docstring). This
+    list has drifted from main.py's registration (e.g. missing
+    inkscape_fleet/inkscape_fab_art) and passes each tool's full function
+    object through generic `mcp.tool()(fn)` instead of main.py's explicit,
+    per-param wrappers. Do not add new tools here; add them to main.py.
+    """
     # Register core portmanteau tools
     for tool_info in PORTMANTEAU_TOOLS:
         mcp.tool()(tool_info["function"])
@@ -215,3 +226,4 @@ def register_all_tools(mcp: Any, cli_wrapper: Any, config: Any) -> None:
 
     # Register individual utility tools
     mcp.tool()(list_local_models)
+    mcp.tool()(llm_ops)

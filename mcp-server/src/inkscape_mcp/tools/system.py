@@ -11,8 +11,12 @@ SUPPORTED OPERATIONS:
 - diagnostics: Run diagnostic checks and system readiness
 - version: Get server version and protocol information
 - config: View current configuration settings
-- list_extensions: Discover and list available Inkscape extensions
-- execute_extension: Execute Inkscape extensions with parameters
+- list_extensions: Discover and list locally-installed Inkscape extensions
+- execute_extension: Execute Inkscape extensions with parameters (currently disabled - see operation)
+- search_extensions: Search inkscape.org's live online extension gallery
+- install_extension: Download and install a gallery extension (verified-only by default)
+- uninstall_extension: Remove an extension this server installed
+- list_managed_extensions: List extensions installed via this server
 
 OPERATIONS DETAIL:
 
@@ -226,6 +230,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from ..utils import inkscape_gallery
 from ..utils.execution_mode import describe_execution_mode
 from ..utils.telemetry import set_execution_mode
 
@@ -252,15 +257,26 @@ async def inkscape_system(
         "config",
         "execution_mode",
         "hands_in_command",
-    "list_extensions",
-    "execute_extension",
-    "self_terminate",
+        "list_extensions",
+        "execute_extension",
+        "search_extensions",
+        "install_extension",
+        "uninstall_extension",
+        "list_managed_extensions",
+        "self_terminate",
     ],
     extension_id: str | None = None,
     _extension_params: dict[str, Any] | None = None,
     _input_file: str | None = None,
     _output_file: str | None = None,
     action: str = "",
+    query: str = "",
+    limit: int = 20,
+    name: str = "",
+    download_url: str = "",
+    verified: bool = False,
+    targets: list[str] | None = None,
+    allow_unverified: bool = False,
     cli_wrapper: Any = None,
     config: Any = None,
 ) -> dict[str, Any]:
@@ -328,9 +344,12 @@ async def inkscape_system(
         elif operation == "hands_in_command":
             if not action:
                 return SystemResult(
-                    success=False, operation="hands_in_command",
+                    success=False,
+                    operation="hands_in_command",
                     message="action parameter is required (e.g. 'select-all;object-flip-horizontally')",
-                    data={}, execution_time_ms=0, error="ValueError",
+                    data={},
+                    execution_time_ms=0,
+                    error="ValueError",
                 ).model_dump()
 
             try:
@@ -340,18 +359,23 @@ async def inkscape_system(
                     config.process_timeout,
                 )
                 return SystemResult(
-                    success=True, operation="hands_in_command",
+                    success=True,
+                    operation="hands_in_command",
                     message=f"Sent action to active Inkscape window: {action[:120]}",
                     data={"action": action, "response": result.strip()[:500]},
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
             except Exception as exc:
                 return SystemResult(
-                    success=False, operation="hands_in_command",
+                    success=False,
+                    operation="hands_in_command",
                     message=f"Hands-in command failed: {exc}. Is Inkscape GUI running?",
-                    data={"action": action,
-                          "hint": "Open Inkscape GUI first, then set INKSCAPE_GUI_WATCH=1"},
-                    execution_time_ms=0, error=str(exc),
+                    data={
+                        "action": action,
+                        "hint": "Open Inkscape GUI first, then set INKSCAPE_GUI_WATCH=1",
+                    },
+                    execution_time_ms=0,
+                    error=str(exc),
                 ).model_dump()
 
         elif operation == "version":
@@ -399,7 +423,9 @@ async def inkscape_system(
                 base = Path(str(config.inkscape_executable)).parent.parent
                 ext_dirs.append(str(base / "share" / "inkscape" / "extensions"))
                 ext_dirs.append(str(Path.home() / ".config" / "inkscape" / "extensions"))
-                ext_dirs.append(str(Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions"))
+                ext_dirs.append(
+                    str(Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions")
+                )
             for d in ext_dirs:
                 dp = Path(d)
                 if dp.is_dir():
@@ -418,15 +444,20 @@ async def inkscape_system(
                                 elif ll.startswith("<id>"):
                                     ext_id = ll.replace("<id>", "").replace("</id>", "").strip()
                             if name:
-                                extensions.append({"id": ext_id or inx.stem, "name": name,
-                                                   "path": str(inx)})
+                                extensions.append(
+                                    {"id": ext_id or inx.stem, "name": name, "path": str(inx)}
+                                )
                         except Exception:
                             pass
             return SystemResult(
-                success=True, operation="list_extensions",
+                success=True,
+                operation="list_extensions",
                 message=f"Found {len(extensions)} extensions in {len(ext_dirs)} directories",
-                data={"extensions": extensions, "total_count": len(extensions),
-                      "source_dirs": ext_dirs},
+                data={
+                    "extensions": extensions,
+                    "total_count": len(extensions),
+                    "source_dirs": ext_dirs,
+                },
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 
@@ -447,6 +478,111 @@ async def inkscape_system(
                 message=f"Extension system disabled - cannot execute {extension_id}",
                 error="Extension system temporarily disabled",
                 data={"note": "Extension system temporarily disabled"},
+                execution_time_ms=(time.time() - start_time) * 1000,
+            ).model_dump()
+
+        elif operation == "search_extensions":
+            try:
+                result = await inkscape_gallery.search_gallery(query, limit)
+                return SystemResult(
+                    success=True,
+                    operation="search_extensions",
+                    message=f"Found {result['count']} extension(s) on inkscape.org"
+                    + (f" matching '{query}'" if query else ""),
+                    data=result,
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except Exception as e:
+                return SystemResult(
+                    success=False,
+                    operation="search_extensions",
+                    message=f"Gallery search failed: {e}",
+                    error=str(e),
+                    data={},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+
+        elif operation == "install_extension":
+            if not extension_id or not download_url:
+                return SystemResult(
+                    success=False,
+                    operation="install_extension",
+                    message="extension_id and download_url are required - use search_extensions first",
+                    error="ValueError",
+                    data={},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            try:
+                result = await inkscape_gallery.install_extension(
+                    extension_id,
+                    name or extension_id,
+                    download_url,
+                    verified=verified,
+                    targets=targets,
+                    allow_unverified=allow_unverified,
+                )
+                return SystemResult(
+                    success=True,
+                    operation="install_extension",
+                    message=f"Installed '{result['name']}' - restart Inkscape to use it",
+                    data=result,
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except PermissionError as e:
+                return SystemResult(
+                    success=False,
+                    operation="install_extension",
+                    message=str(e),
+                    error="PermissionError",
+                    data={"recovery_options": ["Pass allow_unverified=true if you've reviewed the extension yourself"]},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except Exception as e:
+                return SystemResult(
+                    success=False,
+                    operation="install_extension",
+                    message=f"Install failed: {e}",
+                    error=str(e),
+                    data={},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+
+        elif operation == "uninstall_extension":
+            if not extension_id:
+                return SystemResult(
+                    success=False,
+                    operation="uninstall_extension",
+                    message="extension_id is required",
+                    error="ValueError",
+                    data={},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            try:
+                result = await inkscape_gallery.uninstall_extension(extension_id)
+                return SystemResult(
+                    success=True,
+                    operation="uninstall_extension",
+                    message=f"Removed {len(result['removed_files'])} file(s) - restart Inkscape",
+                    data=result,
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+            except KeyError as e:
+                return SystemResult(
+                    success=False,
+                    operation="uninstall_extension",
+                    message=str(e),
+                    error="KeyError",
+                    data={},
+                    execution_time_ms=(time.time() - start_time) * 1000,
+                ).model_dump()
+
+        elif operation == "list_managed_extensions":
+            result = inkscape_gallery.list_managed_extensions()
+            return SystemResult(
+                success=True,
+                operation="list_managed_extensions",
+                message=f"{len(result['extensions'])} extension(s) installed via this server",
+                data=result,
                 execution_time_ms=(time.time() - start_time) * 1000,
             ).model_dump()
 
@@ -481,6 +617,7 @@ async def inkscape_system(
 
         elif operation == "self_terminate":
             import os
+
             logger.warning("Self-termination requested by agent")
             os._exit(0)
 

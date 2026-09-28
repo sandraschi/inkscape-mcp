@@ -49,7 +49,11 @@ def _svg_metrics(path: Path, root: ET.Element) -> dict[str, Any]:
     width = root.get("width", "")
     height = root.get("height", "")
     elements = list(root.iter())
-    tagged = [el for el in elements if el.tag.endswith(("rect", "path", "circle", "ellipse", "polygon", "line", "text"))]
+    tagged = [
+        el
+        for el in elements
+        if el.tag.endswith(("rect", "path", "circle", "ellipse", "polygon", "line", "text"))
+    ]
     painted = 0
     for el in tagged:
         if el.get("fill") not in (None, "none") or el.get("stroke") not in (None, "none"):

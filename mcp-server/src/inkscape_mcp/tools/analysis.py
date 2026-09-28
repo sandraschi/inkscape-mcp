@@ -251,7 +251,9 @@ async def inkscape_analysis(
                         [str(config.inkscape_executable), str(input_path_obj), "--query-all"],
                         config.process_timeout,
                     )
-                    object_count = max(1, len([line for line in all_str.strip().split("\n") if line.strip()]))
+                    object_count = max(
+                        1, len([line for line in all_str.strip().split("\n") if line.strip()])
+                    )
                 except Exception:
                     pass
 
@@ -366,21 +368,30 @@ async def inkscape_analysis(
                 for line in all_str.strip().split("\n"):
                     parts = line.strip().split(",")
                     if len(parts) >= 5:
-                        objects.append({
-                            "id": parts[0], "x": float(parts[1]), "y": float(parts[2]),
-                            "w": float(parts[3]), "h": float(parts[4]),
-                        })
+                        objects.append(
+                            {
+                                "id": parts[0],
+                                "x": float(parts[1]),
+                                "y": float(parts[2]),
+                                "w": float(parts[3]),
+                                "h": float(parts[4]),
+                            }
+                        )
                 return AnalysisResult(
-                    success=True, operation="objects",
+                    success=True,
+                    operation="objects",
                     message=f"Found {len(objects)} objects in {input_path}",
                     data={"objects": objects, "count": len(objects)},
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
             except Exception as e:
                 return AnalysisResult(
-                    success=False, operation="objects",
+                    success=False,
+                    operation="objects",
                     message=f"Object listing failed: {e}",
-                    data={}, execution_time_ms=0, error=str(e),
+                    data={},
+                    execution_time_ms=0,
+                    error=str(e),
                 ).model_dump()
 
         elif operation == "structure":
@@ -394,22 +405,34 @@ async def inkscape_analysis(
                 for line in all_str.strip().split("\n"):
                     parts = line.strip().split(",")
                     if len(parts) >= 5:
-                        objects.append({
-                            "id": parts[0], "x": float(parts[1]), "y": float(parts[2]),
-                            "w": float(parts[3]), "h": float(parts[4]),
-                        })
+                        objects.append(
+                            {
+                                "id": parts[0],
+                                "x": float(parts[1]),
+                                "y": float(parts[2]),
+                                "w": float(parts[3]),
+                                "h": float(parts[4]),
+                            }
+                        )
                 return AnalysisResult(
-                    success=True, operation="structure",
+                    success=True,
+                    operation="structure",
                     message=f"Analyzed structure: {len(objects)} top-level objects",
-                    data={"objects": objects, "count": len(objects),
-                          "hint": "Layer/group detection requires inkex; --query-all shows flat object list"},
+                    data={
+                        "objects": objects,
+                        "count": len(objects),
+                        "hint": "Layer/group detection requires inkex; --query-all shows flat object list",
+                    },
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
             except Exception as e:
                 return AnalysisResult(
-                    success=False, operation="structure",
+                    success=False,
+                    operation="structure",
                     message=f"Structure analysis failed: {e}",
-                    data={}, execution_time_ms=0, error=str(e),
+                    data={},
+                    execution_time_ms=0,
+                    error=str(e),
                 ).model_dump()
 
         elif operation == "quality":
@@ -419,28 +442,38 @@ async def inkscape_analysis(
                     [str(config.inkscape_executable), str(input_path_obj), "--query-all"],
                     config.process_timeout,
                 )
-                obj_count = max(1, len([line for line in all_str.strip().split("\n") if line.strip()]))
+                obj_count = max(
+                    1, len([line for line in all_str.strip().split("\n") if line.strip()])
+                )
                 file_kb = input_path_obj.stat().st_size / 1024
                 # Simple heuristics
                 issues: list[str] = []
                 if file_kb > 100:
-                    issues.append(f"Large file ({file_kb:.0f} KB) — consider scour_svg")
+                    issues.append(f"Large file ({file_kb:.0f} KB) - consider scour_svg")
                 if obj_count > 100:
-                    issues.append(f"High object count ({obj_count}) — may benefit from path_combine")
+                    issues.append(
+                        f"High object count ({obj_count}) - may benefit from path_combine"
+                    )
                 return AnalysisResult(
-                    success=True, operation="quality",
+                    success=True,
+                    operation="quality",
                     message=f"Quality check: {len(issues)} suggestion(s)",
                     data={
-                        "file_size_kb": round(file_kb, 1), "object_count": obj_count,
-                        "issues": issues, "score": max(0, 10 - len(issues)),
+                        "file_size_kb": round(file_kb, 1),
+                        "object_count": obj_count,
+                        "issues": issues,
+                        "score": max(0, 10 - len(issues)),
                     },
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
             except Exception as e:
                 return AnalysisResult(
-                    success=False, operation="quality",
+                    success=False,
+                    operation="quality",
                     message=f"Quality analysis failed: {e}",
-                    data={}, execution_time_ms=0, error=str(e),
+                    data={},
+                    execution_time_ms=0,
+                    error=str(e),
                 ).model_dump()
 
         else:

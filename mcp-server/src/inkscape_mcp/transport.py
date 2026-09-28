@@ -236,6 +236,7 @@ async def run_server_async(
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP mode: {endpoint}")
             import uvicorn
+
             asgi_app = mcp_app.http_app()
             config_uv = uvicorn.Config(asgi_app, host=host, port=port, log_level="info")
             server = uvicorn.Server(config_uv)
@@ -246,7 +247,7 @@ async def run_server_async(
             port = config["port"]
             logger.warning("SSE mode is deprecated. Migrate to HTTP Streamable (--http).")
             logger.info(f"Running in SSE mode: http://{host}:{port}")
-            await mcp_app.run_async(transport='sse', host=host, port=port)
+            await mcp_app.run_async(transport="sse", host=host, port=port)
 
     except asyncio.CancelledError:
         logger.info(f"{server_name} task cancelled")

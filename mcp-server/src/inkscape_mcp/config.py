@@ -7,6 +7,7 @@ including Inkscape settings, performance tuning, and user preferences.
 
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -210,7 +211,31 @@ class InkscapeConfig(BaseModel):
                     logger.warning(f"Failed to load config from {config_path}: {e}")
 
         logger.info("Using default configuration")
-        return cls()
+        cfg = cls()
+        if not cfg.inkscape_executable:
+            detected = cls._detect_inkscape_executable()
+            if detected:
+                cfg.inkscape_executable = detected
+        return cfg
+
+    @staticmethod
+    def _detect_inkscape_executable() -> str | None:
+        """Auto-detect the Inkscape executable (was documented but never implemented)."""
+        candidate = (
+            os.environ.get("INKSCAPE_PATH")
+            or shutil.which("inkscape")
+            or shutil.which("inkscape.exe")
+        )
+        if candidate and Path(candidate).exists():
+            return str(candidate)
+        for p in (
+            Path(r"C:\Program Files\Inkscape\bin\inkscape.exe"),
+            Path(r"C:\Program Files (x86)\Inkscape\bin\inkscape.exe"),
+            Path.home() / "AppData" / "Local" / "Programs" / "Inkscape" / "bin" / "inkscape.exe",
+        ):
+            if p.exists():
+                return str(p)
+        return None
 
     def save_to_file(self, config_path: str | Path) -> None:
         """

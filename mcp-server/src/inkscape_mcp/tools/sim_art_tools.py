@@ -181,7 +181,9 @@ async def _build_icon_sheet(
         try:
             child_tree = ET.parse(src)
             child_root = child_tree.getroot()
-            source_viewbox = child_root.get("viewBox") or child_root.get("viewbox") or f"0 0 {inner} {inner}"
+            source_viewbox = (
+                child_root.get("viewBox") or child_root.get("viewbox") or f"0 0 {inner} {inner}"
+            )
             nested.set("viewBox", source_viewbox)
             for child in list(child_root):
                 nested.append(child)
@@ -470,7 +472,8 @@ async def inkscape_sim_art(
                 operation=operation,
                 message="Sim art pipeline complete",
                 data={"batch": batch, "sheet": sheet, "audit": audit},
-                files=list(batch.get("files") or []) + ([str(sheet_path)] if sheet.get("success") else []),
+                files=list(batch.get("files") or [])
+                + ([str(sheet_path)] if sheet.get("success") else []),
             ).model_dump()
 
         return SimArtResult(

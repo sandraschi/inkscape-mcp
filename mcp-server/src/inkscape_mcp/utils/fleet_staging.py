@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 from pathlib import Path
@@ -19,7 +20,12 @@ def list_staging_files(staging_dir: Path, *, subdir: str = "") -> dict[str, Any]
     if not root.is_dir():
         return {"success": True, "files": [], "staging_dir": str(staging_dir)}
     files = sorted(str(p) for p in root.rglob("*") if p.is_file())
-    return {"success": True, "files": files, "staging_dir": str(staging_dir), "scan_root": str(root)}
+    return {
+        "success": True,
+        "files": files,
+        "staging_dir": str(staging_dir),
+        "scan_root": str(root),
+    }
 
 
 async def stage_file(
@@ -36,7 +42,7 @@ async def stage_file(
     try:
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / src.name
-        shutil.copy2(src, dest)
+        await asyncio.to_thread(shutil.copy2, src, dest)
     except OSError as exc:
         logger.exception("Staging copy failed for %s", source_path)
         return {"success": False, "error": str(exc)}

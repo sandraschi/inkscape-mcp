@@ -268,8 +268,7 @@ class InkscapeDetector:
             # Check minimum version requirements
             if major < 1:
                 raise RuntimeError(
-                    f"Inkscape version {version} is too old. "
-                    "Please install Inkscape 1.0+"
+                    f"Inkscape version {version} is too old. Please install Inkscape 1.0+"
                 )
 
             self.logger.info(f"Validated Inkscape version: {version}")

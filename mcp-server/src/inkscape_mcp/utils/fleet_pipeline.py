@@ -47,7 +47,9 @@ class PipelineReport:
             "png_path": self.png_path,
             "project_path": self.project_path,
             "staging_dir": self.staging_dir,
-            "steps": [{"name": s.name, "success": s.success, "detail": s.detail} for s in self.steps],
+            "steps": [
+                {"name": s.name, "success": s.success, "detail": s.detail} for s in self.steps
+            ],
         }
 
 
@@ -80,7 +82,9 @@ async def run_fleet_pipeline(
 
     svg = Path(svg_path)
     if not svg.is_file():
-        report.steps.append(PipelineStep("precheck", False, {"error": f"SVG not found: {svg_path}"}))
+        report.steps.append(
+            PipelineStep("precheck", False, {"error": f"SVG not found: {svg_path}"})
+        )
         return report
 
     project = Path(project_path)
@@ -111,7 +115,9 @@ async def run_fleet_pipeline(
             cli_wrapper=cli_wrapper,
             config=config,
         )
-        report.steps.append(PipelineStep("inkscape_export_png", bool(export_result.get("success")), export_result))
+        report.steps.append(
+            PipelineStep("inkscape_export_png", bool(export_result.get("success")), export_result)
+        )
         if not export_result.get("success"):
             return report
 
@@ -123,7 +129,10 @@ async def run_fleet_pipeline(
                 PipelineStep(
                     "gimp_validate",
                     False,
-                    {"error": f"gimp-mcp not reachable at {gurl}", "hint": "Use --skip-gimp to bypass"},
+                    {
+                        "error": f"gimp-mcp not reachable at {gurl}",
+                        "hint": "Use --skip-gimp to bypass",
+                    },
                 )
             )
             return report
@@ -132,7 +141,9 @@ async def run_fleet_pipeline(
             gimp_url=gurl,
             target_platform=target_platform,
         )
-        report.steps.append(PipelineStep("gimp_validate", bool(gimp_result.get("success")), gimp_result))
+        report.steps.append(
+            PipelineStep("gimp_validate", bool(gimp_result.get("success")), gimp_result)
+        )
         if not gimp_result.get("success"):
             return report
 
@@ -142,7 +153,9 @@ async def run_fleet_pipeline(
             blender_url=burl,
             import_to_blender=import_to_blender,
         )
-        report.steps.append(PipelineStep("blender_stage_svg", bool(blender_result.get("success")), blender_result))
+        report.steps.append(
+            PipelineStep("blender_stage_svg", bool(blender_result.get("success")), blender_result)
+        )
         if not blender_result.get("success"):
             return report
 
@@ -165,7 +178,9 @@ async def run_fleet_pipeline(
         project_path=project_path,
         unity_url=uurl,
     )
-    report.steps.append(PipelineStep("unity_sprite_push", bool(unity_result.get("success")), unity_result))
+    report.steps.append(
+        PipelineStep("unity_sprite_push", bool(unity_result.get("success")), unity_result)
+    )
 
     report.success = all(s.success for s in report.steps)
     return report

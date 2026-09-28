@@ -18,7 +18,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
-# Capability probe tools — passed to ctx.sample so the LLM can query them
+# Capability probe tools - passed to ctx.sample so the LLM can query them
 # ---------------------------------------------------------------------------
 
 
@@ -208,8 +208,18 @@ def register_agentic_tools(mcp_instance=None):
     if mcp_instance is None:
         from .main import mcp as mcp_instance  # noqa: PLC0415
 
-    _mutating = {}
-    _read_only = {"readonly": True}
+    _mutating = {
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": False,
+        "openWorldHint": False,
+    }
+    _read_only = {
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
 
     @mcp_instance.tool(annotations=_mutating)
     async def generate_svg(
@@ -235,7 +245,7 @@ def register_agentic_tools(mcp_instance=None):
             reference_svgs: Optional list of reference SVG file paths
             post_processing: Inkscape ops to apply after generation (simplify, optimize, etc.)
             max_steps: Max SEP-1577 reasoning loops (default: 5)
-            ctx: FastMCP context — injected when client supports sampling
+            ctx: FastMCP context - injected when client supports sampling
 
         Returns:
             dict with success, svg_path, svg_content preview, and metadata
@@ -261,7 +271,7 @@ def register_agentic_tools(mcp_instance=None):
         if ctx is None:
             return {
                 "success": False,
-                "error": "Sampling context unavailable — client does not support SEP-1577.",
+                "error": "Sampling context unavailable - client does not support SEP-1577.",
                 "message": (
                     "Use a sampling-capable client (Claude Desktop, Antigravity) "
                     "to generate SVGs via this tool."
@@ -273,7 +283,7 @@ def register_agentic_tools(mcp_instance=None):
             "Your job is to produce a COMPLETE, VALID SVG file as a string. "
             "Steps: (1) Call the relevant capability probes to understand available elements. "
             "(2) Plan the composition (layers, viewBox, elements, colours). "
-            "(3) Output the FULL SVG XML as your final response — no truncation, no placeholders. "
+            "(3) Output the FULL SVG XML as your final response - no truncation, no placeholders. "
             "For heraldic designs: use proper heraldic convention (tinctures, charges, postures). "
             "For 'asses rampant': draw donkey/ass figures in rampant posture (upright, hind legs only, "
             "forepaws raised, facing dexter). "
@@ -366,7 +376,7 @@ def register_agentic_tools(mcp_instance=None):
             workflow_prompt: Natural language workflow goal
             available_operations: Optional list to constrain the plan
             max_steps: Maximum reasoning loops (default: 5)
-            ctx: FastMCP context — injected when client supports sampling
+            ctx: FastMCP context - injected when client supports sampling
 
         Returns:
             dict with success, message (final plan), steps_taken, tool_calls
@@ -388,7 +398,7 @@ def register_agentic_tools(mcp_instance=None):
             "Call the capability probes to discover available operations, then produce a "
             "concrete, ordered, step-by-step plan that maps precisely to real Inkscape operations. "
             "Be specific: name each operation, parameters, and expected output. "
-            "Never hallucinate operations — only use what the probes confirm."
+            "Never hallucinate operations - only use what the probes confirm."
         )
         try:
             loop_result = await _run_sep1577_loop(
@@ -431,7 +441,7 @@ def register_agentic_tools(mcp_instance=None):
             available_operations: Operations the LLM may use in the plan
             processing_strategy: "adaptive" | "parallel" | "sequential"
             max_steps: Maximum reasoning loops (default: 5)
-            ctx: FastMCP context — injected when client supports sampling
+            ctx: FastMCP context - injected when client supports sampling
 
         Returns:
             dict with success, message (processing plan), steps_taken, tool_calls
@@ -502,7 +512,7 @@ def register_agentic_tools(mcp_instance=None):
             user_query: Natural language question about Inkscape or vector graphics
             context_level: "basic" | "comprehensive" | "detailed"
             max_steps: Max reasoning loops (default: 3)
-            ctx: FastMCP context — injected when client supports sampling
+            ctx: FastMCP context - injected when client supports sampling
 
         Returns:
             dict with success, message, next_steps

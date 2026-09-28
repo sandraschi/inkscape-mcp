@@ -10,9 +10,17 @@ REPO_DIR := justfile_directory()
 # --- Build & Release ---------------------------------------------------------
 
 # Build .mcpb bundle for Claude Desktop (sync src into mcpb/, validate, pack)
-# Path is scripts/mcpb-pack.ps1 per MCPB_PACKAGING_STANDARDS.md -- do not repoint at mcpb/pack.ps1.
+# mcpb/pack.ps1 is the actively-maintained fleet-canonical script (refreshed
+# 2026-09-27 "from canonical template") - implements MCPB_PACKAGING_STANDARDS.md
+# section 2.5 in full: wipe+fresh-copy staging, pack-root .mcpbignore, the
+# mechanical checks, then pack. Do NOT repoint this at a hand-rolled script -
+# that happened once already (2026-09-28) on a bad-faith reading of section
+# 1.1's template snippet alone, without checking whether mcpb/pack.ps1 already
+# existed and was current. It was, and the replacement lacked the wipe+recopy
+# step, the mechanical checks, and the pack-root .mcpbignore copy that
+# mcpb/pack.ps1 already had.
 mcpb-pack:
-    powershell.exe -NoProfile -File "{{REPO_DIR}}/scripts/mcpb-pack.ps1"
+    powershell.exe -NoProfile -File "{{REPO_DIR}}/mcpb/pack.ps1"
 
 # Run CUA-NSIS smoke test (install -> launch -> verify -> uninstall)
 # Syncs reports/cua-<repo>-<date>.md to mcd when the smoke script writes one.

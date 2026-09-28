@@ -134,6 +134,19 @@ if (Test-Path $SrcPrompts) {
     Write-Host '  synced assets/prompts -> mcpb/assets/prompts'
 }
 
+Step 1c 'Sync run_server.py -> mcpb/run_server.py (if this repo uses a standalone bootstrap entry point)'
+# A hand-maintained second copy is exactly how mcpb/run_server.py went stale
+# here (2026-09-28): kept a hardcoded-username debug-log path and a
+# CWD-relative sys.path.insert("src") for weeks after the repo-root copy was
+# cleaned up, because nothing ever re-copied it. Always overwrite so mcpb/
+# can never again silently diverge from the maintained source.
+$SrcRunServer = Join-Path $RepoRoot 'run_server.py'
+$StageRunServer = Join-Path $McpbDir 'run_server.py'
+if ((Test-Path $SrcRunServer) -and (Test-Path $StageRunServer)) {
+    Copy-Item $SrcRunServer $StageRunServer -Force
+    Write-Host '  synced run_server.py -> mcpb/run_server.py'
+}
+
 Step 2 'Strip pollution from the fresh stage'
 Get-ChildItem -Recurse -Path $StageRoot -Include '__pycache__' -Directory -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue

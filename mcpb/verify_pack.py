@@ -40,7 +40,21 @@ def check_import(stage_dir: str, entry_module_or_file: str, package_name: str) -
         # Standalone wrapper script (e.g. run_server.py) - run its top-level
         # code (imports, sys.path setup) without triggering `if __name__ ==
         # "__main__":`, by giving it a run_name that isn't "__main__".
-        runpy.run_path(str(entry_path), run_name="__mcpb_verify__")
+        #
+        # This script's OWN argv ("import", stage_dir, entry, package_name)
+        # is still sys.argv at this point - runpy does not touch it. A wrapper
+        # that unconditionally calls a CLI entry point's main() at module
+        # level (not gated behind `if __name__ == "__main__":`) - confirmed
+        # the more common fleet pattern per this module's own docstring, and
+        # exactly what inkscape-mcp's run_server.py does - then has its
+        # argparse choke on these four verifier arguments as if they were its
+        # own CLI flags. Neutralize argv for the duration of the run.
+        saved_argv = sys.argv
+        sys.argv = [str(entry_path)]
+        try:
+            runpy.run_path(str(entry_path), run_name="__mcpb_verify__")
+        finally:
+            sys.argv = saved_argv
         mod = sys.modules.get(package_name)
         if mod is None:
             raise SystemExit(f"FAIL import: running {entry_path} never imported {package_name!r}")

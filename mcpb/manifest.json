@@ -2,7 +2,7 @@
   "manifest_version": "0.2",
   "name": "inkscape-mcp",
   "version": "2.6.0",
-  "description": "MCP server for Inkscape-backed SVG and vector operations (FastMCP 3.2.0+)",
+  "description": "Headless Inkscape SVG automation via FastMCP: create/edit vector graphics, layers, animation, LPEs, gradients/patterns, XML editing, text-on-path, filters, and fleet handoff to GIMP/Blender/Unity/Resonite. Includes online extension-gallery search/install and AI-assisted SVG generation.",
   "author": { "name": "sandraschi" },
   "server": {
     "type": "python",
@@ -17,51 +17,77 @@
     }
   },
   "tools": [
-    { "name": "generate_svg", "description": "generate_svg" },
-    { "name": "agentic_inkscape_workflow", "description": "agentic_inkscape_workflow" },
-    { "name": "intelligent_vector_processing", "description": "intelligent_vector_processing" },
-    { "name": "conversational_inkscape_assistant", "description": "conversational_inkscape_assistant" },
-    { "name": "api_logs", "description": "api_logs" },
-    { "name": "api_logs_clear", "description": "api_logs_clear" },
-    { "name": "api_help", "description": "api_help" },
-    { "name": "api_docs", "description": "api_docs" },
-    { "name": "llm_providers", "description": "llm_providers" },
-    { "name": "health", "description": "health" },
-    { "name": "diagnostics", "description": "diagnostics" },
-    { "name": "system_info", "description": "system_info" },
-    { "name": "generate_svg_endpoint", "description": "generate_svg_endpoint" },
-    { "name": "api_v1_tool", "description": "api_v1_tool" },
-    { "name": "list_skills", "description": "list_skills" },
-    { "name": "get_skill", "description": "get_skill" },
-    { "name": "fleet_overview", "description": "fleet_overview" },
-    { "name": "capabilities", "description": "capabilities" },
-    { "name": "main_stdio", "description": "main(stdio)" },
-    { "name": "main_http", "description": "main(http)" },
-    { "name": "main_sse", "description": "main(sse)" },
-    { "name": "list_local_models", "description": "list_local_models" },
-    { "name": "inkscape_analysis_quality", "description": "inkscape_analysis(quality)" },
-    { "name": "inkscape_analysis_statistics", "description": "inkscape_analysis(statistics)" },
-    { "name": "inkscape_analysis_validate", "description": "inkscape_analysis(validate)" },
-    { "name": "inkscape_analysis_objects", "description": "inkscape_analysis(objects)" },
-    { "name": "inkscape_analysis_dimensions", "description": "inkscape_analysis(dimensions)" },
-    { "name": "inkscape_analysis_structure", "description": "inkscape_analysis(structure)" },
-    { "name": "inkscape_file_load", "description": "inkscape_file(load)" },
-    { "name": "inkscape_file_save", "description": "inkscape_file(save)" },
-    { "name": "inkscape_file_convert", "description": "inkscape_file(convert)" },
-    { "name": "inkscape_file_info", "description": "inkscape_file(info)" },
-    { "name": "inkscape_file_validate", "description": "inkscape_file(validate)" },
-    { "name": "inkscape_file_list_formats", "description": "inkscape_file(list_formats)" },
-    { "name": "generate_heraldry", "description": "generate_heraldry" },
-    { "name": "generate_heraldry_trumponia_trumponia", "description": "generate_heraldry_trumponia(trumponia)" },
-    { "name": "generate_heraldry_trumponia_custom", "description": "generate_heraldry_trumponia(custom)" },
-    { "name": "_parse_svg_xml_list", "description": "_parse_svg_xml(list)" },
-    { "name": "_parse_svg_xml_get", "description": "_parse_svg_xml(get)" },
-    { "name": "_parse_svg_xml_create", "description": "_parse_svg_xml(create)" },
-    { "name": "_parse_svg_xml_rename", "description": "_parse_svg_xml(rename)" },
-    { "name": "_parse_svg_xml_hide", "description": "_parse_svg_xml(hide)" },
-    { "name": "_parse_svg_xml_show", "description": "_parse_svg_xml(show)" },
-    { "name": "_parse_svg_xml_reorder", "description": "_parse_svg_xml(reorder)" },
-    { "name": "_parse_svg_xml_lock", "description": "_parse_svg_xml(lock)" },
-    { "name": "_parse_svg_xml_unlock", "description": "_parse_svg_xml(unlock)" }
+    {
+      "name": "inkscape_file",
+      "description": "File operations: load, convert, info, validate, list_formats"
+    },
+    {
+      "name": "inkscape_vector",
+      "description": "Vector editing: primitives, booleans, LPEs, gradients/patterns, XML get/set-attributes, text-on-path, flow-text, symbols, trace, QR/barcode, filters (blur/drop_shadow/glow), bulk restyle by CSS-like selector"
+    },
+    {
+      "name": "inkscape_layers",
+      "description": "Layer management: list, create, rename, hide/show, lock/unlock, reorder"
+    },
+    {
+      "name": "inkscape_animation",
+      "description": "SMIL/CSS animation: presets (bounce, fade, slide, rotate, pulse, shake) plus raw animate/transform/motion/color"
+    },
+    {
+      "name": "inkscape_analysis",
+      "description": "Document analysis: statistics, validate, dimensions, structure, quality"
+    },
+    {
+      "name": "inkscape_render",
+      "description": "Agent-vision PNG exports and document summaries for vision-loop workflows"
+    },
+    {
+      "name": "inkscape_validation",
+      "description": "SVG QA checks: viewBox, stroke/fill, size limits, web-export best practices"
+    },
+    {
+      "name": "inkscape_fleet",
+      "description": "Cross-repo handoff: push renders to GIMP, stage SVGs for Blender, export Unity sprites"
+    },
+    {
+      "name": "inkscape_fab_art",
+      "description": "DXF/laser fab paths and Gazebo robotics schematic staging"
+    },
+    {
+      "name": "inkscape_sim_art",
+      "description": "Icon packs, sprite sheets, and Resonite/VRChat UI asset staging"
+    },
+    {
+      "name": "inkscape_system",
+      "description": "Server/Inkscape status, diagnostics, version, config, and online extension-gallery search/install/uninstall"
+    },
+    {
+      "name": "generate_svg",
+      "description": "Natural-language SVG generation via client LLM sampling, with Inkscape post-processing"
+    },
+    {
+      "name": "generate_heraldry",
+      "description": "Heraldic coat-of-arms SVG generation from preset compositions"
+    },
+    {
+      "name": "list_local_models",
+      "description": "Discover local Ollama / LM Studio model IDs"
+    },
+    {
+      "name": "llm_ops",
+      "description": "Manage the local LLM engine: list/switch/unload models, VRAM telemetry"
+    },
+    {
+      "name": "agentic_inkscape_workflow",
+      "description": "Autonomous multi-step Inkscape workflows via client-side LLM sampling"
+    },
+    {
+      "name": "conversational_inkscape_assistant",
+      "description": "Conversational multi-step assistant over the vector-editing tool surface"
+    },
+    {
+      "name": "intelligent_vector_processing",
+      "description": "Batch SVG/vector processing driven by client-side LLM sampling"
+    }
   ]
 }

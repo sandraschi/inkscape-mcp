@@ -1,5 +1,11 @@
 
-## [Unreleased] — 2026-09-28
+## [2.7.0] - 2026-09-28
+
+### Fixed (MCPB packaging)
+- **MCPB bundle was HTTP-only under its own manifest's exact launch command**: `main.py` built `transport_args` from the raw `--mode` argparse default (`"dual"`) instead of the `effective_mode` value that actually resolves `MCP_TRANSPORT`/no-flag launches to `stdio` - so a bundle launched exactly as `manifest.json` specifies (no `--mode` flag) always came up in HTTP-only mode instead of stdio, breaking every install through Claude Desktop. Root-caused by unpacking and launching the built artifact exactly as the manifest specifies, not by reading the code. Also gated `run_server.py`'s `main()` call behind `if __name__ == "__main__":` (it was unconditionally called, which also broke `mcpb/verify_pack.py`'s standalone-script verification).
+- **`mcpb/manifest.json` `tools[]` was 46 stale auto-generated entries**, including private helper functions (`_parse_svg_xml_list`) - replaced with the real 18-tool list; same fix applied to `mcp-server/manifest.json` (version was also still `2.0.0b0`).
+- **`mcpb/pack.ps1` now auto-syncs `run_server.py` from the repo root on every pack run**, closing the drift that let a stale copy of the entry point ship silently.
+- **`mcp-server/src/` was committed instead of gitignored** despite being a fully regenerable staging mirror of `src/` - added to `.gitignore` alongside the pre-existing `mcpb/src/` rule.
 
 ### Fixed
 - **`generate-svg` 500 error**: the cloud-fallback loop raised uncaught on the first configured-but-broken provider instead of trying the next one, and `_ollama_model()`/`_ollama_base()` ignored the model/endpoint the user actually selected in AI Settings, defaulting to a hardcoded `qwen2.5-coder:latest` this Ollama install never pulled. Now tries every configured cloud provider before failing (clean 400, not 500), and prefers the user's actual AI Settings selection.
@@ -23,9 +29,7 @@
 - **`POST /api/settings/llm` hijacked the active provider/model pair on any key save** (BUG-043) - saving a key from any cloud card overwrote whatever provider you were actually using. Added `select: bool = True`; card key-saves now pass `select: false`.
 - **`LlmProviderCards.tsx` had drifted from the canonical template**: auto-selected `models[0]` on key save (BUG-030, "never auto-pick") and its Test button reported curated names as success with no key configured (BUG-042). Synced with the template's behavior, keeping this repo's dark-theme styling.
 
-## [Unreleased] — 2026-09-27
-
-### Fixed
+### Fixed (2026-09-27)
 - **`inkscape_vector` parameter surface**: the MCP schema only exposed `operation`/`input_path`/`output_path`, silently dropping all per-operation params (`shape`, `x`, `y`, `fill`, `lpe_id`, `text`, etc.) needed by most of its 30+ operations. `create_object`, `apply_lpe`, `text_set_content`/`text_set_style`, and others are now actually reachable.
 - **`InkscapeVectorOperation` enum**: was missing `create_object`, `text_set_content`, `text_set_style`, `text_list_fonts`, `list_lpes`, `apply_lpe`, `inspect` - these operations existed in the implementation but failed schema validation before reaching it.
 - **`inkscape_layers` and `inkscape_animation` were never registered** on the stdio/Claude Desktop entry point (`main.py`) despite being fully implemented and documented in the README - both tools are now registered.

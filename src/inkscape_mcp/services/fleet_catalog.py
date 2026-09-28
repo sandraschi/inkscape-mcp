@@ -107,7 +107,9 @@ def _parse_webapp_ports_md(path: Path) -> dict[str, list[int]]:
     return dict(by_repo)
 
 
-def op_port_audit(*, registry_path: str | None = None, webapp_ports_path: str | None = None) -> dict[str, Any]:
+def op_port_audit(
+    *, registry_path: str | None = None, webapp_ports_path: str | None = None
+) -> dict[str, Any]:
     reg_path = Path(registry_path) if registry_path else DEFAULT_REGISTRY_PATH
     ports_path = Path(webapp_ports_path) if webapp_ports_path else DEFAULT_WEBAPP_PORTS_PATH
     entries = load_registry(reg_path)
@@ -128,9 +130,18 @@ def op_port_audit(*, registry_path: str | None = None, webapp_ports_path: str | 
                 port_to_ids[p].append(rid)
         doc_list = doc_ports.get(rid.lower(), [])
         if port > 0 and doc_list and port not in doc_list:
-            mismatches.append({"id": rid, "registry_port": port, "webapp_ports_doc": doc_list, "kind": "backend"})
+            mismatches.append(
+                {"id": rid, "registry_port": port, "webapp_ports_doc": doc_list, "kind": "backend"}
+            )
         if fport > 0 and doc_list and fport not in doc_list:
-            mismatches.append({"id": rid, "registry_port": fport, "webapp_ports_doc": doc_list, "kind": "frontend"})
+            mismatches.append(
+                {
+                    "id": rid,
+                    "registry_port": fport,
+                    "webapp_ports_doc": doc_list,
+                    "kind": "frontend",
+                }
+            )
 
     for p, ids in port_to_ids.items():
         if len(ids) > 1:
@@ -158,7 +169,9 @@ def _docs_present(repo_path: Path) -> dict[str, bool]:
     }
 
 
-def op_docs_gate(*, registry_path: str | None = None, repos_root: str | None = None) -> dict[str, Any]:
+def op_docs_gate(
+    *, registry_path: str | None = None, repos_root: str | None = None
+) -> dict[str, Any]:
     entries = load_registry(Path(registry_path) if registry_path else DEFAULT_REGISTRY_PATH)
     root = Path(repos_root) if repos_root else DEFAULT_REPOS_ROOT
     results: list[dict[str, Any]] = []
@@ -172,7 +185,9 @@ def op_docs_gate(*, registry_path: str | None = None, repos_root: str | None = N
         rid = str(row.get("id") or "")
         repo_path = Path(str(row.get("repo_path") or root / rid))
         if not repo_path.is_dir():
-            results.append({"id": rid, "repo_path": str(repo_path), "exists": False, "missing": ["repo_path"]})
+            results.append(
+                {"id": rid, "repo_path": str(repo_path), "exists": False, "missing": ["repo_path"]}
+            )
             missing_total += 1
             continue
         checks = _docs_present(repo_path)
@@ -202,9 +217,15 @@ def op_docs_gate(*, registry_path: str | None = None, repos_root: str | None = N
     )
 
 
-def op_quarantine_report(*, registry_path: str | None = None, owner: str = DEFAULT_FLEET_OWNER) -> dict[str, Any]:
+def op_quarantine_report(
+    *, registry_path: str | None = None, owner: str = DEFAULT_FLEET_OWNER
+) -> dict[str, Any]:
     entries = load_registry(Path(registry_path) if registry_path else DEFAULT_REGISTRY_PATH)
-    quarantined = [r for r in entries if isinstance(r, dict) and str(r.get("status") or "").lower() == "quarantined"]
+    quarantined = [
+        r
+        for r in entries
+        if isinstance(r, dict) and str(r.get("status") or "").lower() == "quarantined"
+    ]
     report: list[dict[str, Any]] = []
     for row in quarantined:
         rid = str(row.get("id") or "")
@@ -213,7 +234,9 @@ def op_quarantine_report(*, registry_path: str | None = None, owner: str = DEFAU
         open_prs = 0
         open_issues = 0
         last_push = None
-        ok, out, _ = run_gh(["api", f"repos/{slug}", "-q", "{pushedAt, openIssuesCount, openPullsCount, htmlUrl}"])
+        ok, out, _ = run_gh(
+            ["api", f"repos/{slug}", "-q", "{pushedAt, openIssuesCount, openPullsCount, htmlUrl}"]
+        )
         if ok and out.strip():
             try:
                 meta = json.loads(out) if out.strip().startswith("{") else {}

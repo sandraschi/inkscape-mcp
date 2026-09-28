@@ -258,9 +258,7 @@ class AppsEnsureIn(BaseModel):
     port: int = 0
 
 
-def _resolve_id_port(
-    app_id: str, port: int
-) -> tuple[str, int]:
+def _resolve_id_port(app_id: str, port: int) -> tuple[str, int]:
     if not app_id and port:
         for row in load_registry():
             if int(row.get("frontend_port") or row.get("port") or 0) == port:
@@ -296,9 +294,7 @@ def register_apps_routes(router: Any) -> None:
         """Click-to-open: health first, foreground Tauri, else start detached."""
         import asyncio
 
-        app_id, port = _resolve_id_port(
-            (body.id or body.app_id).strip(), int(body.port or 0)
-        )
+        app_id, port = _resolve_id_port((body.id or body.app_id).strip(), int(body.port or 0))
         if not port:
             return {"success": False, "error": "port or id required", "alive": False}
         health = await asyncio.to_thread(_check_port_health_sync, port)
@@ -372,7 +368,14 @@ def register_apps_routes(router: Any) -> None:
 
                     if start_cmd.lower().endswith(".ps1"):
                         subprocess.Popen(
-                            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", start_cmd],
+                            [
+                                "powershell.exe",
+                                "-NoProfile",
+                                "-ExecutionPolicy",
+                                "Bypass",
+                                "-File",
+                                start_cmd,
+                            ],
                             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
                         )
                     else:

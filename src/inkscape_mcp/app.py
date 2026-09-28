@@ -369,7 +369,10 @@ async def _call_gemini_chat(messages: list[dict], model: str, api_key: str) -> s
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model or 'gemini-3.5-flash-lite'}:generateContent?key={api_key}"
     )
-    payload: dict[str, Any] = {"contents": contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
+    payload: dict[str, Any] = {
+        "contents": contents,
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192},
+    }
     if system:
         payload["system_instruction"] = {"parts": [{"text": system}]}
     async with httpx.AsyncClient(timeout=90.0) as client:
@@ -385,7 +388,11 @@ async def _call_gemini_chat(messages: list[dict], model: str, api_key: str) -> s
 async def _call_anthropic_chat(messages: list[dict], model: str, api_key: str) -> str:
     """Multi-turn Anthropic call for /api/chat (see _call_gemini_chat note)."""
     system = "\n".join(m["content"] for m in messages if m.get("role") == "system")
-    turns = [{"role": m["role"], "content": m["content"]} for m in messages if m.get("role") in ("user", "assistant")]
+    turns = [
+        {"role": m["role"], "content": m["content"]}
+        for m in messages
+        if m.get("role") in ("user", "assistant")
+    ]
     async with httpx.AsyncClient(timeout=90.0) as client:
         r = await client.post(
             "https://api.anthropic.com/v1/messages",
@@ -408,7 +415,9 @@ async def _call_anthropic_chat(messages: list[dict], model: str, api_key: str) -
 
 # OpenAI, DeepSeek, OpenRouter, and Meta's Model API are all OpenAI-compatible
 # /chat/completions - one shared implementation instead of four near-duplicates.
-async def _call_openai_compatible(prompt: str, system: str, *, base_url: str, api_key: str, model: str) -> str:
+async def _call_openai_compatible(
+    prompt: str, system: str, *, base_url: str, api_key: str, model: str
+) -> str:
     async with httpx.AsyncClient(timeout=60.0) as client:
         r = await client.post(
             f"{base_url}/chat/completions",
@@ -427,7 +436,9 @@ async def _call_openai_compatible(prompt: str, system: str, *, base_url: str, ap
     return r.json()["choices"][0]["message"]["content"]
 
 
-async def _call_openai_compatible_chat(messages: list[dict], model: str, *, base_url: str, api_key: str) -> str:
+async def _call_openai_compatible_chat(
+    messages: list[dict], model: str, *, base_url: str, api_key: str
+) -> str:
     """Multi-turn call for /api/chat (see _call_gemini_chat note) - unlike
     Gemini/Anthropic, OpenAI-compatible APIs take system+user+assistant all
     in one `messages` array, so no separate system extraction is needed."""
@@ -486,13 +497,20 @@ async def _call_openrouter(prompt: str, system: str) -> str:
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY not set")
     return await _call_openai_compatible(
-        prompt, system, base_url="https://openrouter.ai/api/v1", api_key=api_key, model="openai/gpt-6-luna"
+        prompt,
+        system,
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+        model="openai/gpt-6-luna",
     )
 
 
 async def _call_openrouter_chat(messages: list[dict], model: str, api_key: str) -> str:
     return await _call_openai_compatible_chat(
-        messages, model or "openai/gpt-6-luna", base_url="https://openrouter.ai/api/v1", api_key=api_key
+        messages,
+        model or "openai/gpt-6-luna",
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
     )
 
 
@@ -688,7 +706,9 @@ async def _call_mcp_tool(mcp: Any, tool_name: str, params: dict) -> dict[str, An
     elif isinstance(mcp_result, tuple) and len(mcp_result) >= 2:
         content_list, structured_content = mcp_result[0], mcp_result[1]
     else:
-        content_list = mcp_result if isinstance(mcp_result, list) else getattr(result, "content", [])
+        content_list = (
+            mcp_result if isinstance(mcp_result, list) else getattr(result, "content", [])
+        )
 
     data: Any = structured_content
     error_text: str | None = None
@@ -910,7 +930,13 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
             writer.writerow(["id", "timestamp", "level", "kind", "detail"])
             for e in logs:
                 writer.writerow(
-                    [e.get("id", ""), e.get("timestamp", ""), e.get("level", ""), e.get("kind", ""), e.get("detail", "")]
+                    [
+                        e.get("id", ""),
+                        e.get("timestamp", ""),
+                        e.get("level", ""),
+                        e.get("kind", ""),
+                        e.get("detail", ""),
+                    ]
                 )
             return Response(
                 content=buf.getvalue(),
@@ -1035,7 +1061,9 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                         generator = (
                             _stream_lmstudio_raw(client, endpoint, model, msgs)
                             if provider == "lmstudio"
-                            else _stream_ollama_raw(client, endpoint, model, msgs, tools=tools_schema or None)
+                            else _stream_ollama_raw(
+                                client, endpoint, model, msgs, tools=tools_schema or None
+                            )
                         )
                         async for kind, item in generator:
                             if kind == "text":
@@ -1046,7 +1074,9 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                         if not pending_tool_calls:
                             break
 
-                        msgs.append({"role": "assistant", "content": "", "tool_calls": pending_tool_calls})
+                        msgs.append(
+                            {"role": "assistant", "content": "", "tool_calls": pending_tool_calls}
+                        )
                         for tc in pending_tool_calls:
                             fn = (tc or {}).get("function") or {}
                             tool_name = str(fn.get("name") or "")
@@ -1068,15 +1098,23 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                             if tool_name:
                                 outcome = await _call_mcp_tool(mcp, tool_name, args)
                             else:
-                                outcome = {"success": False, "data": None, "error": "model returned an empty tool name"}
+                                outcome = {
+                                    "success": False,
+                                    "data": None,
+                                    "error": "model returned an empty tool name",
+                                }
                             timing_ms = round((time.monotonic() - t0) * 1000, 1)
 
                             result_obj = {
                                 "success": outcome["success"],
                                 "tool": tool_name,
                                 "params": args,
-                                "result": json.dumps(outcome["data"]) if outcome["success"] else None,
-                                "error": None if outcome["success"] else (outcome["error"] or "Tool failed"),
+                                "result": json.dumps(outcome["data"])
+                                if outcome["success"]
+                                else None,
+                                "error": None
+                                if outcome["success"]
+                                else (outcome["error"] or "Tool failed"),
                                 "timing_ms": timing_ms,
                             }
                             yield f"data: {json.dumps({'type': _AgenticEvent.TOOL_RESULT, 'tool': tool_name, 'result': result_obj})}\n\n"
@@ -1086,7 +1124,9 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                                     "role": "tool",
                                     "tool_name": tool_name,
                                     "content": json.dumps(
-                                        outcome["data"] if outcome["success"] else {"error": outcome["error"]}
+                                        outcome["data"]
+                                        if outcome["success"]
+                                        else {"error": outcome["error"]}
                                     ),
                                 }
                             )
@@ -1159,7 +1199,11 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         "anthropic": ["claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-5-5"],
         "openai": ["gpt-6-luna", "gpt-6-sol"],
         "deepseek": ["deepseek-flash", "deepseek-v4-pro"],
-        "openrouter": ["openai/gpt-6-luna", "deepseek/deepseek-flash", "google/gemini-3.5-flash-lite"],
+        "openrouter": [
+            "openai/gpt-6-luna",
+            "deepseek/deepseek-flash",
+            "google/gemini-3.5-flash-lite",
+        ],
         # "-contributor" is not a cosmetic suffix: selecting it opts your
         # prompts/completions into Meta's training pipeline in exchange for
         # ~10-20x lower cost (see _call_meta's docstring). Kept as the exact,
@@ -1347,7 +1391,9 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
                 "source": "live" if models else "none",
             }
         if provider not in _cloud_providers:
-            return JSONResponse({"success": False, "error": f"Unknown provider '{provider}'"}, status_code=400)
+            return JSONResponse(
+                {"success": False, "error": f"Unknown provider '{provider}'"}, status_code=400
+            )
         result = await _live_cloud_models(provider, api_key)
         ok = result.get("source") == "live" and len(result.get("models", [])) > 0
         return {"success": True, "ok": ok, **result}
@@ -1428,13 +1474,19 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         saved = server_settings.load()
 
         inkscape_path = (config.inkscape_executable if config else None) or ""
-        inkscape_source = "saved" if saved.get("inkscape_path") else ("detected" if inkscape_path else "none")
+        inkscape_source = (
+            "saved" if saved.get("inkscape_path") else ("detected" if inkscape_path else "none")
+        )
 
         ollama_url_env = _env("OLLAMA_BASE_URL", "")
-        ollama_source = "saved" if saved.get("ollama_base_url") else ("env" if ollama_url_env else "default")
+        ollama_source = (
+            "saved" if saved.get("ollama_base_url") else ("env" if ollama_url_env else "default")
+        )
 
         ollama_model_env = _env("OLLAMA_MODEL", "")
-        ollama_model_source = "saved" if saved.get("ollama_model") else ("env" if ollama_model_env else "default")
+        ollama_model_source = (
+            "saved" if saved.get("ollama_model") else ("env" if ollama_model_env else "default")
+        )
 
         port_env = _env("MCP_PORT", "")
         return {
@@ -1498,18 +1550,31 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         ]
         clouds_configured = [pid for pid in _cloud_providers if llm_settings_store.has_key(pid)]
         if ollama_ok:
-            recommendation = {"path": "local:ollama", "reason": f"Ollama detected with {len(ollama_models)} model(s) - free, local, no key needed."}
+            recommendation = {
+                "path": "local:ollama",
+                "reason": f"Ollama detected with {len(ollama_models)} model(s) - free, local, no key needed.",
+            }
         elif lm_ok:
-            recommendation = {"path": "local:lmstudio", "reason": "LM Studio detected - free, local, no key needed."}
+            recommendation = {
+                "path": "local:lmstudio",
+                "reason": "LM Studio detected - free, local, no key needed.",
+            }
         elif clouds_configured:
-            recommendation = {"path": f"cloud:{clouds_configured[0]}", "reason": "A cloud key is already configured."}
+            recommendation = {
+                "path": f"cloud:{clouds_configured[0]}",
+                "reason": "A cloud key is already configured.",
+            }
         else:
             recommendation = {
                 "path": "cloud:gemini",
                 "reason": "No local engine detected. Gemini, OpenAI (gpt-6-luna), and DeepSeek all have "
                 "cheap instant paths if you'd rather not install anything - pick whichever you already have a key for.",
             }
-        return {"locals": locals_, "clouds_configured": clouds_configured, "recommendation": recommendation}
+        return {
+            "locals": locals_,
+            "clouds_configured": clouds_configured,
+            "recommendation": recommendation,
+        }
 
     _install_state: dict[str, dict[str, Any]] = {}
 
@@ -1518,14 +1583,23 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         payload = await request.json()
         engine = str(payload.get("engine") or "")
         if engine != "ollama":
-            return {"engine": engine, "started": False, "reason": "only 'ollama' is installable from here"}
+            return {
+                "engine": engine,
+                "started": False,
+                "reason": "only 'ollama' is installable from here",
+            }
         _install_state["ollama"] = {"state": "running", "output": ""}
 
         async def _run() -> None:
             try:
                 proc = await asyncio.create_subprocess_exec(
-                    "winget", "install", "-e", "--id", "Ollama.Ollama",
-                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+                    "winget",
+                    "install",
+                    "-e",
+                    "--id",
+                    "Ollama.Ollama",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
                 )
                 out, _ = await proc.communicate()
                 _install_state["ollama"] = {

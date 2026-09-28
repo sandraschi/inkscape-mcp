@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "inkscape-mcp",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Headless Inkscape SVG automation via FastMCP: create/edit vector graphics, layers, animation, LPEs, gradients/patterns, XML editing, text-on-path, filters, and fleet handoff to GIMP/Blender/Unity/Resonite. Includes online extension-gallery search/install and AI-assisted SVG generation.",
   "author": {
     "name": "Sandra Schipal"

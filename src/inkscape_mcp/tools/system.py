@@ -534,7 +534,11 @@ async def inkscape_system(
                     operation="install_extension",
                     message=str(e),
                     error="PermissionError",
-                    data={"recovery_options": ["Pass allow_unverified=true if you've reviewed the extension yourself"]},
+                    data={
+                        "recovery_options": [
+                            "Pass allow_unverified=true if you've reviewed the extension yourself"
+                        ]
+                    },
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
             except Exception as e:

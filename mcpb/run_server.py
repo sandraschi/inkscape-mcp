@@ -20,8 +20,9 @@ os.environ.setdefault("OTEL_PYTHON_CONTEXT", "contextvars_context")
 
 # Eager-import stdlib C extensions that are lazy-imported by other modules
 # and missed by PyInstaller's static analysis (plex-mcp postmortem).
-import _strptime  # noqa: F401
 import _datetime  # noqa: F401
+import _strptime  # noqa: F401
+
 import cachetools  # noqa: F401
 
 from inkscape_mcp.main import main

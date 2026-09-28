@@ -45,7 +45,15 @@ def extensions_dir() -> Path:
     if system == "Windows":
         return Path.home() / "AppData" / "Roaming" / "inkscape" / "extensions"
     if system == "Darwin":
-        return Path.home() / "Library" / "Application Support" / "org.inkscape.Inkscape" / "config" / "inkscape" / "extensions"
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "org.inkscape.Inkscape"
+            / "config"
+            / "inkscape"
+            / "extensions"
+        )
     return Path.home() / ".config" / "inkscape" / "extensions"
 
 
@@ -172,7 +180,12 @@ async def install_extension(
 
     marker = dest_root / _MANAGED_MARKER
     managed = json.loads(marker.read_text(encoding="utf-8")) if marker.exists() else {}
-    managed[extension_id] = {"name": name, "download_url": download_url, "files": files, "dir": str(pkg_dir)}
+    managed[extension_id] = {
+        "name": name,
+        "download_url": download_url,
+        "files": files,
+        "dir": str(pkg_dir),
+    }
     marker.write_text(json.dumps(managed, indent=2), encoding="utf-8")
 
     return {
@@ -193,7 +206,9 @@ async def uninstall_extension(extension_id: str) -> dict[str, Any]:
     managed = json.loads(marker.read_text(encoding="utf-8")) if marker.exists() else {}
     entry = managed.pop(extension_id, None)
     if entry is None:
-        raise KeyError(f"'{extension_id}' was not installed by this server (not in the managed list)")
+        raise KeyError(
+            f"'{extension_id}' was not installed by this server (not in the managed list)"
+        )
 
     pkg_dir = Path(entry["dir"])
     removed = []

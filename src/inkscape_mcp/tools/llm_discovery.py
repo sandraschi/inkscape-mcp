@@ -87,7 +87,9 @@ async def llm_ops(
                 "error": "empty model",
                 "error_type": "ValueError",
                 "operation": operation,
-                "recovery_options": ["Call list_models first, then switch to a name from that list."],
+                "recovery_options": [
+                    "Call list_models first, then switch to a name from that list."
+                ],
             }
         switch = await llm_engine.switch_ollama_model(model.strip(), base)
         return {

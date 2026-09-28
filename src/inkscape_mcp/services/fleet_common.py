@@ -51,7 +51,9 @@ def default_fleet_repos_file() -> Path:
     return _DEFAULT_STATE_DIR / "fleet-repos.txt"
 
 
-def load_fleet_repos(*, fleet_repos: str | None = None, fleet_repos_file: str | None = None) -> list[tuple[str, str]]:
+def load_fleet_repos(
+    *, fleet_repos: str | None = None, fleet_repos_file: str | None = None
+) -> list[tuple[str, str]]:
     if fleet_repos and fleet_repos.strip():
         repos = parse_fleet_repos(fleet_repos)
         if repos:
@@ -92,7 +94,9 @@ def state_dir() -> Path:
     return base
 
 
-def post_json(url: str, body: dict[str, Any] | None = None, *, timeout: float = 12.0) -> tuple[bool, str]:
+def post_json(
+    url: str, body: dict[str, Any] | None = None, *, timeout: float = 12.0
+) -> tuple[bool, str]:
     try:
         resp = httpx.post(url, json=body or {}, timeout=timeout)
         return True, resp.text[:8000]

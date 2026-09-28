@@ -51,7 +51,10 @@ _BUILTIN_WORKFLOWS: list[dict[str, Any]] = [
             {
                 "tool": "inkscape_vector",
                 "operation": "create_object",
-                "params": {"shape": "circle", "params": {"cx": 100, "cy": 100, "r": 40, "fill": "#4488ff"}},
+                "params": {
+                    "shape": "circle",
+                    "params": {"cx": 100, "cy": 100, "r": 40, "fill": "#4488ff"},
+                },
             },
             {
                 "tool": "inkscape_animation",
@@ -67,10 +70,17 @@ _BUILTIN_WORKFLOWS: list[dict[str, Any]] = [
             {
                 "tool": "inkscape_vector",
                 "operation": "create_object",
-                "params": {"shape": "rect", "params": {"x": 0, "y": 0, "width": 100, "height": 100, "fill": "#888"}},
+                "params": {
+                    "shape": "rect",
+                    "params": {"x": 0, "y": 0, "width": 100, "height": 100, "fill": "#888"},
+                },
             },
             {"tool": "inkscape_layers", "operation": "create", "params": {"label": "Draft"}},
-            {"tool": "inkscape_layers", "operation": "rename", "params": {"layer_id": "layer1", "new_label": "Background"}},
+            {
+                "tool": "inkscape_layers",
+                "operation": "rename",
+                "params": {"layer_id": "layer1", "new_label": "Background"},
+            },
             {"tool": "inkscape_layers", "operation": "hide", "params": {"layer_id": "layer1"}},
         ],
     },
@@ -83,7 +93,13 @@ _BUILTIN_WORKFLOWS: list[dict[str, Any]] = [
                 "operation": "create_object",
                 "params": {
                     "shape": "text",
-                    "params": {"content": "Inkscape MCP", "x": 20, "y": 60, "font_size": 32, "fill": "#222222"},
+                    "params": {
+                        "content": "Inkscape MCP",
+                        "x": 20,
+                        "y": 60,
+                        "font_size": 32,
+                        "fill": "#222222",
+                    },
                 },
             },
             {"tool": "inkscape_vector", "operation": "text_to_path", "params": {}},
@@ -105,14 +121,23 @@ def init_db() -> None:
     """Create tables if missing and seed builtin workflows once."""
     with _connect() as conn:
         conn.executescript(_SCHEMA)
-        existing = conn.execute("SELECT COUNT(*) AS n FROM workflows WHERE is_builtin = 1").fetchone()
+        existing = conn.execute(
+            "SELECT COUNT(*) AS n FROM workflows WHERE is_builtin = 1"
+        ).fetchone()
         if existing["n"] == 0:
             now = _now()
             for wf in _BUILTIN_WORKFLOWS:
                 conn.execute(
                     "INSERT INTO workflows (id, name, description, steps, is_builtin, created_at, updated_at) "
                     "VALUES (?, ?, ?, ?, 1, ?, ?)",
-                    (str(uuid.uuid4()), wf["name"], wf["description"], json.dumps(wf["steps"]), now, now),
+                    (
+                        str(uuid.uuid4()),
+                        wf["name"],
+                        wf["description"],
+                        json.dumps(wf["steps"]),
+                        now,
+                        now,
+                    ),
                 )
             conn.commit()
             logger.info("Seeded %d builtin depot workflows", len(_BUILTIN_WORKFLOWS))
@@ -181,7 +206,9 @@ def update_workflow(
     if existing is None:
         return None
     if existing["is_builtin"]:
-        raise ValueError("Builtin workflows are read-only - use 'save as' to create an editable copy")
+        raise ValueError(
+            "Builtin workflows are read-only - use 'save as' to create an editable copy"
+        )
     with _connect() as conn:
         conn.execute(
             "UPDATE workflows SET name = ?, description = ?, steps = ?, updated_at = ? WHERE id = ?",
@@ -216,7 +243,8 @@ def list_assets(workflow_id: str | None = None) -> list[dict[str, Any]]:
     with _connect() as conn:
         if workflow_id:
             rows = conn.execute(
-                "SELECT * FROM assets WHERE workflow_id = ? ORDER BY created_at DESC", (workflow_id,)
+                "SELECT * FROM assets WHERE workflow_id = ? ORDER BY created_at DESC",
+                (workflow_id,),
             ).fetchall()
         else:
             rows = conn.execute("SELECT * FROM assets ORDER BY created_at DESC").fetchall()

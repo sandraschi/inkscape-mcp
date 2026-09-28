@@ -136,7 +136,9 @@ def register_depot_routes(router: APIRouter, call_tool: CallTool) -> None:
                 params["input_path"] = current_path
             params["output_path"] = svg_path if is_last else params.get("output_path", svg_path)
             result = await call_tool(step["tool"], {"operation": step["operation"], **params})
-            step_results.append({"tool": step["tool"], "operation": step["operation"], "result": result})
+            step_results.append(
+                {"tool": step["tool"], "operation": step["operation"], "result": result}
+            )
             if not _tool_ok(result):
                 return {
                     "success": False,
@@ -154,9 +156,16 @@ def register_depot_routes(router: APIRouter, call_tool: CallTool) -> None:
 
         thumb_result = await call_tool(
             "inkscape_render",
-            {"operation": "export_preview", "input_path": svg_path, "output_path": thumb_path, "dpi": 96},
+            {
+                "operation": "export_preview",
+                "input_path": svg_path,
+                "output_path": thumb_path,
+                "dpi": 96,
+            },
         )
-        thumbnail_path = thumb_path if _tool_ok(thumb_result) and Path(thumb_path).exists() else None
+        thumbnail_path = (
+            thumb_path if _tool_ok(thumb_result) and Path(thumb_path).exists() else None
+        )
 
         asset = depot_store.create_asset(
             name=f"{wf['name']} ({run_id})",
@@ -201,6 +210,10 @@ def register_depot_routes(router: APIRouter, call_tool: CallTool) -> None:
     @router.get("/depot/assets/{asset_id}/thumbnail")
     async def get_asset_thumbnail(asset_id: str) -> FileResponse:
         asset = depot_store.get_asset(asset_id)
-        if asset is None or not asset["thumbnail_path"] or not Path(asset["thumbnail_path"]).exists():
+        if (
+            asset is None
+            or not asset["thumbnail_path"]
+            or not Path(asset["thumbnail_path"]).exists()
+        ):
             raise HTTPException(status_code=404, detail="Thumbnail not found")
         return FileResponse(asset["thumbnail_path"], media_type="image/png")

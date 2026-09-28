@@ -529,9 +529,7 @@ async def inkscape_vector(
             return await _bulk_restyle(input_path, output_path, selector, params or {})
 
         elif operation == "apply_filter":
-            return await _apply_filter(
-                input_path, output_path, selector, object_id, params or {}
-            )
+            return await _apply_filter(input_path, output_path, selector, object_id, params or {})
 
         elif operation == "create_gradient":
             return await _create_gradient(input_path, output_path, object_id, params or {})
@@ -1650,7 +1648,9 @@ async def _apply_filter(
                 error="ValueError",
             ).model_dump()
 
-        filter_id = str(params.get("filter_id") or f"filter_{kind}_{int(time.time() * 1000) % 100000}")
+        filter_id = str(
+            params.get("filter_id") or f"filter_{kind}_{int(time.time() * 1000) % 100000}"
+        )
         defs = root.find(f"{{{SVG_URI}}}defs")
         if defs is None:
             defs = ET.SubElement(root, f"{{{SVG_URI}}}defs")
@@ -1818,7 +1818,7 @@ async def _create_pattern(
             return VectorOperationResult(
                 success=False,
                 operation="create_pattern",
-                message="params.content is required (raw SVG markup for one tile, e.g. '<circle cx=\"5\" cy=\"5\" r=\"4\" fill=\"red\"/>')",
+                message='params.content is required (raw SVG markup for one tile, e.g. \'<circle cx="5" cy="5" r="4" fill="red"/>\')',
                 data={},
                 execution_time_ms=0,
                 error="ValueError",
@@ -1844,7 +1844,7 @@ async def _create_pattern(
             },
         )
         try:
-            tile = ET.fromstring(f"<g xmlns=\"{SVG_URI}\">{content}</g>")
+            tile = ET.fromstring(f'<g xmlns="{SVG_URI}">{content}</g>')
         except ET.ParseError as e:
             raise ValueError(f"params.content is not valid SVG markup: {e}") from e
         for child in tile:
@@ -1918,7 +1918,12 @@ async def _get_attributes(input_path: str, object_id: str) -> dict[str, Any]:
             success=True,
             operation="get_attributes",
             message=f"Read {len(el.attrib)} attribute(s) from '{object_id}'",
-            data={"id": object_id, "tag": _local_tag(el), "attributes": dict(el.attrib), "style": style_map},
+            data={
+                "id": object_id,
+                "tag": _local_tag(el),
+                "attributes": dict(el.attrib),
+                "style": style_map,
+            },
             execution_time_ms=0,
         ).model_dump()
     except FileNotFoundError:
@@ -2121,7 +2126,7 @@ async def _create_symbol(
             symbol_attrs["viewBox"] = str(params["viewBox"])
         symbol = ET.SubElement(defs, f"{{{SVG_URI}}}symbol", symbol_attrs)
         try:
-            fragment = ET.fromstring(f"<g xmlns=\"{SVG_URI}\">{content}</g>")
+            fragment = ET.fromstring(f'<g xmlns="{SVG_URI}">{content}</g>')
         except ET.ParseError as e:
             raise ValueError(f"params.content is not valid SVG markup: {e}") from e
         for child in fragment:

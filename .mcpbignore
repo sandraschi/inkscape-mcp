@@ -24,6 +24,12 @@ native/
 web_sota/
 scripts/
 
+# mcpb/'s own build-time tooling - not runtime code, never belongs in the
+# shipped bundle. This file is synced to mcpb/.mcpbignore (the pack root)
+# by pack.ps1 step 3, so these paths are relative to mcpb/, not the repo root.
+pack.ps1
+verify_pack.py
+
 # Editor / tooling backups (MCPB_PACKAGING_STANDARDS.md 2.4 - both patterns required)
 *.bak
 *.bak.*

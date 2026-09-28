@@ -177,6 +177,7 @@ _dashboard/
 
 # Quality-check reports (local, not committed)
 reports/
+cua-reports/
 
 # MCPB build artifacts -- staging copies of src/, regenerated on every pack.
 # Never hand-edit, never commit. Two parallel pipelines exist in this repo:

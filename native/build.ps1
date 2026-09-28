@@ -27,7 +27,7 @@ Write-Host "=== ${RepoName} Tauri Release Build ===" -ForegroundColor Cyan
 # shell (BUG-045). Resolve a qualified path once instead.
 $bunExe = Join-Path $env:USERPROFILE ".bun\bin\bun.exe"
 if (-not (Test-Path $bunExe)) { $bunExe = (Get-Command bun -ErrorAction SilentlyContinue).Source }
-if (-not $bunExe) { throw "bun not found — install from https://bun.sh" }
+if (-not $bunExe) { throw "bun not found - install from https://bun.sh" }
 
 # Step 0: Verify API_BASE matches backend port (catches "Failed to fetch" before Tauri build)
 $apiFile = Join-Path $Root "web_sota\src\lib\api.ts"
@@ -188,7 +188,7 @@ if ($setupExe -and (Test-Path $launcherDir)) {
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = $setupExe.FullName
         $shortcut.Save()
-        Write-Host "  Shortcut: $shortcutPath → $($setupExe.Name)" -ForegroundColor Green
+        Write-Host "  Shortcut: $shortcutPath -> $($setupExe.Name)" -ForegroundColor Green
     } catch {
         Write-Host "  WARNING: Could not create shortcut: $_" -ForegroundColor DarkYellow
     }

@@ -1494,7 +1494,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
             "ollama_base_url": {"value": _ollama_base(), "source": ollama_source},
             "ollama_model": {"value": _ollama_model(), "source": ollama_model_source},
             "mcp_port": {
-                "value": saved.get("mcp_port") or port_env or "11027",
+                "value": saved.get("mcp_port") or port_env or "11028",
                 "source": "saved" if saved.get("mcp_port") else ("env" if port_env else "default"),
                 "note": "Takes effect on next restart - this page is itself served on the current port.",
             },

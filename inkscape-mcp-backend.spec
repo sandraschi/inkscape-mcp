@@ -1,17 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
+from PyInstaller.utils.hooks import collect_submodules
+
 a = Analysis(
     ['run_server.py'],
     pathex=['src'],
     binaries=[],
     datas=[('src/inkscape_mcp', 'inkscape_mcp')],
-    hiddenimports=['uvicorn.logging', 'uvicorn.loops.asyncio', 'uvicorn.protocols.http.httptools_impl', 'uvicorn.lifespan.on'],
+    hiddenimports=[
+        'uvicorn.logging', 'uvicorn.loops.asyncio', 'uvicorn.protocols.http.httptools_impl',
+        'uvicorn.lifespan.on', 'cachetools', '_strptime', '_datetime',
+        'joserfc', 'joserfc.jwk', 'joserfc.jwt',
+    ] + collect_submodules('key_value') + collect_submodules('inkscape_mcp'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    noarchive=False,
+    # MANDATORY: without noarchive=True, stdlib modules (difflib, statistics, pydoc)
+    # become unreachable when packages load from disk-extracted datas in onefile mode.
+    noarchive=True,
     optimize=0,
 )
 pyz = PYZ(a.pure)
@@ -26,7 +34,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,  # UPX breaks or triggers AV false-positives on frozen builds
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,

@@ -86,6 +86,8 @@ dev = [
     "bandit>=1.7.0",
     "safety>=3.0.0",
     "pyinstaller>=6.21.0",
+    "pywinauto>=0.6.9",
+    "pytesseract>=0.3.13",
 ]
 
 # PyPI Publishing Configuration

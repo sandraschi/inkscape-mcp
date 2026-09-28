@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 3
+CUA_SMOKE_VERSION = 13
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
-mcp-central-docs, copy the template over — version number will have changed.
+mcp-central-docs, copy the template over - version number will have changed.
 
 Usage:
     python scripts/cua-smoke.py
@@ -58,14 +58,13 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 3  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 13  # bump when template changes; see docstring
 
 
 def _check_version():
     """Warn if this file doesn't match the template version."""
     from pathlib import Path
 
-    ver_file = Path(__file__)
     # If the template path exists, compare versions
     tpl = Path(os.getenv("MCP_CENTRAL_DOCS", "")) / "templates/tauri-native/scripts/cua-smoke.py"
     if tpl.exists():
@@ -95,6 +94,7 @@ PRODUCT_NAME = cfg("product_name", "Pywinauto MCP Operator")
 HEALTH_PATH = cfg("health_path", "/api/v1/health")
 DIAGNOSTICS_PATH = cfg("diagnostics_path", "/api/v1/diagnostics")
 FEATURE_PATH = cfg("feature_smoke_path", "/api/v1/system/info")
+REQUEST_LOG_PATH = cfg("request_log_path", "/api/v1/request-log")
 WINDOW_TITLE_RE = cfg("window_title_re", "Pywinauto MCP")
 BRIDGE_OK_TEXT = cfg("bridge_ok_text", "REST bridge reachable")
 INSTALL_DIR = cfg("install_dir", "%LOCALAPPDATA%\\Pywinauto MCP Operator")
@@ -102,7 +102,11 @@ OPERATOR_EXE = cfg("operator_exe", "pywinauto-mcp-operator.exe")
 PROCESS_NAMES = cfg("backend_process_names", ["pywinauto-mcp-operator", "pywinauto-mcp-backend"])
 NSIS_GLOB = cfg("nsis_glob", "web_sota/src-tauri/target/release/bundle/nsis/Pywinauto MCP Operator_*_x64-setup.exe")
 REGISTRY_FILTER = cfg("uninstall_registry_filter", "*Pywinauto*")
-MAX_RETRY = 10
+# 60s budget: a freshly-installed PyInstaller onefile backend exe triggers a
+# fresh Windows Defender real-time scan on top of onefile self-extraction to
+# %TEMP%\_MEI*, measured ~35-40s cold; the old 30s budget declared FATAL
+# while the backend was still healthy (see TRAPS_AND_PITFALLS.md).
+MAX_RETRY = 20
 RETRY_DELAY = 3
 
 _INSTALLED = False
@@ -134,7 +138,7 @@ def cua_available() -> bool:
 
 
 def _find_tauri_window(title_re: str):
-    """Find Tauri webview window — excludes classic apps by class_name."""
+    """Find Tauri webview window - excludes classic apps by class_name."""
     wins = pywinauto.findwindows.find_elements(title_re=title_re)
     tauri = [w for w in wins if w.class_name != "QMainWindow"]
     if not tauri:
@@ -147,25 +151,36 @@ def _get_window(handle: int):
     return app.window(handle=handle)
 
 
-def cua_find_window(title_re: str = "") -> dict | None:
-    """Find a window by title regex. Returns {handle, title, rect} or None."""
-    try:
-        import pywinauto
+def cua_find_window(title_re: str = "", retry_seconds: int = 10) -> dict | None:
+    """Find a window by title regex. Returns {handle, title, rect} or None.
 
-        wins = pywinauto.findwindows.find_elements(title_re=title_re)
-        tauri = [w for w in wins if w.class_name != "QMainWindow"]
-        if not tauri:
+    Retries for up to `retry_seconds` (1s poll) - the backend can report
+    healthy before the WebView2 window has finished initializing and
+    rendering, so a single immediate lookup right after the health check
+    is a common false-negative source (window genuinely appears a couple
+    seconds later).
+    """
+    import pywinauto
+
+    deadline = time.monotonic() + retry_seconds
+    while True:
+        try:
+            wins = pywinauto.findwindows.find_elements(title_re=title_re)
+            tauri = [w for w in wins if w.class_name != "QMainWindow"]
+            if tauri:
+                handle = tauri[0].handle
+                app = pywinauto.Application(backend="uia").connect(handle=handle)
+                win = app.window(handle=handle)
+                win.wait("visible", timeout=5)
+                rect = win.rectangle()
+                w = rect.width if isinstance(rect.width, int) else rect.width()
+                h = rect.height if isinstance(rect.height, int) else rect.height()
+                return {"handle": handle, "title": win.window_text(), "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h}}
+        except Exception:
+            pass
+        if time.monotonic() >= deadline:
             return None
-        handle = tauri[0].handle
-        app = pywinauto.Application(backend="uia").connect(handle=handle)
-        win = app.window(handle=handle)
-        win.wait("visible", timeout=5)
-        rect = win.rectangle()
-        w = rect.width if isinstance(rect.width, int) else rect.width()
-        h = rect.height if isinstance(rect.height, int) else rect.height()
-        return {"handle": handle, "title": win.window_text(), "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h}}
-    except Exception:
-        return None
+        time.sleep(1)
 
 
 def cua_screenshot(window_handle: int = 0, output_path: str = "") -> str | None:
@@ -224,7 +239,11 @@ def cua_click(window_handle: int, x: int, y: int):
 
 
 def _release_mouse():
-    """Release all mouse buttons — call after any clicking to prevent stuck input."""
+    """Release all mouse buttons and dismiss any stray context menu - call after
+    any clicking to prevent stuck input. UIA click_input() on some WebView2/Chromium
+    elements fires through the accessibility Invoke pattern rather than a true
+    synthetic click, which Chromium can map to a contextmenu event when no direct
+    click handler is bound - Escape clears that before the next step."""
     try:
         import ctypes
         MOUSEEVENTF_LEFTUP = 0x0004
@@ -234,13 +253,21 @@ def _release_mouse():
             ctypes.windll.user32.mouse_event(flag, 0, 0, 0, 0)
     except Exception:
         pass
+    try:
+        import ctypes
+        VK_ESCAPE = 0x1B
+        KEYEVENTF_KEYUP = 0x0002
+        ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
+    except Exception:
+        pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
 
 class PhaseFailed(Exception):
-    """Non-fatal phase failure — script continues to uninstall."""
+    """Non-fatal phase failure - script continues to uninstall."""
 
 
 def fatal(msg: str):
@@ -318,6 +345,25 @@ def launch_app():
 # ── Phase 4: Verify window ───────────────────────────────────────────
 
 
+def _foreground_and_maximize(handle: int):
+    """Bring the app window to front and maximize it. MUST be called before every
+    screenshot-based check (not just the nav walk) - capture_as_image()/PrintWindow
+    on an unfocused/occluded WebView2 window can silently return whatever window
+    IS on top instead of the target, since Chromium's compositor surface doesn't
+    always reflect through PrintWindow the way a plain native window does when not
+    foregrounded. Confirmed on kicad-mcp 2026-09-22: an OCR check without this
+    captured unrelated desktop content (a notes window) instead of the app."""
+    try:
+        import pywinauto
+        app = pywinauto.Application(backend="uia").connect(handle=handle)
+        w = app.window(handle=handle)
+        w.set_focus()
+        w.maximize()
+        time.sleep(1)
+    except Exception:
+        pass
+
+
 def verify_window():
     if not cua_available():
         log("CUA client unavailable -- window check skipped")
@@ -330,6 +376,7 @@ def verify_window():
         log(f"Window '{win.get('title', '?')}' found: {w}x{h}")
         if isinstance(w, int) and isinstance(h, int) and w > 0 and h > 0 and (w < 100 or h < 100):
             phase_fail(f"Window too small: {w}x{h}")
+        _foreground_and_maximize(win.get("handle", 0))
     else:
         log(f"Window matching '{WINDOW_TITLE_RE}' not found")
 
@@ -339,6 +386,9 @@ def verify_window():
 
 def take_screenshot(output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
+    win = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2)
+    if win:
+        _foreground_and_maximize(win.get("handle", 0))
     path = os.path.join(output_dir, f"cua-smoke-{int(time.time())}.png")
     result = cua_screenshot(0, path)
     if result and os.path.exists(result):
@@ -392,17 +442,30 @@ def verify_webview_bridge(output_dir: str):
         log("CUA client unavailable -- WebView bridge check skipped")
         return
     os.makedirs(output_dir, exist_ok=True)
-    snap_path = os.path.join(output_dir, f"bridge-snap-{int(time.time())}.png")
-    result = cua_screenshot(0, snap_path)
-    text = cua_ocr_text(0, snap_path or "")
-    if not text and result and os.path.exists(snap_path):
-        text = cua_ocr_text(image_path=snap_path)
-    if BRIDGE_OK_TEXT.lower() in text.lower() or "connected" in text.lower():
-        log(f"WebView bridge OK (found '{BRIDGE_OK_TEXT}' in screenshot OCR)")
-    elif text:
-        os.makedirs(output_dir, exist_ok=True)
+    # Retry with delay: the frontend's OWN health poll (independent of the backend
+    # being reachable, which was already confirmed in Phase 3) uses exponential
+    # backoff (1s, 2s, 4s, 8s, 16s, 30s per the connection-health standard). If its
+    # first attempt landed before the backend finished binding, a single-shot check
+    # right after Phase 6/7 can catch it mid-backoff and false-fail a healthy app
+    # (kicad-mcp, 2026-09-22: confirmed "System Online" appears fine given ~15-20s).
+    text = ""
+    for attempt in range(6):
+        win = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2)
+        if win:
+            _foreground_and_maximize(win.get("handle", 0))
+        snap_path = os.path.join(output_dir, f"bridge-snap-{int(time.time())}.png")
+        result = cua_screenshot(0, snap_path)
+        text = cua_ocr_text(0, snap_path or "")
+        if not text and result and os.path.exists(snap_path):
+            text = cua_ocr_text(image_path=snap_path)
+        if BRIDGE_OK_TEXT.lower() in text.lower() or "connected" in text.lower():
+            log(f"WebView bridge OK (found '{BRIDGE_OK_TEXT}' in screenshot OCR, attempt {attempt + 1})")
+            return
+        if attempt < 5:
+            time.sleep(5)
+    if text:
         log(f"WebView OCR text: {text[:200]}")
-        phase_fail(f"WebView bridge not OK — likely API_BASE/CSP/CORS (expected '{BRIDGE_OK_TEXT}')")
+        phase_fail(f"WebView bridge not OK - likely API_BASE/CSP/CORS (expected '{BRIDGE_OK_TEXT}')")
     else:
         log("WebView bridge check skipped (no OCR available)")
 
@@ -413,18 +476,39 @@ def verify_webview_bridge(output_dir: str):
 def _verify_page_ocr(text: str, label: str, expected: str) -> bool:
     """Check OCR text for page validity. Returns True if page seems OK."""
     text_lower = text.lower()
-    fail_keywords = ["404", "not found", "could not find", "error", "timeout", "internal server error", "bad gateway"]
+    # Bare "error"/"timeout"/"not found" are too broad: legitimate pages describe
+    # error-handling behavior, show log entries with an ERROR level, have a
+    # "Timeout (s)" settings field, or show a genuine "Service: Not found" status
+    # for an optional integration that simply isn't running (found via
+    # teleoperator-mcp's Inbox page false-positiving on "Warnings and errors are
+    # surfaced" descriptive text, and browser-mcp's Settings page false-positiving
+    # on "Vllm :8000 Not found" -- a correct, expected status, not an error).
+    # Use specific failure phrases instead.
+    fail_keywords = [
+        "404",
+        "page not found",
+        "resource not found",
+        "could not find",
+        "internal server error",
+        "bad gateway",
+        "unexpected error",
+        "an error occurred",
+        "application error",
+        "failed to load",
+        "connection timed out",
+        "request timed out",
+    ]
     for kw in fail_keywords:
         if kw in text_lower:
             log(f"  Page '{label}': ERROR keyword '{kw}' found in OCR")
             return False
     if not text.strip():
-        log(f"  Page '{label}': EMPTY OCR — page may be blank or not loading")
+        log(f"  Page '{label}': EMPTY OCR - page may be blank or not loading")
         return False
     if expected.lower() in text_lower:
         log(f"  Page '{label}': V OK (found '{expected}')")
         return True
-    log(f"  Page '{label}': X expected '{expected}' not found in OCR — page may be wrong")
+    log(f"  Page '{label}': X expected '{expected}' not found in OCR - page may be wrong")
     return False
 
 
@@ -498,16 +582,7 @@ def nav_click_through(output_dir: str):
     snap_dir = os.path.join(output_dir, "nav")
     handle = win.get("handle", 0)
 
-    # Bring window to front and maximize (user was warned)
-    try:
-        import pywinauto
-        app = pywinauto.Application(backend="uia").connect(handle=handle)
-        w = app.window(handle=handle)
-        w.set_focus()
-        w.maximize()
-        time.sleep(1)
-    except Exception:
-        pass
+    _foreground_and_maximize(handle)
 
     for idx, (label, expected_header) in enumerate(nav_routes):
         try:
@@ -526,6 +601,71 @@ def nav_click_through(output_dir: str):
             _release_mouse()
 
     _release_mouse()
+
+
+# ── Phase 9b: Backend-receipt proof (bypasses webview entirely) ─────────
+
+
+def verify_backend_received_requests(baseline_count: int):
+    """Prove the webview's own fetches actually reached the backend.
+
+    OCR-based nav verification can pass even when EVERY webview fetch is
+    silently failing -- a page's title renders via client-side routing
+    regardless of whether its data call succeeded, so a page showing its own
+    name in OCR proves nothing about connectivity. This phase queries the
+    backend's own request log directly (a plain HTTP GET, immune to whatever
+    might be blocking the webview's fetches -- e.g. AppContainer loopback
+    isolation when the installed app was launched from within a sandboxed
+    parent process) and checks whether the nav-walk actually generated new
+    backend traffic. Requires the target repo's backend to implement
+    GET {request_log_path} returning {"count": int, "requests": [...]} --
+    if it 404s, this repo hasn't adopted the pattern yet; skip, don't fail.
+    See mcp-central-docs HANDOVER.md 2026-09-20 for the incident this
+    phase exists to catch (browser-mcp: zero webview requests ever landed,
+    across every page, for an entire CUA run -- OCR nav-walk still said
+    'ALL PHASES PASSED').
+    """
+    try:
+        req = urllib.request.Request(f"{BACKEND_URL}{REQUEST_LOG_PATH}")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 404:
+                log("Backend-receipt check skipped (repo has no request-log endpoint yet)")
+                return
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            log("Backend-receipt check skipped (repo has no request-log endpoint yet)")
+            return
+        raise
+    except Exception as e:
+        log(f"Backend-receipt check failed to query (non-fatal): {e}")
+        return
+
+    new_count = data.get("count", 0) - baseline_count
+    nav_route_count = len(cfg("nav_routes", []))
+    if new_count <= 0:
+        phase_fail(
+            f"Backend received ZERO new requests during nav click-through "
+            f"({nav_route_count} pages visited). The webview's fetches are not "
+            f"reaching the backend at all -- every page's OCR pass is a false "
+            f"positive proving only that titles render, not that data loads."
+        )
+    elif new_count < nav_route_count:
+        log_warn(
+            f"Backend received only {new_count} new requests for {nav_route_count} "
+            f"pages visited -- some pages' fetches may not be landing."
+        )
+    else:
+        log(f"Backend-receipt OK: {new_count} requests logged during nav click-through")
+
+
+def _get_request_log_count() -> int:
+    try:
+        req = urllib.request.Request(f"{BACKEND_URL}{REQUEST_LOG_PATH}")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode()).get("count", 0)
+    except Exception:
+        return 0
 
 
 # ── Phase 10: Log analysis ────────────────────────────────────────────
@@ -618,6 +758,15 @@ def main():
     if args.config:
         _CONFIG.update(load_config(args.config))
 
+    _nav_baseline = {"count": 0}
+
+    def _capture_nav_baseline():
+        _nav_baseline["count"] = _get_request_log_count()
+
+    def _run_nav_and_capture_baseline():
+        _capture_nav_baseline()
+        nav_click_through(args.output_dir)
+
     phases = [
         (True, "Kill stale processes", lambda: kill_stale()),
         (True, "Install NSIS", lambda: silent_install(args.installer or find_installer())),
@@ -627,7 +776,8 @@ def main():
         (False, "Feature route", check_feature_route),
         (False, "Check diagnostics", check_diagnostics),
         (False, "WebView bridge", lambda: verify_webview_bridge(args.output_dir)),
-        (False, "Nav click-through", lambda: nav_click_through(args.output_dir)),
+        (False, "Nav click-through", _run_nav_and_capture_baseline),
+        (False, "Backend-receipt proof", lambda: verify_backend_received_requests(_nav_baseline["count"])),
         (False, "Analyze app logs", analyze_logs),
         (False, "Uninstall", uninstall),
     ]
@@ -636,8 +786,14 @@ def main():
     fatal_failed = False
 
     print(f"\n{'=' * 50}")
-    print(f"  CUA Smoke Test — {PRODUCT_NAME}")
+    print(f"  CUA Smoke Test - {PRODUCT_NAME}")
     print(f"{'=' * 50}\n")
+
+    if not _HAS_PYWAUTO:
+        print("  !!! WARNING: pywinauto is not importable in this venv. !!!")
+        print("  !!! Every GUI-driven phase will be SILENTLY SKIPPED.   !!!")
+        print("  !!! Run: uv add --dev pywinauto pillow pytesseract     !!!")
+        print("  !!! This run cannot verify the UI actually works.\n")
 
     try:
         for is_fatal, name, fn in phases:
@@ -661,10 +817,19 @@ def main():
 
     print(f"{'=' * 50}")
     print(f"  Result: {passed}/{passed + failed} phases passed")
+    if not _HAS_PYWAUTO:
+        print("  WARNING: pywinauto was NOT importable in this venv - every GUI-driven")
+        print("  phase (window verify, screenshot, WebView OCR, nav click-through) was")
+        print("  SILENTLY SKIPPED, not verified. This run does NOT prove the UI works.")
+        print("  Fix: add pywinauto, pillow, pytesseract as dev dependencies and re-run.")
     if failed:
         print(f"  {failed} phase(s) FAILED")
     if fatal_failed:
-        print("  FATAL phase failure — see above")
+        print("  FATAL phase failure - see above")
+        sys.exit(1)
+    if failed or not _HAS_PYWAUTO:
+        print("  NOT ALL PHASES PASSED - do not report this run as a clean pass")
+        print(f"{'=' * 50}\n")
         sys.exit(1)
     print("  ALL PHASES PASSED")
     print(f"{'=' * 50}\n")

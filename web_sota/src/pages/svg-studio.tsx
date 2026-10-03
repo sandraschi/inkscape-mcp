@@ -161,11 +161,13 @@ function SvgPreview({ svg, onCopy }: { svg: string; onCopy: () => void }) {
       <div
         ref={previewRef}
         className="relative z-10 max-h-full max-w-full p-4"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: renders own generator output (same-origin SVG, never remote HTML)
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       {/* Action buttons */}
       <div className="absolute bottom-3 right-3 z-20 flex gap-2">
         <button
+          type="button"
           onClick={onCopy}
           aria-label="Copy SVG source"
           className="flex items-center gap-1.5 rounded-lg bg-slate-800/90 px-3 py-1.5 text-sm text-slate-300 backdrop-blur-sm hover:bg-slate-700 hover:text-white transition-colors"
@@ -174,6 +176,7 @@ function SvgPreview({ svg, onCopy }: { svg: string; onCopy: () => void }) {
           Copy
         </button>
         <button
+          type="button"
           onClick={downloadSvg}
           aria-label="Download SVG"
           className="flex items-center gap-1.5 rounded-lg bg-blue-600/90 px-3 py-1.5 text-sm text-white backdrop-blur-sm hover:bg-blue-500 transition-colors"
@@ -198,12 +201,14 @@ function HistoryThumb({
   return (
     <div className="group relative overflow-hidden rounded-lg border border-slate-700 bg-slate-900 hover:border-blue-500/60 transition-colors">
       <button
+        type="button"
         onClick={onSelect}
         aria-label={`Select SVG: ${item.prompt}`}
         className="block w-full cursor-pointer text-left"
       >
         <div
           className="flex h-24 w-full items-center justify-center overflow-hidden p-2"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: renders own history thumbnails (same-origin SVG, never remote HTML)
           dangerouslySetInnerHTML={{ __html: item.svgContent }}
         />
         <div className="border-t border-slate-700 px-2 py-1">
@@ -214,6 +219,7 @@ function HistoryThumb({
         </div>
       </button>
       <button
+        type="button"
         aria-label="Remove from history"
         onClick={(e) => {
           e.stopPropagation();
@@ -345,10 +351,14 @@ export function SvgStudio() {
         <div className="space-y-5">
           {/* Prompt */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-            <label className="mb-2 block text-sm font-medium text-slate-300">
+            <label
+              htmlFor="svg-prompt"
+              className="mb-2 block text-sm font-medium text-slate-300"
+            >
               Describe your SVG
             </label>
             <textarea
+              id="svg-prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -364,6 +374,7 @@ export function SvgStudio() {
               <div className="mt-2 space-y-1">
                 {EXAMPLE_PROMPTS.map((ex) => (
                   <button
+                    type="button"
                     key={ex}
                     onClick={() => setPrompt(ex)}
                     className="block w-full rounded px-2 py-1 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-200 transition-colors"
@@ -384,6 +395,7 @@ export function SvgStudio() {
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {STYLE_PRESETS.map((s) => (
                 <button
+                  type="button"
                   key={s.id}
                   onClick={() => setStyle(s.id)}
                   title={s.desc}
@@ -410,6 +422,7 @@ export function SvgStudio() {
               <div className="flex flex-wrap gap-2">
                 {DIMENSION_PRESETS.map((d) => (
                   <button
+                    type="button"
                     key={d}
                     onClick={() => setDimensions(d)}
                     className={cn(
@@ -429,6 +442,7 @@ export function SvgStudio() {
               <div className="flex flex-wrap gap-2">
                 {QUALITY_PRESETS.map((q) => (
                   <button
+                    type="button"
                     key={q}
                     onClick={() => setQuality(q)}
                     className={cn(
@@ -448,6 +462,7 @@ export function SvgStudio() {
           {/* Advanced options toggle */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm">
             <button
+              type="button"
               onClick={() => setShowAdvanced((v) => !v)}
               className="flex w-full items-center justify-between px-5 py-3 text-sm text-slate-200 hover:text-slate-300 transition-colors"
             >
@@ -512,6 +527,7 @@ export function SvgStudio() {
 
           {/* Generate button */}
           <button
+            type="button"
             onClick={handleGenerate}
             disabled={loading || !prompt.trim()}
             className={cn(
@@ -547,6 +563,7 @@ export function SvgStudio() {
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="flex-1 break-words">{error}</div>
               <button
+                type="button"
                 onClick={() => setError(null)}
                 aria-label="Dismiss error"
                 className="shrink-0 text-red-600 hover:text-red-400"
@@ -582,6 +599,7 @@ export function SvgStudio() {
                   )}
                   {activeHistoryItem && (
                     <button
+                      type="button"
                       onClick={() => setActiveHistoryItem(null)}
                       className="flex items-center gap-1 rounded px-2 py-0.5 text-sm text-blue-400 hover:bg-slate-800"
                     >

@@ -203,10 +203,8 @@ def _save_svg(svg_content: str, description: str, style_preset: str) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def register_agentic_tools(mcp_instance=None):
+def register_agentic_tools(mcp_instance) -> None:
     """Register agentic workflow tools with FastMCP 3.1 SEP-1577 sampling."""
-    if mcp_instance is None:
-        from .main import mcp as mcp_instance  # noqa: PLC0415
 
     _mutating = {
         "readOnlyHint": False,

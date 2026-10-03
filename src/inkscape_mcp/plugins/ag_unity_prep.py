@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false
 """
 AG Unity Prep Extension
 

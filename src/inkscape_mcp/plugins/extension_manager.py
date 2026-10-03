@@ -58,7 +58,7 @@ class ExtensionManager:
         self.extensions: dict[str, InkscapeExtension] = {}
         self.logger = logging.getLogger(__name__)
 
-    def discover_extensions(self, extension_dirs: list[str] | None = None) -> None:
+    def discover_extensions(self, extension_dirs: list[str | Path] | None = None) -> None:
         """Discover and load extensions from specified directories.
 
         Args:
@@ -139,21 +139,21 @@ class ExtensionManager:
                 return None
 
             name_elem = root.find(".//name")
-            name = name_elem.text if name_elem is not None else ext_id.text
+            name = (name_elem.text or "") if name_elem is not None else (ext_id.text or "")
 
             # Find the Python script file
             script_elem = root.find(".//script/command")
             if script_elem is None:
                 return None
 
-            script_path = inx_file.parent / script_elem.text
+            script_path = inx_file.parent / (script_elem.text or "")
             if not script_path.exists():
                 return None
 
             # Parse parameters
             parameters = []
             for param in root.findall(".//param"):
-                param_name = param.get("name")
+                param_name = param.get("name") or ""
                 param_type = param.get("type", "string")
                 param_default = param.text or param.get("default")
 

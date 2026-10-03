@@ -19,6 +19,7 @@ from ..utils.fleet_staging import stage_file
 from ..utils.svg_pack_audit import audit_svg_pack_directory
 from ..utils.svg_pack_presets import ATLAS_LAYOUTS
 from ..utils.svg_pack_presets import DEFAULT_SIM_STAGING
+from ..utils.svg_pack_presets import SvgIconTemplate
 from ..utils.svg_pack_presets import detect_svg_icons
 from ..utils.svg_pack_presets import list_svg_pack_presets
 from ..utils.svg_pack_presets import resolve_icon_template
@@ -55,7 +56,7 @@ def _iter_svgs(input_dir: Path) -> list[Path]:
     return sorted({p.resolve() for p in input_dir.glob("*.svg") if p.is_file()})
 
 
-def _normalize_svg_to_template(src: Path, dest: Path, template: dict[str, Any]) -> None:
+def _normalize_svg_to_template(src: Path, dest: Path, template: SvgIconTemplate) -> None:
     tree = ET.parse(src)
     root = tree.getroot()
     if not (root.tag.endswith("svg") or root.tag == "svg"):

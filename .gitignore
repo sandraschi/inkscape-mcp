@@ -111,6 +111,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Fleet backup artifacts
+*.bak
+*.bak.*
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -187,4 +191,3 @@ cua-reports/
 # it is untracked, not just ignored going forward.
 mcpb/src/
 mcp-server/src/
-

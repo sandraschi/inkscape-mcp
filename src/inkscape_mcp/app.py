@@ -32,25 +32,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.responses import PlainTextResponse
+from starlette.responses import Response
+from starlette.responses import StreamingResponse
+from starlette.routing import Mount
+
 from .services import llm_engine
 from .services import llm_settings_store
 from .services import server_settings
 
-try:
-    import httpx
-    from fastapi import APIRouter
-    from fastapi import FastAPI
-    from fastapi import Request
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse
-    from starlette.responses import PlainTextResponse
-    from starlette.responses import Response
-    from starlette.responses import StreamingResponse
-    from starlette.routing import Mount
-
-    FASTAPI_AVAILABLE = True
-except ImportError:
-    FASTAPI_AVAILABLE = False
+FASTAPI_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
@@ -1429,7 +1426,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         }
 
     @app.post("/api/settings/llm")
-    async def save_llm_settings(request: Request) -> dict:
+    async def save_llm_settings(request: Request) -> dict | JSONResponse:
         payload = await request.json()
         provider = str(payload.get("provider") or "").strip()
         model = str(payload.get("model") or "").strip()

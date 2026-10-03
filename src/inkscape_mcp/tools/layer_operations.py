@@ -42,9 +42,9 @@ def _write_svg_xml(path: str, content: str) -> None:
     Path(path).write_text(content, encoding="utf-8")
 
 
-def _extract_layers(svg_xml: str) -> list[dict[str, str | None]]:
+def _extract_layers(svg_xml: str) -> list[dict[str, str | bool | None]]:
     """Find all `<g inkscape:groupmode="layer">` elements and return their attributes."""
-    layers: list[dict[str, str | None]] = []
+    layers: list[dict[str, str | bool | None]] = []
     for match in _LAYER_RE.findall(svg_xml):
         tag = match[: match.index(">") + 1] if ">" in match else match
         attrs: dict[str, str | None] = {}

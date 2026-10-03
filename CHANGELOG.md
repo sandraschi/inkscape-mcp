@@ -1,4 +1,11 @@
 
+## [Unreleased] (assfix 2026-10-03, first full pass)
+- `inkscape_shutdown` tool (confirm-gated) + both bundle manifests updated
+- Launcher health shortcut (`/api/health` answered without engine init) + logging import fix (was 500)
+- pyright 98 → 0 (added to dev deps; unguarded hard-dep imports, Context-None, Prefab shims, dispatcher names, narrowing fixes)
+- Exact `reportPrivateImportUsage=false` learning: trailing text breaks the directive (bare only)
+- Pre-commit hook installed; `.bak` dross deleted; reports/ already ignored
+
 ## [2.7.0] - 2026-09-28
 
 ### Fixed (MCPB packaging)
@@ -560,4 +567,3 @@ This release transforms Inkscape-MCP into a comprehensive "vibe architect" workf
 - 🔄 In development
 - 📋 Planned for future release
 - 🎯 Key achievement/milestone
-

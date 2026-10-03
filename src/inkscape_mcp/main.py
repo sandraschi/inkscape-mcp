@@ -909,6 +909,34 @@ class InkscapeMCPServer:
             """
             return await llm_ops_tool(operation, provider=provider, model=model, endpoint=endpoint)
 
+        @self.mcp.tool(
+            annotations=ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=True,
+                idempotentHint=False,
+                openWorldHint=False,
+            ),
+        )
+        async def inkscape_shutdown(confirmed: bool = False) -> dict[str, Any]:
+            """INKSCAPE_SHUTDOWN - Terminate the inkscape-mcp server process.
+
+            ## Return Format
+            {"success": bool, "message": str}
+
+            ## Examples
+            await inkscape_shutdown(confirmed=True)
+            """
+            if not confirmed:
+                return {
+                    "success": False,
+                    "message": "Refusing: pass confirmed=true to terminate the server process.",
+                }
+            import os as _os
+            import signal as _signal
+
+            _os.kill(_os.getpid(), _signal.SIGTERM)
+            return {"success": True, "message": "inkscape-mcp server terminating."}
+
         self.tools = {
             "inkscape_file": inkscape_file,
             "inkscape_vector": inkscape_vector,
@@ -923,6 +951,7 @@ class InkscapeMCPServer:
             "inkscape_system": inkscape_system,
             "list_local_models": list_local_models,
             "llm_ops": llm_ops,
+            "inkscape_shutdown": inkscape_shutdown,
         }
 
 

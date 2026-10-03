@@ -5,6 +5,9 @@ GenerativeUI provider: prefab-ui >= 0.14.0
 Renders directly in Claude Desktop / supporting clients.
 """
 
+# pyright: reportMissingImports=false
+# Legacy fastmcp.prefab API is optional; guarded try/except below falls back
+# to a warning when absent.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

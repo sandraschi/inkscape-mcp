@@ -95,18 +95,20 @@ class ShellModeWrapper:
 
     async def close(self) -> None:
         """Shutdown the Inkscape shell process cleanly."""
-        if not self._proc:
+        proc = self._proc
+        if not proc:
             return
         try:
-            if self._proc.returncode is None:
-                self._proc.stdin.write(b"quit\n")
-                await self._proc.stdin.drain()
-                await asyncio.wait_for(self._proc.wait(), timeout=5.0)
+            if proc.returncode is None:
+                assert proc.stdin is not None
+                proc.stdin.write(b"quit\n")
+                await proc.stdin.drain()
+                await asyncio.wait_for(proc.wait(), timeout=5.0)
         except Exception:
             pass
         finally:
-            if self._proc.returncode is None:
-                self._proc.kill()
+            if proc.returncode is None:
+                proc.kill()
             self._proc = None
             logger.info("Inkscape shell closed")
 
@@ -136,10 +138,12 @@ class ShellModeWrapper:
             )
         """
         self._ensure_running()
+        proc = self._proc
+        assert proc is not None and proc.stdin is not None
         command = ";".join(a.strip() for a in actions if a.strip()) + "\n"
         logger.debug("Shell → %r", command.rstrip())
-        self._proc.stdin.write(command.encode())
-        await self._proc.stdin.drain()
+        proc.stdin.write(command.encode())
+        await proc.stdin.drain()
 
         try:
             response = await asyncio.wait_for(self._read_until_prompt(), timeout=self._timeout)
@@ -221,9 +225,10 @@ class ShellModeWrapper:
         Returns everything read up to (but not including) the prompt.
         """
         buf = bytearray()
-        assert self._proc is not None
+        proc = self._proc
+        assert proc is not None and proc.stdout is not None
         while True:
-            chunk = await self._proc.stdout.read(256)
+            chunk = await proc.stdout.read(256)
             if not chunk:
                 raise ShellModeError("Inkscape shell process closed unexpectedly")
             buf.extend(chunk)

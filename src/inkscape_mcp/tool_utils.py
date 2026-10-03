@@ -76,7 +76,9 @@ def tool(
             "required_parameters": required_parameters or [],
         }
 
-        func._mcp_tool = tool_meta
+        # Store tool metadata as an attribute (setattr: T|type declare no _mcp_tool slot;
+        # noqa B010 is intentional here - plain assignment fails pyright reportFunctionMemberAccess)
+        setattr(func, "_mcp_tool", tool_meta)  # noqa: B010
 
         # If it's already a coroutine function, just add the metadata
         if inspect.iscoroutinefunction(func):
@@ -105,6 +107,5 @@ def tool(
 
     # Handle both @tool and @tool() syntax
     if callable(name):
-        func = name
-        return decorator(func)
+        return decorator(cast("T | type", name))
     return decorator

@@ -16,6 +16,10 @@ from .config import InkscapeConfig
 logger = logging.getLogger(__name__)
 
 
+_HEALTH_PATHS = ("/api/health", "/health")
+_HEALTH_BODY = b'{"status": "ok", "server": "inkscape-mcp"}'
+
+
 # Module-level app for ASGI compatibility. On first request this constructs
 # main.InkscapeMCPServer - the actively-maintained registration path (full
 # tool set + full per-operation params) - and delegates to mcp.http_app()
@@ -37,6 +41,18 @@ class _LazyASGI:
         return _LazyASGI._inner
 
     async def __call__(self, scope: dict, receive, send) -> None:
+        # Launcher probe shortcut: answer health without constructing the
+        # engine (full init happens on the first real /mcp request).
+        if scope.get("type") == "http" and scope.get("path") in _HEALTH_PATHS:
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [(b"content-type", b"application/json")],
+                }
+            )
+            await send({"type": "http.response.body", "body": _HEALTH_BODY})
+            return
         inner = await self._ensure()
         await inner(scope, receive, send)
 
@@ -124,9 +140,10 @@ class InkscapeMcpServer:
         """
         try:
             # Simple version check to test connectivity
-            result = await self.inkscape._execute_command(
-                [self.config.inkscape_executable, "--version"], timeout=5
-            )
+            exe = self.config.inkscape_executable
+            if not exe:
+                return False
+            result = await self.inkscape._execute_command([exe, "--version"], timeout=5)
             return "Inkscape" in result
         except Exception as e:
             logger.error(f"Inkscape connection test failed: {e}")

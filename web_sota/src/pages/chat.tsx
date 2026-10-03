@@ -275,7 +275,7 @@ export function Chat() {
         buf = lines.pop() ?? "";
         for (const line of lines) {
           const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          if (!trimmed?.startsWith("data: ")) continue;
           const raw = trimmed.slice(6);
           try {
             const event = JSON.parse(raw);
@@ -450,9 +450,15 @@ export function Chat() {
       {showSettings && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 flex flex-wrap gap-3 items-center text-sm">
           <div>
-            <label className="text-sm text-slate-400 block">Provider</label>
+            <label
+              htmlFor="chat-provider"
+              className="text-sm text-slate-400 block"
+            >
+              Provider
+            </label>
             <div className="relative">
               <select
+                id="chat-provider"
                 value={provider}
                 onChange={(e) => onProviderChange(e.target.value)}
                 className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-sm min-w-[9rem] appearance-none pr-6"
@@ -476,8 +482,14 @@ export function Chat() {
           </div>
           {modelOptions.length > 0 && (
             <div>
-              <label className="text-sm text-slate-400 block">Model</label>
+              <label
+                htmlFor="chat-model-select"
+                className="text-sm text-slate-400 block"
+              >
+                Model
+              </label>
               <select
+                id="chat-model-select"
                 value={model}
                 onChange={(e) => onModelChange(e.target.value)}
                 className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-sm min-w-[9rem]"
@@ -492,8 +504,14 @@ export function Chat() {
           )}
           {modelOptions.length === 0 && (
             <div>
-              <label className="text-sm text-slate-400 block">Model</label>
+              <label
+                htmlFor="chat-model-input"
+                className="text-sm text-slate-400 block"
+              >
+                Model
+              </label>
               <input
+                id="chat-model-input"
                 value={model}
                 onChange={(e) => onModelChange(e.target.value)}
                 className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-sm w-28 font-mono"
@@ -501,8 +519,14 @@ export function Chat() {
             </div>
           )}
           <div>
-            <label className="text-sm text-slate-400 block">Endpoint</label>
+            <label
+              htmlFor="chat-endpoint"
+              className="text-sm text-slate-400 block"
+            >
+              Endpoint
+            </label>
             <input
+              id="chat-endpoint"
               value={endpoint}
               onChange={(e) => {
                 setEndpoint(e.target.value);
@@ -555,6 +579,7 @@ export function Chat() {
         ) : (
           messages.map((msg, i) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: append-only chat log, never reordered
               key={i}
               className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
             >
@@ -578,6 +603,7 @@ export function Chat() {
                   <div className="space-y-2 mb-2">
                     {msg.toolCalls.map((tc, j) => (
                       <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: append-only per-message list, never reordered
                         key={j}
                         className="bg-slate-900/80 border border-slate-700/60 rounded-lg overflow-hidden text-sm"
                       >

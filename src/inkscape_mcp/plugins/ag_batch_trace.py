@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false
 """
 AG Batch Trace Extension
 

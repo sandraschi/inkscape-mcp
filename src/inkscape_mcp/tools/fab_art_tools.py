@@ -117,8 +117,8 @@ async def _batch_laser_dots(
             output_path=str(dest),
             cli_wrapper=cli_wrapper,
             config=config,
-            x=dot["x"],
-            y=dot["y"],
+            x=int(dot["x"]),
+            y=int(dot["y"]),
             preset_id=preset_id,
         )
         if result.get("success"):
@@ -356,7 +356,9 @@ async def inkscape_fab_art(
                 config=config,
             )
             success = (
-                bool(dxf.get("success")) and schematic.get("success") and staged.get("success")
+                bool(dxf.get("success"))
+                and bool(schematic.get("success"))
+                and bool(staged.get("success"))
             )
             return FabArtResult(
                 success=success,

@@ -12,9 +12,6 @@ import re
 import subprocess
 from pathlib import Path
 
-if platform.system() == "Windows":
-    import winreg
-
 logger = logging.getLogger(__name__)
 
 
@@ -95,6 +92,8 @@ class InkscapeDetector:
         Returns:
             Optional[str]: Path from registry if found
         """
+        import winreg  # Windows-only stdlib; deferred here (not top-level) since this path runs on Windows only
+
         try:
             # Check HKEY_LOCAL_MACHINE
             registry_keys = [
@@ -173,7 +172,7 @@ class InkscapeDetector:
         for path in common_paths:
             expanded_path = Path(path).expanduser()
             if self._validate_executable(expanded_path):
-                return expanded_path
+                return str(expanded_path)
 
         return None
 
@@ -203,7 +202,7 @@ class InkscapeDetector:
 
         return None
 
-    def _validate_executable(self, path: str) -> bool:
+    def _validate_executable(self, path: str | Path) -> bool:
         """
         Validate that the given path is a valid Inkscape executable.
 

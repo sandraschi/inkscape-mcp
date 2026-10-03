@@ -433,6 +433,7 @@ async def inkscape_system(
                         try:
                             txt = inx.read_text(encoding="utf-8", errors="replace")
                             name = ""
+                            ext_id = ""
                             for line in txt.split("\n"):
                                 ll = line.strip()
                                 if ll.startswith("<_name>"):
@@ -469,6 +470,7 @@ async def inkscape_system(
                     operation="execute_extension",
                     message="Extension ID is required",
                     error="Missing extension_id parameter",
+                    data={},
                     execution_time_ms=(time.time() - start_time) * 1000,
                 ).model_dump()
 

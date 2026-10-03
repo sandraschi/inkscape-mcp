@@ -5,6 +5,8 @@ This module provides comprehensive logging setup with structured output,
 error handling, and multiple output formats for development and production.
 """
 
+from __future__ import annotations
+
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -63,7 +65,7 @@ class StructuredLogger:
                 serialize=False,  # Keep as text for readability
             )
 
-    def get_logger(self, name: str) -> "logger":
+    def get_logger(self, name: str) -> Any:
         """
         Get a logger instance for a specific component.
 
@@ -82,7 +84,7 @@ _logger_instance: StructuredLogger | None = None
 
 def setup_logging(
     log_level: str = "INFO", log_file: Path | None = None, component: str = "gimp_mcp"
-) -> "logger":
+) -> Any:
     """
     Setup global logging configuration.
 
@@ -102,7 +104,7 @@ def setup_logging(
     return _logger_instance.get_logger(component)
 
 
-def get_logger(component: str = "gimp_mcp") -> "logger":
+def get_logger(component: str = "gimp_mcp") -> Any:
     """
     Get logger for a component.
 
@@ -115,7 +117,9 @@ def get_logger(component: str = "gimp_mcp") -> "logger":
     if _logger_instance is None:
         setup_logging()
 
-    return _logger_instance.get_logger(component)
+    inst = _logger_instance
+    assert inst is not None
+    return inst.get_logger(component)
 
 
 def log_operation_start(operation: str, **kwargs) -> dict[str, Any]:

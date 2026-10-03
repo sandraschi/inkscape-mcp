@@ -119,6 +119,10 @@
     {
       "name": "intelligent_vector_processing",
       "description": "Batch SVG/vector processing driven by client-side LLM sampling"
+    },
+    {
+      "name": "inkscape_shutdown",
+      "description": "Shut down the server process (confirm-gated)"
     }
   ]
 }

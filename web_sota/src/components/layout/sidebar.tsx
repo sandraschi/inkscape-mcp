@@ -2,7 +2,6 @@ import {
   Activity,
   Archive,
   Bot,
-  BrainCircuit,
   ChevronLeft,
   ChevronRight,
   CircleHelp,
@@ -43,7 +42,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/apps", label: "Apps", icon: Grid3X3 },
     { href: "/api-docs", label: "API Docs", icon: Code2 },
     { href: "/settings", label: "Settings", icon: Settings },
-    { href: "/ai-settings", label: "AI Settings", icon: BrainCircuit },
     { href: "/status", label: "Status", icon: Server },
     { href: "/help", label: "Help", icon: CircleHelp },
   ];
@@ -65,6 +63,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         </div>
         <button
+          type="button"
           onClick={onToggle}
           className="ml-auto flex items-center justify-center rounded-md p-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}

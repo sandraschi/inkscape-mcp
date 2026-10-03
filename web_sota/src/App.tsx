@@ -9,7 +9,6 @@ import {
 import { AppLayout } from "@/components/layout/app-layout";
 import { Actions } from "@/pages/actions";
 import { AgentTools } from "@/pages/agent-tools";
-import { AiSettings } from "@/pages/ai-settings";
 import { AnimationStudio } from "@/pages/animation";
 import { ApiDocs } from "@/pages/api-docs";
 import { AppsPage as Apps } from "@/pages/apps";
@@ -51,7 +50,6 @@ function AnimatedRoutes() {
           <Route path="/skills" element={<Skills />} />
           <Route path="/apps" element={<Apps />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/ai-settings" element={<AiSettings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>

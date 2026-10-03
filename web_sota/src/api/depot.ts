@@ -1,4 +1,11 @@
-import { API_BASE, apiDelete, apiGet, apiPatch, apiPost, apiPut } from "./client";
+import {
+  API_BASE,
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiPost,
+  apiPut,
+} from "./client";
 
 export interface WorkflowStep {
   tool: string;
@@ -42,15 +49,20 @@ export const depotApi = {
     id: string,
     body: Partial<Pick<Workflow, "name" | "description" | "steps">>,
   ) => apiPut<Workflow>(`/api/depot/workflows/${id}`, body),
-  deleteWorkflow: (id: string) => apiDelete<{ success: boolean }>(`/api/depot/workflows/${id}`),
-  runWorkflow: (id: string) => apiPost<RunResult>(`/api/depot/workflows/${id}/run`),
+  deleteWorkflow: (id: string) =>
+    apiDelete<{ success: boolean }>(`/api/depot/workflows/${id}`),
+  runWorkflow: (id: string) =>
+    apiPost<RunResult>(`/api/depot/workflows/${id}/run`),
 
   listAssets: (workflowId?: string) =>
-    apiGet<Asset[]>(`/api/depot/assets${workflowId ? `?workflow_id=${workflowId}` : ""}`),
+    apiGet<Asset[]>(
+      `/api/depot/assets${workflowId ? `?workflow_id=${workflowId}` : ""}`,
+    ),
   getAsset: (id: string) => apiGet<Asset>(`/api/depot/assets/${id}`),
   updateAsset: (id: string, body: Partial<Pick<Asset, "name" | "tags">>) =>
     apiPatch<Asset>(`/api/depot/assets/${id}`, body),
-  deleteAsset: (id: string) => apiDelete<{ success: boolean }>(`/api/depot/assets/${id}`),
+  deleteAsset: (id: string) =>
+    apiDelete<{ success: boolean }>(`/api/depot/assets/${id}`),
 
   fileUrl: (id: string) => `${API_BASE}/api/depot/assets/${id}/file`,
   thumbnailUrl: (id: string) => `${API_BASE}/api/depot/assets/${id}/thumbnail`,

@@ -16,11 +16,11 @@ services:
     image: ghcr.io/sandraschi/inkscape-mcp:latest
     container_name: inkscape-mcp
     ports:
-      - "10900:10900"
+      - "11028:11028"
       - "9074:9074"
     environment:
       MCP_HOST: 0.0.0.0
-      MCP_PORT: "10900"
+      MCP_PORT: "11028"
       MCP_TRANSPORT: http
       INKSCAPE_MCP_METRICS_ENABLED: "true"
       PROMETHEUS_PORT: "9074"
@@ -32,7 +32,7 @@ services:
       promtail.job: inkscape-mcp
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:10900/api/health', timeout=5)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:11028/api/health', timeout=5)\""]
       interval: 30s
       timeout: 10s
       retries: 3

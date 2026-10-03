@@ -77,4 +77,6 @@ html:not(.dark) iframe {
 }
 
 /* Vendored Apps hub token (APPS_PAGE_STANDARD.md). */
-:root { --gh-green: 142 71% 45%; }
+:root {
+  --gh-green: 142 71% 45%;
+}

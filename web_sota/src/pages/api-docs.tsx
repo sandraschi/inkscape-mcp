@@ -38,6 +38,7 @@ export function ApiDocs() {
         <div className="flex items-center gap-3">
           <div className="flex rounded-lg border border-slate-700 overflow-hidden">
             <button
+              type="button"
               onClick={() => setView("swagger")}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 view === "swagger"
@@ -48,6 +49,7 @@ export function ApiDocs() {
               Swagger
             </button>
             <button
+              type="button"
               onClick={() => setView("redoc")}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 view === "redoc"

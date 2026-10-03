@@ -47,6 +47,7 @@ export function Skills() {
         <div className="w-64 shrink-0 space-y-1">
           {skills.map((s) => (
             <button
+              type="button"
               key={s.name}
               onClick={() => setSelected(s.name)}
               className={`w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors ${

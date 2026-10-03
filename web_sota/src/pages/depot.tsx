@@ -1,6 +1,11 @@
 import { Archive, Loader2, Play, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { depotApi, type Asset, type Workflow, type WorkflowStep } from "@/api/depot";
+import {
+  type Asset,
+  depotApi,
+  type Workflow,
+  type WorkflowStep,
+} from "@/api/depot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +47,7 @@ function StepEditor({
     <div className="space-y-2">
       {steps.map((step, i) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: pipeline steps are append-only, never reordered
           key={`${step.tool}-${i}`}
           className="grid grid-cols-1 gap-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3 md:grid-cols-[1fr_1fr_2fr_auto]"
         >
@@ -69,6 +75,7 @@ function StepEditor({
           />
           {!readOnly && (
             <button
+              type="button"
               onClick={() => onChange(steps.filter((_, idx) => idx !== i))}
               className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-red-400"
               title="Remove step"
@@ -140,7 +147,11 @@ function WorkflowCard({
     setSaving(true);
     setError(null);
     try {
-      await depotApi.createWorkflow(`${workflow.name} (copy)`, workflow.description, steps);
+      await depotApi.createWorkflow(
+        `${workflow.name} (copy)`,
+        workflow.description,
+        steps,
+      );
       onChanged();
     } catch (e: any) {
       setError(e.message);
@@ -166,12 +177,17 @@ function WorkflowCard({
             <CardTitle className="flex items-center gap-2 text-sm text-slate-200">
               {workflow.name}
               {workflow.is_builtin && (
-                <Badge variant="outline" className="border-slate-700 text-slate-400">
+                <Badge
+                  variant="outline"
+                  className="border-slate-700 text-slate-400"
+                >
                   builtin
                 </Badge>
               )}
             </CardTitle>
-            <CardDescription className="text-sm">{workflow.description}</CardDescription>
+            <CardDescription className="text-sm">
+              {workflow.description}
+            </CardDescription>
           </div>
           <div className="flex gap-2">
             <Button
@@ -189,6 +205,7 @@ function WorkflowCard({
             </Button>
             {!workflow.is_builtin && (
               <button
+                type="button"
                 onClick={remove}
                 className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-red-400"
                 title="Delete workflow"
@@ -200,7 +217,11 @@ function WorkflowCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <StepEditor steps={steps} onChange={setSteps} readOnly={workflow.is_builtin} />
+        <StepEditor
+          steps={steps}
+          onChange={setSteps}
+          readOnly={workflow.is_builtin}
+        />
         <div className="flex gap-2">
           {!workflow.is_builtin && (
             <Button
@@ -305,7 +326,11 @@ function AssetsGrid() {
       {assets.map((asset) => (
         <Card key={asset.id} className="border-slate-800 bg-slate-950/50">
           <CardContent className="space-y-2 p-3">
-            <a href={depotApi.fileUrl(asset.id)} target="_blank" rel="noreferrer">
+            <a
+              href={depotApi.fileUrl(asset.id)}
+              target="_blank"
+              rel="noreferrer"
+            >
               <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-md border border-slate-800 bg-white">
                 {asset.thumbnail_path ? (
                   <img
@@ -326,6 +351,7 @@ function AssetsGrid() {
                 {new Date(asset.created_at).toLocaleString()}
               </span>
               <button
+                type="button"
                 onClick={() => remove(asset.id)}
                 className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-red-400"
                 title="Delete asset"

@@ -7,9 +7,9 @@ import { Card } from "@/components/ui/card";
 import {
   installStatus,
   type ProviderInfo,
+  testProvider as runTest,
   saveLlmSettings,
   startInstall,
-  testProvider as runTest,
 } from "@/lib/llm";
 
 type Props = {

@@ -1,7 +1,9 @@
-import { Loader2, RefreshCw, Server, Settings2, Sparkles } from "lucide-react";
+import { Loader2, RefreshCw, Server, Settings2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { apiGet, apiPost } from "@/api/client";
+import { ActiveLlmCard } from "@/components/llm/ActiveLlmCard";
+import { LlmOnboarding } from "@/components/llm/LlmOnboarding";
+import { LlmProviderCards } from "@/components/llm/LlmProviderCards";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +14,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import API_BASE from "@/lib/api";
+import {
+  fetchLlmSettings,
+  fetchProviders,
+  loadSelection,
+  type ProviderInfo,
+} from "@/lib/llm";
 
 interface ServerSettingField {
   value: string;
@@ -43,10 +51,23 @@ interface HealthPayload {
 export function Settings() {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [serverSettings, setServerSettings] = useState<ServerSettingsPayload | null>(null);
+  const [serverSettings, setServerSettings] =
+    useState<ServerSettingsPayload | null>(null);
   const [form, setForm] = useState({ inkscape_path: "", mcp_port: "" });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [probing, setProbing] = useState(true);
+  const [llmSelected, setLlmSelected] = useState("ollama");
+
+  const refreshProviders = useCallback(async () => {
+    try {
+      const pv = await fetchProviders();
+      setProviders(pv.providers);
+    } catch {
+      /* keep previous list */
+    }
+  }, []);
 
   const load = async () => {
     setError(null);
@@ -80,7 +101,23 @@ export function Settings() {
   useEffect(() => {
     void load();
     void loadServerSettings();
-  }, [loadServerSettings]);
+    (async () => {
+      await refreshProviders();
+      const prev = loadSelection();
+      if (prev.provider) setLlmSelected(prev.provider);
+      try {
+        const s = await fetchLlmSettings();
+        if (s.provider) setLlmSelected(s.provider);
+      } catch {
+        /* backend truth unavailable: local mirror stands */
+      }
+      setProbing(false);
+    })();
+  }, [loadServerSettings, refreshProviders]);
+
+  const handleCardsChanged = useCallback(async () => {
+    await refreshProviders();
+  }, [refreshProviders]);
 
   const saveServerSettings = useCallback(async () => {
     setSaving(true);
@@ -102,10 +139,11 @@ export function Settings() {
         setSaveMsg("Nothing changed.");
         return;
       }
-      const res = await apiPost<{ success: boolean; error?: string; restart_required?: boolean }>(
-        "/api/settings/server",
-        changed,
-      );
+      const res = await apiPost<{
+        success: boolean;
+        error?: string;
+        restart_required?: boolean;
+      }>("/api/settings/server", changed);
       if (!res.success) {
         setSaveMsg(res.error || "Save failed.");
       } else {
@@ -134,8 +172,8 @@ export function Settings() {
             Settings
           </h2>
           <p className="text-slate-300">
-            Server-level config (Inkscape path, MCP port). All AI/LLM
-            provider settings live on AI Settings, not here.
+            Server-level config (Inkscape path, MCP port) plus local and cloud
+            LLM providers used by Chat and agent tools.
           </p>
         </div>
         <Button
@@ -184,25 +222,14 @@ export function Settings() {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-800 bg-slate-950/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Sparkles className="h-5 w-5 text-blue-400" />
-            AI / LLM Providers
-          </CardTitle>
-          <CardDescription className="text-slate-300">
-            Ollama, cloud providers, model selection, API keys, and testing
-            all live on AI Settings - nothing AI-related is duplicated here.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link to="/ai-settings">
-            <Button className="bg-blue-600 text-white hover:bg-blue-500">
-              Open AI Settings
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <LlmOnboarding mode="full" />
+      <ActiveLlmCard />
+      <LlmProviderCards
+        providers={providers}
+        probing={probing}
+        selected={llmSelected}
+        onChanged={handleCardsChanged}
+      />
 
       <Card className="border-slate-800 bg-slate-950/50">
         <CardHeader>
@@ -211,25 +238,32 @@ export function Settings() {
             Server Configuration
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Inkscape path applies immediately, no restart (MCP port needs
-            one). MCP clients (Cursor, Claude) use their own JSON config —
-            see repo <code className="text-slate-300">docs/IDE_MCP.md</code>.
+            Inkscape path applies immediately, no restart (MCP port needs one).
+            MCP clients (Cursor, Claude) use their own JSON config — see repo{" "}
+            <code className="text-slate-300">docs/IDE_MCP.md</code>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="space-y-1">
-            <label className="text-xs text-slate-400" htmlFor="set-inkscape-path">
+            <label
+              className="text-xs text-slate-400"
+              htmlFor="set-inkscape-path"
+            >
               Inkscape executable path
             </label>
             <Input
               id="set-inkscape-path"
               value={form.inkscape_path}
-              onChange={(e) => setForm((f) => ({ ...f, inkscape_path: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, inkscape_path: e.target.value }))
+              }
               placeholder="C:\Program Files\Inkscape\bin\inkscape.exe"
               className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200"
             />
             {serverSettings && (
-              <p className="text-xs text-slate-500">source: {serverSettings.inkscape_path.source}</p>
+              <p className="text-xs text-slate-500">
+                source: {serverSettings.inkscape_path.source}
+              </p>
             )}
           </div>
           <div className="space-y-1">
@@ -239,7 +273,9 @@ export function Settings() {
             <Input
               id="set-mcp-port"
               value={form.mcp_port}
-              onChange={(e) => setForm((f) => ({ ...f, mcp_port: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, mcp_port: e.target.value }))
+              }
               placeholder="11027"
               className="border-slate-800 bg-slate-900 font-mono text-xs text-slate-200 max-w-32"
             />
@@ -253,10 +289,14 @@ export function Settings() {
               disabled={saving}
               className="bg-blue-600 text-white hover:bg-blue-500"
             >
-              {saving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+              {saving ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : null}
               Save
             </Button>
-            {saveMsg && <span className="text-xs text-slate-400">{saveMsg}</span>}
+            {saveMsg && (
+              <span className="text-xs text-slate-400">{saveMsg}</span>
+            )}
           </div>
         </CardContent>
       </Card>

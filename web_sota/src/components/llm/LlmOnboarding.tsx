@@ -142,7 +142,7 @@ export function LlmOnboarding({ mode }: Props) {
           )}
           {mode === "banner" && (
             <Button size="sm" variant="ghost" asChild>
-              <Link to="/ai-settings">AI Settings</Link>
+              <Link to="/settings">Settings</Link>
             </Button>
           )}
         </div>

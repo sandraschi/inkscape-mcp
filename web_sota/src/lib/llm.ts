@@ -148,7 +148,11 @@ export interface TestResult {
  * A Test that ignores the typed key reports curated names as success;
  * that lie is BUG-042 (giskard-mcp 2026-09-21).
  */
-export function testProvider(provider: string, apiKey?: string, endpoint?: string): Promise<TestResult> {
+export function testProvider(
+  provider: string,
+  apiKey?: string,
+  endpoint?: string,
+): Promise<TestResult> {
   return apiPost<TestResult>("/api/llm/test", {
     provider,
     ...(apiKey ? { api_key: apiKey } : {}),

@@ -217,6 +217,7 @@ export function LayerManager() {
                 <div className="flex items-center gap-1">
                   {layer.visible ? (
                     <button
+                      type="button"
                       onClick={() => doOp("hide", { layer_id: layer.id })}
                       className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-300"
                       title="Hide"
@@ -225,6 +226,7 @@ export function LayerManager() {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => doOp("show", { layer_id: layer.id })}
                       className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-300"
                       title="Show"
@@ -234,6 +236,7 @@ export function LayerManager() {
                   )}
                   {layer.locked ? (
                     <button
+                      type="button"
                       onClick={() => doOp("unlock", { layer_id: layer.id })}
                       className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-300"
                       title="Unlock"
@@ -242,6 +245,7 @@ export function LayerManager() {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => doOp("lock", { layer_id: layer.id })}
                       className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-300"
                       title="Lock"

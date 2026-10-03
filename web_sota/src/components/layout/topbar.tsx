@@ -1,7 +1,14 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ExternalLink, HelpCircle, LayoutGrid, Moon, ScrollText, Sun } from "lucide-react";
+import {
+  ExternalLink,
+  HelpCircle,
+  LayoutGrid,
+  Moon,
+  ScrollText,
+  Sun,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { APPS_CATALOG } from "@/common/apps-catalog";
 import { HelpModal } from "@/components/modals/HelpModal";
@@ -93,7 +100,11 @@ export function Topbar() {
           type="button"
           onClick={toggle}
           className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-          title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+          title={
+            light
+              ? "Switch to dark (experimental light mode)"
+              : "Switch to light (experimental, ugly)"
+          }
           aria-label="Toggle light mode (experimental)"
         >
           {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}

@@ -90,7 +90,7 @@ export function AnimationStudio() {
         presetId,
         parseFloat(duration) || 2,
         color,
-        parseInt(size) || 50,
+        parseInt(size, 10) || 50,
         shape,
       ),
     [presetId, duration, color, size, shape],
@@ -276,6 +276,7 @@ export function AnimationStudio() {
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {PRESETS.map((p) => (
               <button
+                type="button"
                 key={p.id}
                 onClick={() => setPresetId(p.id)}
                 className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-slate-800 ${

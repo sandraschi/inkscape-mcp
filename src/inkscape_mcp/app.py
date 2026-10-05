@@ -1425,7 +1425,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
             "model": data.get("model"),
         }
 
-    @app.post("/api/settings/llm")
+    @app.post("/api/settings/llm", response_model=None)
     async def save_llm_settings(request: Request) -> dict | JSONResponse:
         payload = await request.json()
         provider = str(payload.get("provider") or "").strip()

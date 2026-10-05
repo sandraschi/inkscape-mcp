@@ -28,13 +28,42 @@ AI agents create, edit, layer, animate, and export SVG files using Inkscape. Wor
 - Fleet pipeline — hand off to GIMP, Blender, Unity, Resonite
 - LPEs, text operations, object inspection, hands-in control
 
-## Quick Install
+## Install
 
-**Claude Desktop:** download the `.mcpb` from [Releases](https://github.com/sandraschi/inkscape-mcp/releases) and drag it onto Claude.
+### Let your AI set it up
 
-**Windows desktop app:** download the NSIS installer from [Releases](https://github.com/sandraschi/inkscape-mcp/releases) and run it.
+Do you use an AI coding assistant (Claude Code, Cursor, Codex, GitHub Copilot, ...)? Paste this into it:
 
-**Manual:** `git clone`, `uv sync`, `just serve`. See [INSTALL.md](INSTALL.md) for all methods.
+```text
+Set up inkscape-mcp on this PC for me: https://github.com/sandraschi/inkscape-mcp - follow docs/AI_SETUP.md in that repository.
+```
+
+It checks your PC first (Inkscape, ports, disk) and installs nothing until that passes. It asks before
+installing Inkscape, then sets up the server and connects it to your AI app.
+
+### Or do it yourself
+
+**Claude Desktop only:** download the `.mcpb` from [Releases](https://github.com/sandraschi/inkscape-mcp/releases/latest) and drag it onto Claude.
+
+**Windows, with the dashboard:** `git clone https://github.com/sandraschi/inkscape-mcp`, then double-click
+**`start.bat`**. It installs what is missing (uv, bun, dependencies), starts the server and opens the dashboard
+at `http://127.0.0.1:11029`. Run it again any time: it resumes or reports that it is already running.
+`stop.bat` stops it. `start.bat -Check` tells you whether it will work here, without installing anything.
+
+**Windows desktop app:** the NSIS installer from [Releases](https://github.com/sandraschi/inkscape-mcp/releases/latest).
+
+Every method: [INSTALL.md](INSTALL.md).
+
+> **The first `start.bat` run takes 2-4 minutes** and the window can sit quiet while Python packages
+> install. This is normal. Don't close it.
+
+### Something went wrong?
+
+- **It stopped during install.** Run `start.bat` again. It continues where it stopped.
+- **"held by another program" on port 11028 or 11029.** Another app uses that port. Close it, then rerun.
+- **Export / convert does nothing.** Inkscape is missing. `winget install Inkscape.Inkscape`, then restart.
+- **Still stuck?** See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md), or open an
+  [issue](https://github.com/sandraschi/inkscape-mcp/issues) and attach `logs\start.log`.
 
 ## What You Can Do
 
@@ -58,7 +87,7 @@ AI agents create, edit, layer, animate, and export SVG files using Inkscape. Wor
 
 - **Windows**, macOS, or Linux
 - **Inkscape 1.0+** (1.2+ recommended for Actions API)
-- **Python 3.12+** with [uv](https://docs.astral.sh/uv/)
+- [uv](https://docs.astral.sh/uv/) (fetches Python 3.12+ itself; `start.bat` installs uv for you)
 - Optional: Ollama for AI-assisted SVG generation
 
 ## License

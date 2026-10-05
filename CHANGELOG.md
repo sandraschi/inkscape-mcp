@@ -1,4 +1,10 @@
 
+## [Unreleased] - one-click install pilot (2026-10-05)
+- **"Let your AI set it up"**: README paste line + `docs/AI_SETUP.md`, the install contract for coding agents (check, decide, install, start, connect, stop conditions)
+- **`start.bat` rewritten as an idempotent state machine** with `-Check [-Json]`, `-Yes`, `-NoStart`, `-Detach`, `-Stop`, `-Restart`; `stop.bat` added; installs uv/bun via winget, runs uv sync/bun install, never kills unknown processes, binds 127.0.0.1, one log set per run in `logs/`
+- **Fixed: REST bridge never mounted** (`/api/settings/llm` return annotation rejected by FastAPI) - `/api/health` and every dashboard API call were 404
+- README: install section, first-run expectation, "Something went wrong?" block
+
 ## [Unreleased] (assfix 2026-10-03, first full pass)
 - `inkscape_shutdown` tool (confirm-gated) + both bundle manifests updated
 - Launcher health shortcut (`/api/health` answered without engine init) + logging import fix (was 500)

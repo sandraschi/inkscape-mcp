@@ -1,4 +1,4 @@
-﻿# Per-repo fleet start config for inkscape-mcp
+# Per-repo fleet start config for inkscape-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'inkscape-mcp'
@@ -10,6 +10,7 @@
         Kind          = 'uvicorn'
         UvicornTarget = 'inkscape_mcp.server:app'
         SyncExtras    = @('dev')
+        SyncOnStart  = $true
         Env           = @{ WEB_PORT = '11028' }
     }
     Frontend = @{

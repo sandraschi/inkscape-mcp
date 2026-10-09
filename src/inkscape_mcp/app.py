@@ -848,7 +848,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
     if config and hasattr(config, "inkscape_executable"):
         inkscape_exe = config.inkscape_executable
 
-    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.6.0")
+    app = FastAPI(title="Inkscape MCP REST Bridge", version="2.7.1")
     _start_time = datetime.now(UTC)
 
     app.add_middleware(
@@ -1307,6 +1307,21 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
             pass
         return False, []
 
+    @app.get("/api/llm/discover")
+    async def llm_discover() -> dict:
+        """Local LLM auto-discovery (fleet standard path).
+
+        Probes Ollama (:11434) and LM Studio (:1234). Thin alias over the
+        same probes backing ``/api/llm/providers`` for clients that use the
+        canonical discover path.
+        """
+        ollama_ok, ollama_models = await _probe_ollama()
+        lm_ok, lm_models = await _probe_lmstudio()
+        return {
+            "ollama": {"detected": ollama_ok, "models": ollama_models},
+            "lmstudio": {"detected": lm_ok, "models": lm_models},
+        }
+
     @app.get("/api/llm/providers")
     async def llm_providers() -> dict:
         ollama_ok, ollama_models = await _probe_ollama()
@@ -1615,6 +1630,21 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {"engine": engine, **st}
 
     # ── /api/health ──────────────────────────────────────────────────────────
+    @app.post("/api/shutdown")
+    async def api_shutdown() -> dict:
+        """Orderly exit for service managers (fleet launcher calls this before
+        ``Restart-Service`` so in-flight work can checkpoint). Responds 200
+        immediately, then exits the process after a short delay."""
+        loop = asyncio.get_running_loop()
+
+        def _exit_later() -> None:
+            time.sleep(0.5)
+            os._exit(0)
+
+        threading.Thread(target=_exit_later, daemon=True).start()
+        logger.warning("POST /api/shutdown — exiting in 0.5s (loop=%s)", loop is not None)
+        return {"status": "shutting down"}
+
     @app.get("/api/health")
     async def health() -> dict:
         ollama_ok = False
@@ -1665,7 +1695,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.6.0",
+            "version": "2.7.1",
             "description": "AI-powered vector graphics and SVG editing server. Exposes Inkscape's full feature surface through the Model Context Protocol.",
             "uptime_seconds": int((datetime.now(UTC) - _start_time).total_seconds()),
             "backend_port": int(_env("MCP_PORT", "11028")),
@@ -1706,7 +1736,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.6.0",
+            "version": "2.7.1",
             "uptime_seconds": int((datetime.now(UTC) - _start_time).total_seconds()),
             "tool_count": len(tools),
             "tools": tools,
@@ -1726,7 +1756,7 @@ def register_rest_api(mcp: Any, config: Any | None = None) -> None:
         return {
             "status": "ok",
             "server": "inkscape-mcp",
-            "version": "2.6.0",
+            "version": "2.7.1",
             "tool_count": len(tools),
             "tools": tools,
             "system": {"windows": True},

@@ -310,14 +310,26 @@ class InkscapeCliWrapper:
             try:
                 stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
 
-                # Combine stdout and stderr for Inkscape
-                output = (stdout + stderr).decode("utf-8", errors="replace")
+                # Decode the streams separately. Inkscape diagnostics
+                # (fontconfig/GTK warnings, etc.) go to stderr and must NEVER
+                # be concatenated onto stdout: --query-* output is parsed
+                # downstream and any leaked diagnostic corrupts it
+                # (issue #8: non-ASCII install paths + fontconfig error).
+                output = stdout.decode("utf-8", errors="replace")
+                err_text = stderr.decode("utf-8", errors="replace")
 
                 if process.returncode != 0:
                     error_msg = (
                         f"Inkscape command failed with return code {process.returncode}: {output}"
                     )
+                    if err_text.strip():
+                        error_msg += f"\nstderr: {err_text}"
                     raise InkscapeExecutionError(error_msg)
+
+                if err_text.strip():
+                    # Benign diagnostics on success: visible in logs, kept out
+                    # of the parsed query result.
+                    logger.debug("Inkscape stderr (ignored): %s", err_text.strip())
 
                 return output
 
@@ -340,10 +352,25 @@ class InkscapeCliWrapper:
     def _get_environment(self) -> dict[str, str]:
         """
         Get environment variables for subprocess execution.
+
+        ``C.UTF-8`` is only forced on POSIX, where it is meaningful. On
+        Windows it makes fontconfig resolve its config path as UTF-8, which
+        breaks non-ASCII install paths (e.g. ``E:\\功能性\\Inkscape``):
+        the conversion drops those bytes and every Inkscape invocation
+        prints ``Fontconfig error: Cannot load default config file`` on
+        stderr (issue #8). Unsetting LANG/LC_ALL on Windows leaves stderr
+        empty in all tested configurations.
         """
         env = os.environ.copy()
 
-        # Ensure UTF-8 encoding
+        if os.name == "nt":
+            # Windows: never force a POSIX locale; drop inherited values so
+            # fontconfig falls back to native path handling.
+            env.pop("LANG", None)
+            env.pop("LC_ALL", None)
+            return env
+
+        # POSIX: ensure UTF-8 output parsing.
         env["LANG"] = "C.UTF-8"
         env["LC_ALL"] = "C.UTF-8"
 

@@ -19,6 +19,15 @@ repos:
         files: \.py$
         pass_filenames: false
 
+  - repo: local
+    hooks:
+      - id: biome
+        name: Lint frontend with biome (fleet gate)
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-biome.ps1
+        language: system
+        files: ^web_sota/
+        pass_filenames: false
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:

@@ -3,6 +3,7 @@ Unit tests for Inkscape CLI wrapper module.
 """
 
 import asyncio
+import os
 from unittest.mock import AsyncMock
 from unittest.mock import patch
 
@@ -66,6 +67,58 @@ class TestInkscapeCliWrapper:
         with patch("asyncio.create_subprocess_exec", AsyncMock(return_value=fake_process)):
             with pytest.raises(InkscapeExecutionError):
                 await mock_cli_wrapper._execute_command(["--invalid-option"], timeout=5)
+
+    @pytest.mark.asyncio
+    async def test_execute_command_stderr_not_merged_on_success(self, mock_cli_wrapper):
+        """Regression test for issue #8: stderr diagnostics must not corrupt query output.
+
+        A fontconfig warning on stderr (non-ASCII install path) previously got
+        concatenated onto ``--query-all`` stdout, breaking float parsing.
+        """
+        fake_process = _FakeProcess(
+            returncode=0,
+            stdout=b"2908.5\n",
+            stderr=b"Fontconfig error: Cannot load default config file",
+        )
+
+        with patch("asyncio.create_subprocess_exec", AsyncMock(return_value=fake_process)):
+            result = await mock_cli_wrapper._execute_command(["--query-all"], timeout=5)
+
+        assert result == "2908.5\n"
+        float(result.strip())  # the reporter's parse step must not raise
+
+    @pytest.mark.asyncio
+    async def test_execute_command_failure_surfaces_stderr(self, mock_cli_wrapper):
+        """On nonzero exit, stderr is surfaced inside the raised error message."""
+        fake_process = _FakeProcess(returncode=1, stdout=b"", stderr=b"Error: bad option")
+
+        with patch("asyncio.create_subprocess_exec", AsyncMock(return_value=fake_process)):
+            with pytest.raises(InkscapeExecutionError) as exc_info:
+                await mock_cli_wrapper._execute_command(["--invalid-option"], timeout=5)
+
+        assert "Error: bad option" in str(exc_info.value)
+
+    def test_get_environment_windows_unsets_locale(self, mock_cli_wrapper):
+        """Regression test for issue #8: no LANG/LC_ALL forcing on Windows."""
+        with (
+            patch.object(os, "name", "nt"),
+            patch.dict(os.environ, {"LANG": "de_DE.UTF-8", "LC_ALL": "de_DE.UTF-8"}),
+        ):
+            env = mock_cli_wrapper._get_environment()
+
+        assert "LANG" not in env
+        assert "LC_ALL" not in env
+
+    def test_get_environment_posix_forces_utf8(self, mock_cli_wrapper):
+        """POSIX behavior unchanged: C.UTF-8 is forced for output parsing."""
+        with (
+            patch.object(os, "name", "posix"),
+            patch.dict(os.environ, {}, clear=False),
+        ):
+            env = mock_cli_wrapper._get_environment()
+
+        assert env["LANG"] == "C.UTF-8"
+        assert env["LC_ALL"] == "C.UTF-8"
 
     @pytest.mark.asyncio
     async def test_execute_command_timeout(self, mock_cli_wrapper):

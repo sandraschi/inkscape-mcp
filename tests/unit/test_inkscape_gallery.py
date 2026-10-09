@@ -128,11 +128,24 @@ class TestManagedExtensions:
         monkeypatch.setenv("INKSCAPE_EXTENSIONS", str(tmp_path))
         tmp_path.mkdir(parents=True, exist_ok=True)
         marker = tmp_path / inkscape_gallery._MANAGED_MARKER
-        marker.write_text(json.dumps({"ext.1": {"name": "Ext One", "files": ["a.py"], "dir": str(tmp_path / "ext.1")}}))
+        marker.write_text(
+            json.dumps(
+                {"ext.1": {"name": "Ext One", "files": ["a.py"], "dir": str(tmp_path / "ext.1")}}
+            )
+        )
 
         result = inkscape_gallery.list_managed_extensions()
 
-        assert result == {"extensions": [{"id": "ext.1", "name": "Ext One", "files": ["a.py"], "dir": str(tmp_path / "ext.1")}]}
+        assert result == {
+            "extensions": [
+                {
+                    "id": "ext.1",
+                    "name": "Ext One",
+                    "files": ["a.py"],
+                    "dir": str(tmp_path / "ext.1"),
+                }
+            ]
+        }
 
     @pytest.mark.asyncio
     async def test_uninstall_unknown_id_raises_key_error(self, monkeypatch, tmp_path):
@@ -147,7 +160,9 @@ class TestManagedExtensions:
         pkg_dir.mkdir(parents=True)
         (pkg_dir / "a.py").write_text("x")
         marker = tmp_path / inkscape_gallery._MANAGED_MARKER
-        marker.write_text(json.dumps({"ext.1": {"name": "Ext One", "files": ["a.py"], "dir": str(pkg_dir)}}))
+        marker.write_text(
+            json.dumps({"ext.1": {"name": "Ext One", "files": ["a.py"], "dir": str(pkg_dir)}})
+        )
 
         result = await inkscape_gallery.uninstall_extension("ext.1")
 

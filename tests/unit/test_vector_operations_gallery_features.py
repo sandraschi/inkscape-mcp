@@ -29,7 +29,10 @@ class TestCreateGradient:
             input_path=str(base_svg),
             output_path=str(base_svg),
             object_id="grad1",
-            params={"type": "linear", "stops": [{"offset": "0%", "color": "#f00"}, {"offset": "100%", "color": "#00f"}]},
+            params={
+                "type": "linear",
+                "stops": [{"offset": "0%", "color": "#f00"}, {"offset": "100%", "color": "#00f"}],
+            },
         )
         assert result["success"] is True
         assert result["data"]["fill"] == "url(#grad1)"
@@ -50,7 +53,10 @@ class TestCreateGradient:
     @pytest.mark.asyncio
     async def test_missing_stops_fails_cleanly(self, base_svg):
         result = await inkscape_vector(
-            operation="create_gradient", input_path=str(base_svg), output_path=str(base_svg), params={}
+            operation="create_gradient",
+            input_path=str(base_svg),
+            output_path=str(base_svg),
+            params={},
         )
         assert result["success"] is False
         assert "stops" in result["message"]
@@ -64,7 +70,11 @@ class TestCreatePattern:
             input_path=str(base_svg),
             output_path=str(base_svg),
             object_id="pat1",
-            params={"width": 5, "height": 5, "content": '<circle cx="2" cy="2" r="1" fill="green"/>'},
+            params={
+                "width": 5,
+                "height": 5,
+                "content": '<circle cx="2" cy="2" r="1" fill="green"/>',
+            },
         )
         assert result["success"] is True
         assert result["data"]["fill"] == "url(#pat1)"
@@ -95,7 +105,9 @@ class TestAttributes:
         )
         assert set_result["success"] is True
 
-        get_result = await inkscape_vector(operation="get_attributes", input_path=str(base_svg), object_id="circle1")
+        get_result = await inkscape_vector(
+            operation="get_attributes", input_path=str(base_svg), object_id="circle1"
+        )
         assert get_result["success"] is True
         assert get_result["data"]["attributes"]["fill"] == "red"
         assert get_result["data"]["style"]["opacity"] == "0.5"
@@ -103,7 +115,9 @@ class TestAttributes:
 
     @pytest.mark.asyncio
     async def test_get_attributes_unknown_id(self, base_svg):
-        result = await inkscape_vector(operation="get_attributes", input_path=str(base_svg), object_id="nope")
+        result = await inkscape_vector(
+            operation="get_attributes", input_path=str(base_svg), object_id="nope"
+        )
         assert result["success"] is False
 
 
@@ -125,7 +139,10 @@ class TestTextOnPath:
     @pytest.mark.asyncio
     async def test_missing_ref_id_fails(self, base_svg):
         result = await inkscape_vector(
-            operation="text_on_path", input_path=str(base_svg), output_path=str(base_svg), params={"content": "x"}
+            operation="text_on_path",
+            input_path=str(base_svg),
+            output_path=str(base_svg),
+            params={"content": "x"},
         )
         assert result["success"] is False
 
@@ -185,6 +202,10 @@ class TestSymbols:
     @pytest.mark.asyncio
     async def test_use_symbol_missing_target_fails(self, base_svg):
         result = await inkscape_vector(
-            operation="use_symbol", input_path=str(base_svg), output_path=str(base_svg), ref_id="ghost", params={}
+            operation="use_symbol",
+            input_path=str(base_svg),
+            output_path=str(base_svg),
+            ref_id="ghost",
+            params={},
         )
         assert result["success"] is False

@@ -173,9 +173,7 @@ class TestLoadConfig:
     def test_load_config_with_existing_file(self, tmp_path):
         """Test loading config from an already-existing file."""
         config_path = tmp_path / "config.yaml"
-        config_path.write_text(
-            yaml.dump({"max_concurrent_processes": 7}), encoding="utf-8"
-        )
+        config_path.write_text(yaml.dump({"max_concurrent_processes": 7}), encoding="utf-8")
 
         config = load_config(config_path)
 

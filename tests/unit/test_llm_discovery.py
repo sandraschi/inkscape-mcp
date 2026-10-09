@@ -28,7 +28,9 @@ class _FakeResponse:
 class TestListLocalModels:
     @pytest.mark.asyncio
     async def test_both_reachable(self):
-        ollama_resp = _FakeResponse(200, {"models": [{"name": "gemma4:12b"}, {"name": "qwen3:32b"}]})
+        ollama_resp = _FakeResponse(
+            200, {"models": [{"name": "gemma4:12b"}, {"name": "qwen3:32b"}]}
+        )
         lmstudio_resp = _FakeResponse(200, {"data": [{"id": "local-model-1"}]})
         with patch(
             "httpx.AsyncClient.get",
@@ -88,7 +90,9 @@ class TestLlmOps:
 
     @pytest.mark.asyncio
     async def test_vram_returns_gpu_list(self):
-        with patch("inkscape_mcp.tools.llm_discovery.llm_engine.gpu_vram", return_value=[{"index": 0}]):
+        with patch(
+            "inkscape_mcp.tools.llm_discovery.llm_engine.gpu_vram", return_value=[{"index": 0}]
+        ):
             result = await llm_ops(operation="vram")
 
         assert result == {"success": True, "operation": "vram", "gpus": [{"index": 0}]}
@@ -117,7 +121,12 @@ class TestLlmOps:
             "inkscape_mcp.tools.llm_discovery.llm_engine.switch_ollama_model",
             AsyncMock(return_value=fake_switch),
         ) as mock_switch:
-            result = await llm_ops(operation="switch_model", provider="ollama", model="new:model", endpoint="http://x:1/")
+            result = await llm_ops(
+                operation="switch_model",
+                provider="ollama",
+                model="new:model",
+                endpoint="http://x:1/",
+            )
 
         mock_switch.assert_awaited_once_with("new:model", "http://x:1")
         assert result["success"] is True
@@ -138,7 +147,10 @@ class TestLlmOps:
 
     @pytest.mark.asyncio
     async def test_loaded_delegates_to_engine(self):
-        fake_loaded = {"engine": True, "models": [{"name": "gemma4:12b", "size_vram_mb": 8000, "expires_at": ""}]}
+        fake_loaded = {
+            "engine": True,
+            "models": [{"name": "gemma4:12b", "size_vram_mb": 8000, "expires_at": ""}],
+        }
         with patch(
             "inkscape_mcp.tools.llm_discovery.llm_engine.ollama_loaded",
             AsyncMock(return_value=fake_loaded),

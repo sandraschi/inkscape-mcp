@@ -158,7 +158,10 @@ class TestOllamaToolSchemas:
                 "function": {
                     "name": "inkscape_vector",
                     "description": "Vector operations.",
-                    "parameters": {"type": "object", "properties": {"operation": {"type": "string"}}},
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"operation": {"type": "string"}},
+                    },
                 },
             }
         ]
@@ -189,9 +192,27 @@ class TestOllamaToolSchemas:
 
 class TestFilterLogs:
     LOGS = [
-        {"id": "1", "level": "INFO", "kind": "server", "detail": "REST bridge mounted", "meta": {"logger": "app"}},
-        {"id": "2", "level": "ERROR", "kind": "tool_call", "detail": "trace_image failed", "meta": {"logger": "vector"}},
-        {"id": "3", "level": "INFO", "kind": "tool_call", "detail": "list_models ok", "meta": {"logger": "llm"}},
+        {
+            "id": "1",
+            "level": "INFO",
+            "kind": "server",
+            "detail": "REST bridge mounted",
+            "meta": {"logger": "app"},
+        },
+        {
+            "id": "2",
+            "level": "ERROR",
+            "kind": "tool_call",
+            "detail": "trace_image failed",
+            "meta": {"logger": "vector"},
+        },
+        {
+            "id": "3",
+            "level": "INFO",
+            "kind": "tool_call",
+            "detail": "list_models ok",
+            "meta": {"logger": "llm"},
+        },
     ]
 
     def test_no_filters_returns_everything(self):

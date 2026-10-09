@@ -158,6 +158,7 @@ tmp/
 # Batch Mutation Safety pre-edit backups (mcp-central-docs/standards/AGENTS.md) -
 # timestamped copies made before any 3+ file batch edit, never meant to be committed.
 *.bak
+*.bak.*
 
 # Inkscape temporary files
 *.svg.tmp

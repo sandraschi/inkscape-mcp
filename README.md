@@ -78,6 +78,7 @@ Every method: [INSTALL.md](INSTALL.md).
 | Doc | Contents |
 |-----|----------|
 | [Installation](INSTALL.md) | All install methods, prerequisites |
+| [Onboarding](docs/ONBOARDING.md) | First-run: Inkscape requirement, sanity check, pitfalls |
 | [Configuration](docs/CONFIGURATION.md) | Env vars, Ollama, Tauri desktop mode |
 | [Tool Reference](docs/TOOLS.md) | All 17 tools, 60+ operations |
 | [Development](docs/DEVELOPMENT.md) | Contributing, local setup, building |

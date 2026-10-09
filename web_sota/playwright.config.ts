@@ -14,7 +14,8 @@ export default defineConfig({
       // with its own hand-duplicated MCP tool registration - not what
       // actually ships. fleet-start.config.ps1's real UvicornTarget is
       // inkscape_mcp.server:app; e2e was silently testing a fork of it.
-      command: "uv run python -m uvicorn inkscape_mcp.server:app --host 127.0.0.1 --port 11028",
+      command:
+        "uv run python -m uvicorn inkscape_mcp.server:app --host 127.0.0.1 --port 11028",
       port: 11028,
       timeout: 45000,
       reuseExistingServer: true,

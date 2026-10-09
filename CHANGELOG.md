@@ -1,4 +1,51 @@
 
+## [2.7.1] - 2026-10-09 (assfix: issue #8 + fleet compliance)
+
+### Fixed (issue #8 — Windows non-ASCII install paths)
+- **`cli_wrapper` no longer forces `LANG`/`LC_ALL=C.UTF-8` on Windows** — the forced POSIX
+  locale made fontconfig resolve its config path as UTF-8, dropping non-ASCII bytes
+  (`E:\功能性\Inkscape` → `E:\??????\Inkscape`) so every Inkscape call printed
+  `Fontconfig error` on stderr. Locale forcing is now POSIX-only; on Windows inherited
+  `LANG`/`LC_ALL` are removed. Verified: reporter's matrix (env × FONTCONFIG combos).
+- **`_execute_command` no longer merges stderr into stdout** — `--query-*` output is parsed
+  downstream, so any diagnostic on stderr corrupted it. Success returns stdout only
+  (stderr logged at debug); failures raise with both streams attached.
+- 4 regression tests in `tests/unit/test_cli_wrapper.py` (stderr isolation, failure surfacing,
+  Windows/POSIX env behavior). Full suite: 192 passed.
+
+### Fixed (fleet compliance)
+- **MCPB `manifest.json`: `${PWD}` → `${__dirname}`** (Claude Desktop never expands `${PWD}`;
+  packed bundle could not start on a real install).
+- **CI now triggers on push/PR** (was tags + dispatch only — CI never ran on dev) + new
+  **frontend job** (bun install → build → biome:ci).
+- **Webapp same-origin API base** (`web_sota/src/lib/api.ts`): relative `/api/...` via vite proxy
+  by default, absolute backend URL only inside Tauri or via `VITE_API_URL`; added `/docs`,
+  `/redoc`, `/openapi.json` to the vite proxy so the ApiDocs iframe works off-localhost.
+- **Chat is skill-first**: loads `GET /api/skills/inkscape` on mount, composes it under the
+  personality system prompt.
+- New endpoints: `POST /api/shutdown` (orderly exit for service managers),
+  `GET /api/llm/discover` (canonical local-LLM probe path).
+- **Ruff hardening**: removed `S110`/`S112` from ignore, added `T20` (both clean, 0 findings).
+- `justfile`: `serve` default port 11027 → registry 11028; `typecheck` mypy → pyright;
+  biome via `bunx`.
+- Session context: `.cursorrules` gains `## Session Context` header (and drops a hallucinated
+  `operation="capabilities"`); `.windsurfrules` + `.github/copilot-instructions.md` created;
+  `renovate.json` added; `scripts/pre-commit-biome.ps1` created + wired into pre-commit.
+- `docs/ONBOARDING.md` created (Inkscape classic-installer requirement, Ollama option,
+  sanity check, pitfalls incl. issue #8).
+- Removed duplicate npm lockfiles (`web_sota/package-lock.json` + root stub; bun is standard);
+  untracked + deleted committed `.bak` junk in `native/src/`; `.gitignore` gains `*.bak.*`.
+- Version synced to 2.7.1 everywhere (`__init__`, FastAPI titles/health payloads, glama
+  tool count 16 → 19, tauri.conf, plugin.json).
+
+### Deferred (with rationale)
+- MCPB `NOREG` (NSIS `mcp-clients.nsh` registration page) — installer change needing a full
+  NSIS build + install/uninstall test cycle; follow-up with the release pipeline.
+- README Claude one-liner + stable `<name>.mcpb`/`install.ps1` — custom `tools/pack_mcpb.py`
+  pipeline produces neither artifact; fix the pipeline first, then document it.
+- Full domain-skill rebuild (`skillbuild inkscape-mcp`) — both SKILL.md files are runt
+  (<50 lines); needs a repo-wide harvest, not an inline rewrite.
+
 ## [Unreleased] - one-click install pilot (2026-10-05)
 - **"Let your AI set it up"**: README paste line + `docs/AI_SETUP.md`, the install contract for coding agents (check, decide, install, start, connect, stop conditions)
 - **`start.bat` rewritten as an idempotent state machine** with `-Check [-Json]`, `-Yes`, `-NoStart`, `-Detach`, `-Stop`, `-Restart`; `stop.bat` added; installs uv/bun via winget, runs uv sync/bun install, never kills unknown processes, binds 127.0.0.1, one log set per run in `logs/`

@@ -1,6 +1,6 @@
 # Inkscape MCP — LLM full manifest
 
-Version **2.6.0** (see `pyproject.toml`). Stack: **Python 3.12+**, **FastMCP ≥3.1**, **Inkscape** with CLI.
+Version **2.7.1** (see `pyproject.toml`). Stack: **Python 3.12+**, **FastMCP ≥3.4.4,<4**, **Inkscape** with CLI.
 
 ---
 
@@ -26,7 +26,47 @@ Operations: **quality**, **statistics**, **validate**, **objects**, **dimensions
 
 ### inkscape_system
 
-Operations: **status**, **help**, **diagnostics**, **version**, **config**, **list_extensions**, **execute_extension** (when enabled).
+Operations: **status**, **help**, **diagnostics**, **version**, **config**, **execution_mode**,
+**list_extensions**, **execute_extension**, **search_extensions**, **install_extension**,
+**uninstall_extension**, **list_managed_extensions**, **self_terminate** (when enabled).
+
+### inkscape_layers
+
+Operations: **list**, **create**, **rename**, **hide**, **show**, **lock**, **unlock**, **reorder**.
+
+### inkscape_animation
+
+SMIL/CSS animation presets (**bounce**, **fade**, **slide**, **rotate**, **pulse**, **shake**) plus raw
+**animate**/**transform**/**motion**/**color**. 100% client-side, no Inkscape needed.
+
+### inkscape_render
+
+Operations: **export_preview**, **export_multi_dpi**, **get_document_summary** — agent-vision PNG
+exports and document summaries for vision-loop workflows.
+
+### inkscape_validation
+
+SVG QA: **validate_svg**, **check_viewbox**, **audit_web_svg**, stroke/fill and size-limit checks.
+
+### inkscape_fleet
+
+Cross-repo handoff: push renders to GIMP, stage SVGs for Blender, export Unity sprites.
+
+### inkscape_fab_art
+
+DXF/laser fab paths and Gazebo robotics schematic staging.
+
+### inkscape_sim_art
+
+Icon packs, sprite sheets, Resonite/VRChat UI asset staging.
+
+### llm_ops
+
+Manage the local LLM engine: list/switch/unload models, VRAM telemetry.
+
+### inkscape_shutdown
+
+Shut down the server process (confirm-gated: `confirmed=True` required).
 
 ### list_local_models
 
@@ -43,6 +83,7 @@ Registered when `agentic` imports succeed and the host supports MCP sampling:
 - **generate_svg** — multi-step SVG generation via `ctx.sample()` / SEP-1577 loop
 - **agentic_inkscape_workflow** — orchestrated workflows
 - **intelligent_vector_processing** — vector-focused agentic path
+- **conversational_inkscape_assistant** — conversational multi-step assistant over the tool surface
 - **conversational_inkscape_assistant** — dialog-style assistance
 
 If sampling is unavailable, these tools return structured errors; use non-agentic `inkscape_*` tools instead. Details: `docs/AI_SAMPLING.md`.
@@ -138,7 +179,7 @@ uvx inkscape-mcp --help
 - **Agentic:** `agentic.py` (sampling)
 - **Prompts/resources:** `prompts_resources.py`
 - **Transport:** `transport.py` (stdio / HTTP / env bridge)
-- **REST:** `app.py` mounts on FastMCP HTTP (`/api/health`, `/api/help`, `/api/logs`, …)
+- **REST:** `app.py` mounts on FastMCP HTTP (`/api/health`, `/api/chat`, `/api/skills`, `/api/llm/providers`, `/api/llm/models`, `/api/llm/discover`, `/api/llm/onboarding`, `/api/v1/diagnostics`, `/api/capabilities`, `POST /api/shutdown`, `/api/docs/{path}`, …)
 - **MCPB:** `mcp-server/` tree, `tools/sync_mcpb_src.py`, `tools/pack_mcpb.py`
 
 ---

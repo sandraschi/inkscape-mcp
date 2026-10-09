@@ -47,6 +47,7 @@ export function Status() {
         <Button
           variant="outline"
           size="sm"
+          data-testid="status-refresh"
           onClick={() => void load()}
           disabled={loading}
           className="border-slate-800 text-slate-300"
@@ -67,7 +68,10 @@ export function Status() {
           {error ? (
             <p className="text-yellow-400">{error}</p>
           ) : (
-            <pre className="max-h-[70vh] overflow-auto rounded-lg border border-slate-800 bg-slate-900 p-4 text-xs text-slate-200">
+            <pre
+              data-testid="status-health-json"
+              className="max-h-[70vh] overflow-auto rounded-lg border border-slate-800 bg-slate-900 p-4 text-xs text-slate-200"
+            >
               {loading && !data ? "Loading…" : JSON.stringify(data, null, 2)}
             </pre>
           )}

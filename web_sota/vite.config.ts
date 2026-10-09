@@ -28,6 +28,19 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      // FastAPI auto-docs (same-origin iframe in ApiDocs page).
+      "/docs": {
+        target: "http://127.0.0.1:11028",
+        changeOrigin: true,
+      },
+      "/redoc": {
+        target: "http://127.0.0.1:11028",
+        changeOrigin: true,
+      },
+      "/openapi.json": {
+        target: "http://127.0.0.1:11028",
+        changeOrigin: true,
+      },
     },
   },
 });

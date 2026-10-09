@@ -49,6 +49,7 @@ export function Skills() {
             <button
               type="button"
               key={s.name}
+              data-testid={`skill-select-${s.name}`}
               onClick={() => setSelected(s.name)}
               className={`w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors ${
                 selected === s.name
@@ -77,7 +78,10 @@ export function Skills() {
                 <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
               </div>
             ) : (
-              <div className="prose prose-invert prose-sm max-w-none text-slate-300">
+              <div
+                data-testid="skill-content"
+                className="prose prose-invert prose-sm max-w-none text-slate-300"
+              >
                 <ReactMarkdown>{content}</ReactMarkdown>
               </div>
             )}

@@ -139,6 +139,7 @@ export default function Logging() {
         <h2 className="text-lg font-bold text-slate-200 mr-2">Logs</h2>
 
         <select
+          data-testid="logs-level-filter"
           className="h-8 rounded border border-slate-700 bg-slate-800 px-2 text-sm text-slate-300"
           value={level}
           onChange={(e) => {
@@ -171,6 +172,7 @@ export default function Logging() {
         </select>
 
         <input
+          data-testid="logs-search"
           className="h-8 w-48 rounded border border-slate-700 bg-slate-800 px-2 text-sm text-slate-300 placeholder:text-slate-400"
           placeholder="Search..."
           value={search}
@@ -193,6 +195,7 @@ export default function Logging() {
 
         <button
           type="button"
+          data-testid="logs-tail-toggle"
           className={`h-8 rounded px-3 text-sm font-medium ${tail ? "bg-emerald-600 text-white" : "border border-slate-700 text-slate-300 hover:bg-slate-800"}`}
           onClick={() => setTail(!tail)}
         >

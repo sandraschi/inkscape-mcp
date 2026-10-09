@@ -179,6 +179,7 @@ export function Settings() {
         <Button
           variant="outline"
           size="sm"
+          data-testid="settings-refresh"
           onClick={() => void load()}
           className="border-slate-800 text-slate-300"
         >
@@ -189,7 +190,10 @@ export function Settings() {
 
       {error && <p className="text-yellow-400">{error}</p>}
 
-      <Card className="border-slate-800 bg-slate-950/50">
+      <Card
+        data-testid="settings-server-card"
+        className="border-slate-800 bg-slate-950/50"
+      >
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Server className="h-5 w-5 text-blue-400" />

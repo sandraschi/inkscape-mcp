@@ -1,4 +1,4 @@
-﻿# FleetStartMode.ps1 - vendored per-repo copy (no mcp-central-docs required at runtime)
+# FleetStartMode.ps1 - vendored per-repo copy (no mcp-central-docs required at runtime)
 # Canonical upstream: mcp-central-docs/scripts/FleetStartMode.ps1 (private fleet docs)
 
 # FleetStartMode.ps1 - shared launch modes for webapp/start.ps1 launchers
@@ -9,7 +9,7 @@ function Get-FleetStartModeBoundParameters {
     param([hashtable]$BoundParameters)
 
     $filtered = @{}
-    foreach ($key in @('Headless', 'BackendOnly', 'FrontendOnly', 'NoBrowser')) {
+    foreach ($key in @('Headless', 'BackendOnly', 'FrontendOnly', 'NoBrowser', 'SkipRestart')) {
         if ($BoundParameters.ContainsKey($key)) {
             $filtered[$key] = $BoundParameters[$key]
         }
@@ -400,9 +400,19 @@ function Start-FleetDetachedShell {
         return Start-Process @psi
     }
 
+    # R8: title detached consoles from -Label so taskbar / taskkill can
+    # identify backend vs frontend without remembering ports. Probe runs
+    # use NoNewWindow + redirect, title is irrelevant there (early return).
+    $titledArgs = @($Args)
+    $cmdIdx = [Array]::IndexOf($titledArgs, '-Command')
+    if ($cmdIdx -ge 0 -and ($cmdIdx + 1) -lt $titledArgs.Count) {
+        $safe = ($Label -replace "'", "''")
+        $titledArgs[$cmdIdx + 1] = "`$Host.UI.RawUI.WindowTitle='$safe'; " + $titledArgs[$cmdIdx + 1]
+    }
+
     $normal = @{
         FilePath     = $Exe
-        ArgumentList = $Args
+        ArgumentList = $titledArgs
         PassThru     = $true
         WindowStyle  = $WindowStyle
     }

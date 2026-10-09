@@ -53,11 +53,15 @@ export function Help() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full border-b border-slate-800 bg-transparent">
+        <TabsList
+          data-testid="help-tabs"
+          className="w-full border-b border-slate-800 bg-transparent"
+        >
           {TABS.map((t) => (
             <TabsTrigger
               key={t.id}
               value={t.id}
+              data-testid={`help-tab-${t.id}`}
               className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm text-slate-200 transition-colors data-[state=active]:border-blue-500 data-[state=active]:text-slate-100"
             >
               <t.icon className="h-4 w-4" />

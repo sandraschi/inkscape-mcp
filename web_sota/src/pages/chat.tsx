@@ -122,6 +122,9 @@ export function Chat() {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  // Skill-first (fleet chat standard): server SKILL.md content loaded on mount
+  // and composed as the base system preprompt under the personality prompt.
+  const [skillPreprompt, setSkillPreprompt] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const persona =
     PERSONALITIES.find((p) => p.id === personality) ?? PERSONALITIES[0];
@@ -158,6 +161,24 @@ export function Chat() {
         if (s.model !== undefined) setModel(s.model ?? "");
       } catch {
         // backend truth unavailable: localStorage mirror stands
+      }
+    })();
+    // Skill-first: load the server skill once; failures are non-fatal
+    // (personality prompt still applies).
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/skills/inkscape`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (
+          data?.ok &&
+          typeof data.content === "string" &&
+          data.content.trim()
+        ) {
+          setSkillPreprompt(data.content.trim());
+        }
+      } catch {
+        // backend unavailable: chat works without the skill preprompt
       }
     })();
   }, []);
@@ -258,7 +279,9 @@ export function Chat() {
           model,
           endpoint,
           stream: true,
-          system_prompt: persona.prompt,
+          system_prompt: skillPreprompt
+            ? `${skillPreprompt}\n\n${persona.prompt}`
+            : persona.prompt,
           history,
         }),
         signal: ctrl.signal,
@@ -351,6 +374,7 @@ export function Chat() {
     endpoint,
     personality,
     persona,
+    skillPreprompt,
   ]);
 
   const stop = () => {

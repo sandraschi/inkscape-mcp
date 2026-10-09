@@ -39,6 +39,7 @@ export function ApiDocs() {
           <div className="flex rounded-lg border border-slate-700 overflow-hidden">
             <button
               type="button"
+              data-testid="api-docs-view-swagger"
               onClick={() => setView("swagger")}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 view === "swagger"
@@ -50,6 +51,7 @@ export function ApiDocs() {
             </button>
             <button
               type="button"
+              data-testid="api-docs-view-redoc"
               onClick={() => setView("redoc")}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 view === "redoc"
@@ -76,6 +78,7 @@ export function ApiDocs() {
         <CardContent className="p-0">
           <iframe
             ref={iframeRef}
+            data-testid="api-docs-frame"
             src={view === "swagger" ? `${BACKEND_DOCS}` : `${API_BASE}/redoc`}
             className="h-[70vh] w-full rounded-lg"
             title="API Documentation"

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "inkscape-mcp"
-version = "2.7.0"
+version = "2.7.1"
 description = "Inkscape-powered SVG and vector automation: edit, convert, trace, render, fleet handoff"
 readme = "README.md"
 authors = [
@@ -197,7 +197,7 @@ all = [
 [tool.fastmcp]
 name = "inkscape-mcp"
 display_name = "Inkscape MCP Server"
-version = "2.7.0"
+version = "2.7.1"
 description = "Inkscape MCP server (FastMCP 3.2.0+), portmanteau tools"
 entry_point = "inkscape_mcp.main:main"
 architecture = "portmanteau"
@@ -208,8 +208,8 @@ target-version = "py312"
 exclude = ["src/inkscape_mcp/tools_legacy"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008", "S106", "S110", "S112", "S101", "B008", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402", "E501"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
+ignore = ["S101", "B008", "S106", "RUF012", "S603", "S607", "S324", "E402", "E501"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
+    branches: [main, master]
     tags: ["v*"]
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -57,6 +60,35 @@ jobs:
       with:
         name: security-scan-results
         path: bandit-report.json
+
+  # Frontend Pipeline (web_sota dashboard: typecheck + build + biome)
+  frontend:
+    name: Frontend
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web_sota
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install frontend dependencies
+      run: bun install --frozen-lockfile
+
+    - name: Typecheck + build frontend
+      run: bun run build
+
+    - name: Lint with biome
+      run: bun run biome:ci
 
   # Testing Pipeline
   test:
@@ -383,7 +415,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: windows-latest
-    needs: [quality, test, build, integration, benchmark, security, docs, docker]
+    needs: [quality, test, build, frontend, integration, benchmark, security, docs, docker]
     if: always()
     timeout-minutes: 5
 

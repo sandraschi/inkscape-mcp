@@ -11,19 +11,19 @@ default:
 
 # Execute Ruff SOTA v13.1 linting
 lint:
-    uv run ruff check .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome ci .
+    uv run ruff check .; Set-Location '{{justfile_directory()}}\web_sota'; bunx @biomejs/biome ci .
 
 # Execute Ruff SOTA v13.1 fix and formatting
 fix:
-    uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome check --write .
+    uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; Set-Location '{{justfile_directory()}}\web_sota'; bunx @biomejs/biome check --write .
 
 # Execute pytest suite
 test:
     uv run pytest
 
-# Execute mypy type analytics
+# Execute pyright type analytics (fleet five-gate)
 typecheck:
-    uv run mypy src/inkscape_mcp
+    uv run pyright src/
 
 # Unified quality verification
 check: lint typecheck test
@@ -41,8 +41,8 @@ audit-deps:
 
 # --- Operation ---
 
-# Launch Inkscape MCP (HTTP mode)
-serve port="11027":
+# Launch Inkscape MCP (HTTP mode, registry backend port 11028)
+serve port="11028":
     uv run inkscape-mcp --mode http --port {{port}}
 
 # Quick fmt alias (calls fix)

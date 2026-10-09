@@ -1,6 +1,6 @@
 {
   "name": "inkscape-mcp",
-  "version": "2.6.0",
+  "version": "2.7.1",
   "description": "Inkscape MCP server for SVG and vector graphics operations",
   "hooks": "../hooks/hooks.json"
 }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from ..config import InkscapeConfig
@@ -17,7 +18,7 @@ async def describe_execution_mode(
 ) -> dict[str, Any]:
     """Return current Hands-In vs Hands-Off mode for agents and webapp."""
     cfg = config or InkscapeConfig.load_default()
-    gui_active = gui_watch_enabled() or detect_inkscape_gui_process()
+    gui_active = gui_watch_enabled() or await asyncio.to_thread(detect_inkscape_gui_process)
     batch_ok = await cli_available(cli_wrapper, cfg)
 
     if gui_active:

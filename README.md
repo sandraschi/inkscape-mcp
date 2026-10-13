@@ -94,3 +94,7 @@ Every method: [INSTALL.md](INSTALL.md).
 ## License
 
 MIT — see [LICENSE.md](LICENSE.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).

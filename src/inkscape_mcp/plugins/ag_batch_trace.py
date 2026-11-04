@@ -54,23 +54,23 @@ class AGBatchTrace(inkex.EffectExtension):
         """Process a single bitmap file."""
         output_path = output_dir / f"{input_path.stem}_traced.svg"
 
+        # Add tracing actions. "export-do" must be an action in --actions
+        # (there is no standalone "--export-do" CLI flag).
+        actions = []
+        actions.append("select-all")  # Select the bitmap
+        actions.append("object-to-path")  # Convert to path (trace)
+        if simplify:
+            actions.append("path-simplify")  # Simplify the path
+        actions.append("export-do")
+
         # Build Inkscape command for tracing
         cmd = [
             "inkscape",
             str(input_path),
             "--batch-process",
+            f"--actions={';'.join(actions)}",
             f"--export-filename={output_path}",
-            "--export-do",
         ]
-
-        # Add tracing actions
-        actions = []
-        actions.append("select-all")  # Select the bitmap
-        actions.append("object-to-path")  # Convert to path (trace)
-        if simplify:
-            actions.append("selection-simplify")  # Simplify the path
-
-        cmd.append(f"--actions={''.join(f'{action};' for action in actions)}")
 
         # Execute the command
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)

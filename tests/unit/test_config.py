@@ -2,7 +2,9 @@
 Unit tests for Inkscape MCP configuration module.
 """
 
+import platform
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -24,7 +26,13 @@ class TestInkscapeConfig:
         assert config.inkscape_executable is None
         assert config.max_concurrent_processes == 3
         assert config.process_timeout == 30
-        assert config.temp_directory == tempfile.gettempdir()
+        # On Linux, default_factory picks a dir under $HOME instead of the
+        # system temp dir: a snap-confined Inkscape (the default Ubuntu
+        # package) can't read the host's /tmp. See config._default_temp_directory.
+        if platform.system() == "Linux":
+            assert config.temp_directory == str(Path.home() / "InkscapeMCP" / "tmp")
+        else:
+            assert config.temp_directory == tempfile.gettempdir()
         assert config.max_file_size_mb == 100
         assert config.default_quality == 95
         assert config.default_interpolation == "lanczos"

@@ -639,12 +639,14 @@ async def _trace_image(
 ) -> dict[str, Any]:
     """Trace bitmap image to vector paths using potrace."""
     try:
+        # input_path is opened by _execute_actions (positional arg) and
+        # output_path is exported via --export-filename;export-do, so the
+        # action chain only needs to select the (already-open) bitmap and
+        # trace it. The old "file-open"/"selection-trace"/"file-save-as"/
+        # "file-close" action ids don't exist in modern Inkscape (1.2+).
         actions = [
-            "file-open:" + input_path,
-            "selection-create-bitmap-copies",
-            "selection-trace",
-            "file-save-as:" + output_path,
-            "file-close",
+            "select-all",
+            "object-trace",
         ]
 
         await cli_wrapper._execute_actions(
@@ -1027,7 +1029,7 @@ async def _path_simplify(
     try:
         actions = [
             f"select-by-id:{object_id}",
-            f"selection-simplify:{threshold}",
+            f"path-simplify:{threshold}",
             f"export-filename:{output_path}",
             "export-do",
         ]

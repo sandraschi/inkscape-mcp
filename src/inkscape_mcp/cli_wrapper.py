@@ -5,9 +5,12 @@ This module provides core Inkscape command-line functionality for MCP operations
 """
 
 import asyncio
+import itertools
 import logging
 import os
 from pathlib import Path
+
+_app_id_tag_counter = itertools.count()
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,10 @@ class InkscapeCliWrapper:
 
         if not Path(config.inkscape_executable).exists():
             raise InkscapeCliError(f"Inkscape executable not found: {config.inkscape_executable}")
+
+        # --app-id-tag (used in _execute_command) was added in Inkscape 1.1;
+        # None until the first command tells us whether it's accepted.
+        self._app_id_tag_supported: bool | None = None
 
     async def export_file(
         self,
@@ -236,10 +243,14 @@ class InkscapeCliWrapper:
 
         # If an output path is specified, add an export action to the chain
         if output_path:
-            cmd_args.append(f"--export-filename={str(Path(output_path).resolve())}")
-            # Ensure an export action is part of the chain if output_path is given
+            # Ensure an export action is part of the chain if output_path is given.
+            # Must be appended to the --actions value (cmd_args[-1]), not to
+            # --export-filename, or Inkscape treats ";export-do" as part of the
+            # export file type and refuses to export (InkFileExportCmd::do_export:
+            # Unknown export type).
             if "export-do" not in actions_str:
-                cmd_args[-1] += ";export-do"  # Append export-do if not already present
+                cmd_args[-1] += ";export-do"
+            cmd_args.append(f"--export-filename={str(Path(output_path).resolve())}")
 
         return await self._execute_command(cmd_args, timeout)
 
@@ -299,44 +310,53 @@ class InkscapeCliWrapper:
         Execute command with proper error handling and logging.
         """
         try:
-            # Use asyncio.create_subprocess_exec for better async handling
-            process = await asyncio.create_subprocess_exec(
-                *cmd_args,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env=self._get_environment(),
+            # GTK apps (incl. the snap-packaged Inkscape that's the default
+            # on Ubuntu) activate a single running instance over D-Bus instead
+            # of starting a new process when one is already open - e.g. the
+            # user has Inkscape's GUI open. The CLI invocation then just
+            # raises/forwards to that window: exit code 0, no output, and the
+            # requested batch-process/export silently never happens.
+            # --app-id-tag (Inkscape 1.1+) forces each invocation to be its
+            # own instance. Older Inkscape rejects the unknown flag, so this
+            # is dropped after a first failed attempt on such installs.
+            use_app_id_tag = self._app_id_tag_supported is not False
+            full_cmd_args = (
+                [
+                    *cmd_args[:1],
+                    f"--app-id-tag=mcp{next(_app_id_tag_counter)}",
+                    *cmd_args[1:],
+                ]
+                if use_app_id_tag
+                else cmd_args
             )
 
-            try:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+            output, err_text, returncode = await self._run_subprocess(full_cmd_args, timeout)
 
-                # Decode the streams separately. Inkscape diagnostics
-                # (fontconfig/GTK warnings, etc.) go to stderr and must NEVER
-                # be concatenated onto stdout: --query-* output is parsed
-                # downstream and any leaked diagnostic corrupts it
-                # (issue #8: non-ASCII install paths + fontconfig error).
-                output = stdout.decode("utf-8", errors="replace")
-                err_text = stderr.decode("utf-8", errors="replace")
+            if (
+                use_app_id_tag
+                and self._app_id_tag_supported is None
+                and returncode != 0
+                and "app-id-tag" in err_text
+            ):
+                # Unsupported on this (older) Inkscape build - retry once
+                # without it and remember not to use it again.
+                self._app_id_tag_supported = False
+                output, err_text, returncode = await self._run_subprocess(cmd_args, timeout)
+            elif self._app_id_tag_supported is None:
+                self._app_id_tag_supported = True
 
-                if process.returncode != 0:
-                    error_msg = (
-                        f"Inkscape command failed with return code {process.returncode}: {output}"
-                    )
-                    if err_text.strip():
-                        error_msg += f"\nstderr: {err_text}"
-                    raise InkscapeExecutionError(error_msg)
-
+            if returncode != 0:
+                error_msg = f"Inkscape command failed with return code {returncode}: {output}"
                 if err_text.strip():
-                    # Benign diagnostics on success: visible in logs, kept out
-                    # of the parsed query result.
-                    logger.debug("Inkscape stderr (ignored): %s", err_text.strip())
+                    error_msg += f"\nstderr: {err_text}"
+                raise InkscapeExecutionError(error_msg)
 
-                return output
+            if err_text.strip():
+                # Benign diagnostics on success: visible in logs, kept out
+                # of the parsed query result.
+                logger.debug("Inkscape stderr (ignored): %s", err_text.strip())
 
-            except TimeoutError as te:
-                process.kill()
-                await process.wait()
-                raise InkscapeTimeoutError(f"Command timed out after {timeout} seconds") from te
+            return output
 
         except FileNotFoundError:
             raise InkscapeExecutionError(
@@ -348,6 +368,35 @@ class InkscapeCliWrapper:
             raise
         except Exception as e:
             raise InkscapeExecutionError(f"Command execution failed: {e}") from e
+
+    async def _run_subprocess(
+        self, cmd_args: list[str], timeout: int
+    ) -> tuple[str, str, int]:
+        """Run one subprocess and return (stdout, stderr, returncode)."""
+        process = await asyncio.create_subprocess_exec(
+            *cmd_args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=self._get_environment(),
+        )
+
+        try:
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+        except TimeoutError as te:
+            process.kill()
+            await process.wait()
+            raise InkscapeTimeoutError(f"Command timed out after {timeout} seconds") from te
+
+        # Decode the streams separately. Inkscape diagnostics (fontconfig/GTK
+        # warnings, etc.) go to stderr and must NEVER be concatenated onto
+        # stdout: --query-* output is parsed downstream and any leaked
+        # diagnostic corrupts it (issue #8: non-ASCII install paths +
+        # fontconfig error).
+        return (
+            stdout.decode("utf-8", errors="replace"),
+            stderr.decode("utf-8", errors="replace"),
+            process.returncode,
+        )
 
     def _get_environment(self) -> dict[str, str]:
         """

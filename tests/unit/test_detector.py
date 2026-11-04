@@ -5,6 +5,7 @@ Unit tests for Inkscape detector module.
 import logging
 import os
 import platform
+import sys
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -84,6 +85,7 @@ class TestInkscapeDetector:
             calls = [str(call.args[0]) for call in mock_validate.call_args_list]
             assert any("Program Files" in call for call in calls)
 
+    @pytest.mark.skipif(sys.platform != "win32", reason="winreg is Windows-only")
     def test_windows_registry_search(self):
         """Test Windows registry search for Inkscape."""
         detector = InkscapeDetector()
@@ -101,6 +103,7 @@ class TestInkscapeDetector:
             result = detector._check_windows_registry()
             assert result == str(Path("C:\\Program Files\\Inkscape") / "bin" / "inkscape.exe")
 
+    @pytest.mark.skipif(sys.platform != "win32", reason="winreg is Windows-only")
     def test_windows_registry_not_found(self):
         """Test Windows registry search when Inkscape not found."""
         detector = InkscapeDetector()

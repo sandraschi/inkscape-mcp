@@ -21,9 +21,18 @@ from inkscape_mcp.cli_wrapper import InkscapeCliWrapper
 
 # Import the modules we're testing
 from inkscape_mcp.config import InkscapeConfig
+from inkscape_mcp.config import _default_temp_directory
 from inkscape_mcp.inkscape_detector import InkscapeDetector
 
 # ===== FIXTURE SCOPE DEFINITIONS =====
+
+# Base dir for test temp files/dirs. Plain tempfile.mkstemp()/mkdtemp() default
+# to system /tmp, which a snap-confined Inkscape (Ubuntu's default package)
+# cannot read even though it can read under $HOME - see
+# inkscape_mcp.config._default_temp_directory. Integration tests that hand
+# real files to the real `inkscape` binary need a dir it can actually open.
+_TEST_TEMP_BASE = Path(_default_temp_directory())
+_TEST_TEMP_BASE.mkdir(parents=True, exist_ok=True)
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +46,7 @@ def event_loop():
 @pytest.fixture(scope="session")
 def temp_dir():
     """Create a temporary directory for the entire test session."""
-    temp_path = Path(tempfile.mkdtemp(prefix="inkscape_mcp_test_"))
+    temp_path = Path(tempfile.mkdtemp(prefix="inkscape_mcp_test_", dir=_TEST_TEMP_BASE))
     yield temp_path
     shutil.rmtree(temp_path, ignore_errors=True)
 
@@ -45,7 +54,7 @@ def temp_dir():
 @pytest.fixture(scope="function")
 def temp_file():
     """Create a temporary file that gets cleaned up after each test."""
-    fd, path = tempfile.mkstemp(suffix=".svg")
+    fd, path = tempfile.mkstemp(suffix=".svg", dir=_TEST_TEMP_BASE)
     file_path = Path(path)
     os.close(fd)  # Close the file descriptor
 
@@ -396,7 +405,7 @@ def assert_error():
 @pytest.fixture
 async def temp_async_file():
     """Create a temporary file for async operations."""
-    fd, path = tempfile.mkstemp(suffix=".svg")
+    fd, path = tempfile.mkstemp(suffix=".svg", dir=_TEST_TEMP_BASE)
     file_path = Path(path)
     os.close(fd)
 

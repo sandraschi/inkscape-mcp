@@ -56,8 +56,6 @@ dependencies = [
     # HTTP server + REST bridge (app.py register_rest_api) - webapp core
     "fastapi>=0.95.0,<1.0.0",
     "uvicorn[standard]>=0.22.0,<1.0.0",
-    # Inkscape extension API â€” required for plugins/ scripts
-    "inkex>=1.2.0",
 ]
 
 [project.urls]
@@ -118,6 +116,15 @@ warn_unreachable = true
 
 
 [project.optional-dependencies]
+# Inkscape extension API (.inx scripts in src/inkscape_mcp/plugins/).
+# Not needed to run the MCP server itself. Kept optional because inkex pins
+# lxml<6, which has no prebuilt wheel for newer CPython (e.g. 3.14) and fails
+# to build from source against newer libxml2 (Ubuntu 25.10+/26.x). If you need
+# these extension scripts, install on Python 3.12/3.13 or install lxml>=6 first.
+extensions = [
+    "inkex>=1.2.0",
+]
+
 # HTTP server support
 http = [
     "fastapi>=0.95.0,<1.0.0",

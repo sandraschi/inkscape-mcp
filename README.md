@@ -2,6 +2,44 @@
 
 AI agents create, edit, layer, animate, and export SVG files using Inkscape. Works as an MCP server (stdio/HTTP), Claude Desktop `.mcpb` bundle, webapp dashboard, or Windows desktop app.
 
+> This fork ([dany-lopez-silttec/inkscape-mcp](https://github.com/dany-lopez-silttec/inkscape-mcp)) tracks
+> [sandraschi/inkscape-mcp](https://github.com/sandraschi/inkscape-mcp) and carries a set of fixes for
+> Inkscape 1.4 / Ubuntu 26.10 — see [Changes in this fork](#changes-in-this-fork) below. Also sent upstream as
+> [sandraschi/inkscape-mcp#12](https://github.com/sandraschi/inkscape-mcp/pull/12).
+
+## Changes in this fork
+
+Found and fixed by actually running the server against a real Inkscape 1.4.4 install on Ubuntu 26.10
+(Python 3.14) — not just reading the code.
+
+**Install**
+- Moved `inkex` to an optional `extensions` extra. Nothing in the server imports it — only the standalone
+  `plugins/ag_*.py` Inkscape extension scripts do, which run inside Inkscape's own bundled Python, not this
+  project's venv. `inkex` pins `lxml<6.0.0`, which has no prebuilt wheel for Python 3.14 and fails to build
+  from source against newer libxml2 (Ubuntu 25.10+/26.x). A plain `pip install -e .` no longer needs to touch
+  `lxml` at all.
+
+**CLI/action-id bugs** (all reproduced and verified against real Inkscape 1.4.4)
+- `cli_wrapper.py`: `;export-do` was appended to the `--export-filename` value instead of to `--actions`,
+  breaking every export (`InkFileExportCmd::do_export: Unknown export type`).
+- Action ids that no longer exist in Inkscape 1.2+: `selection-simplify` → `path-simplify`,
+  `fit-canvas-to-drawing` → `page-fit-to-selection`. `_trace_image`'s
+  `file-open`/`selection-trace`/`file-save-as`/`file-close` chain never existed as actions; rewritten to use
+  the wrapper's normal open/export mechanism with `select-all;object-trace`.
+- `ag_batch_trace.py` passed `--export-do` as a standalone CLI flag, which doesn't exist (only as an action
+  inside `--actions`); inkscape exited 2 on every call. Reordered so `export-do` is part of `--actions`.
+- Default `temp_directory` (system `/tmp`) is invisible to Inkscape's snap package (Ubuntu's default), which
+  sandboxes its own `/tmp`; a dotted path like `~/.cache/...` is equally invisible because snap's `home`
+  interface excludes hidden files/dirs. Default now resolves to `~/InkscapeMCP/tmp` on Linux.
+- A GTK single-instance activation quirk: with an Inkscape GUI window already open, every CLI invocation was
+  silently forwarded to that window instead of running (exit 0, no error, nothing written). `--app-id-tag`
+  forces each invocation to be its own instance; falls back to the old behavior if an older Inkscape rejects
+  the flag.
+
+Verified: 179 unit tests + 11 integration tests (against the real Inkscape binary, including with a GUI
+window deliberately left open) all pass. Also exercised end to end outside the test suite: created a shape,
+ran a real `object_to_path` through the CLI, and rendered a PNG preview.
+
 ## Preview
 
 | Dashboard | Animation Studio | Layer Manager |

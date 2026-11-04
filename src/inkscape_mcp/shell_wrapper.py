@@ -179,13 +179,15 @@ class ShellModeWrapper:
         return await self.run_actions("select-all", "path-intersection")
 
     async def path_simplify(self, threshold: float = 1.0) -> str:
-        return await self.run_actions("select-all", f"selection-simplify:{threshold}")
+        return await self.run_actions("select-all", f"path-simplify:{threshold}")
 
     async def text_to_path(self) -> str:
         return await self.run_actions("select-all", "object-to-path")
 
     async def fit_canvas_to_drawing(self) -> str:
-        return await self.run_actions("fit-canvas-to-drawing")
+        # "fit-canvas-to-drawing" was removed; "page-fit-to-selection" fits the
+        # page to the selection, or to the whole drawing when nothing is selected.
+        return await self.run_actions("page-fit-to-selection")
 
     async def vacuum_defs(self) -> str:
         return await self.run_actions("vacuum-defs")

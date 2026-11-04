@@ -258,7 +258,10 @@ class TestCrossPlatformWorkflows:
         """Test handling of Unicode filenames."""
         # Create file with Unicode name
         unicode_name = "测试_svg_файл.svg"
-        test_path = Path(tempfile.gettempdir()) / unicode_name
+        # Use the configured temp dir, not tempfile.gettempdir() directly: a
+        # snap-confined Inkscape can't read the system temp dir on Linux (see
+        # inkscape_mcp.config._default_temp_directory).
+        test_path = Path(real_config.temp_directory) / unicode_name
 
         try:
             test_content = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40"/></svg>'

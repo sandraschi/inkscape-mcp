@@ -7,6 +7,7 @@ including Inkscape settings, performance tuning, and user preferences.
 
 import logging
 import os
+import platform
 import shutil
 import tempfile
 from pathlib import Path
@@ -18,6 +19,32 @@ from pydantic import Field
 from pydantic import field_validator
 
 logger = logging.getLogger(__name__)
+
+
+def _default_temp_directory() -> str:
+    """Pick a default temp dir a snap-confined Inkscape can actually read.
+
+    Ubuntu's default Inkscape package (Snap Store / `snap install inkscape`)
+    runs sandboxed with its own private /tmp; the host's
+    `tempfile.gettempdir()` (usually /tmp) is invisible to it even though the
+    snap's "home" interface normally grants read access under $HOME. Using
+    system /tmp here causes silent "cannot be opened"/"doesn't exist" failures
+    from the Inkscape CLI on such installs. Default to a directory under
+    $HOME on Linux instead; this is harmless for non-snap installs too.
+
+    The chosen path must not contain any dot-prefixed component (e.g.
+    ~/.cache/...): snapd's "home" interface grants read/write under $HOME but
+    specifically excludes hidden files/directories, so a dotfile-based temp
+    dir is just as invisible to the sandboxed binary as system /tmp is.
+    """
+    if platform.system() == "Linux":
+        home_tmp = Path.home() / "InkscapeMCP" / "tmp"
+        try:
+            home_tmp.mkdir(parents=True, exist_ok=True)
+            return str(home_tmp)
+        except OSError:
+            pass
+    return tempfile.gettempdir()
 
 
 class InkscapeConfig(BaseModel):
@@ -41,7 +68,7 @@ class InkscapeConfig(BaseModel):
 
     # File Handling
     temp_directory: str = Field(
-        default_factory=lambda: tempfile.gettempdir(), description="Directory for temporary files"
+        default_factory=_default_temp_directory, description="Directory for temporary files"
     )
 
     max_file_size_mb: int = Field(default=100, ge=1, le=1000, description="Maximum file size in MB")
